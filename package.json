@@ -1,0 +1,35 @@
+{
+  "name": "yaxha",
+  "version": "1.0.0",
+  "description": "A BGA implementation of Yaxha",
+  "main": "yaxha.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch:ts": "tsc --watch",
+    "watch:scss": "sass --watch src/yaxha.scss:yaxha.css",
+    "watch": "concurrently \"npm run watch:ts\" \"npm run watch:scss\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dorukkicikoglu/bga-yaxha.git"
+  },
+  "keywords": [
+    "bga",
+    "board",
+    "game",
+    "yaxha",
+    "digital",
+    "board",
+    "game",
+    "adaptation"
+  ],
+  "author": "Doruk Kicikoglu",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/dorukkicikoglu/bga-yaxha/issues"
+  },
+  "homepage": "https://github.com/dorukkicikoglu/bga-yaxha#readme",
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

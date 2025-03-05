@@ -171,6 +171,79 @@ namespace Bga\GameFramework\Db {
 }
 
 namespace {
+    /**
+     * Base class for database interactions in BGA.
+     */
+    abstract class APP_DbObject
+    {
+        /**
+         * Performs a query on the database.
+         *
+         * @see https://en.doc.boardgamearena.com/Main_game_logic:_yourgamename.game.php#Accessing_the_database
+         */
+        final static public function DbQuery(string $sql): ?bool
+        {
+            return null;
+        }
+
+        /**
+         * Returns an array of rows for a SQL SELECT query.
+         *
+         * If `$bUniqueValue = true`, returns a simple array of values.
+         */
+        final static public function getObjectListFromDB(string $sql, bool $bUniqueValue = false): array
+        {
+            return [];
+        }
+
+        /**
+         * Returns a single row as an associative array.
+         */
+        final static public function getObjectFromDB(string $sql): ?array
+        {
+            return null;
+        }
+
+        /**
+         * Returns a unique value from the database, or `null` if no value is found.
+         */
+        final static public function getUniqueValueFromDB(string $sql): mixed
+        {
+            return null;
+        }
+
+        /**
+         * Escape a string for safe use in SQL queries.
+         */
+        final static public function escapeStringForDB(string $string): string
+        {
+            return addslashes($string);
+        }
+
+        /**
+         * Returns an associative array of rows for a SQL SELECT statement.
+         *
+         * The first column is used as the key, and the entire row is the value.
+         * If `$bSingleValue` is `true`, it returns `column1 => column2` instead of `column1 => [column1, column2]`.
+         */
+        final static public function getCollectionFromDB(string $sql, bool $bSingleValue = false): array
+        {
+            return [];
+        }
+
+        /**
+         * Returns an associative array of rows for a SQL SELECT statement.
+         * The first array level corresponds to the first column, and the second level corresponds to the second column.
+         * 
+         * If `$bSingleValue = true`, it returns column1 => column2 instead of column1 => [column1, column2].
+         */
+        final static public function getDoubleKeyCollectionFromDB(string $sql, bool $bSingleValue = false): array
+        {
+            return [];
+        }
+    }
+
+namespace {
     exit("This file should not be included, only analyzed by your IDE");
 
     /**
