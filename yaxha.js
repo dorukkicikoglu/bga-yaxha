@@ -1,248 +1,181 @@
-/**
- *------
- * BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
- * yaxha implementation : © <Your name here> <Your email address here>
- *
- * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
- * See http://en.boardgamearena.com/#!doc/Studio for more information.
- * -----
- *
- * yaxha.js
- *
- * yaxha user interface script
- * 
- * In this file, you are describing the logic of your user interface, in Javascript language.
- *
- */
-
-define([
-    "dojo","dojo/_base/declare",
-    "ebg/core/gamegui",
-    "ebg/counter"
-],
-function (dojo, declare) {
-    return declare("bgagame.yaxha", ebg.core.gamegui, {
-        constructor: function(){
-            console.log('yaxha constructor');
-              
-            // Here, you can init the global variables of your user interface
-            // Example:
-            // this.myGlobalValue = 0;
-
-        },
-        
-        /*
-            setup:
-            
-            This method must set up the game user interface according to current game situation specified
-            in parameters.
-            
-            The method is called each time the game interface is displayed to a player, ie:
-            _ when the game starts
-            _ when a player refreshes the game page (F5)
-            
-            "gamedatas" argument contains all datas retrieved by your "getAllDatas" PHP method.
-        */
-        
-        setup: function( gamedatas )
-        {
-            console.log( "Starting game setup" );
-
-            // Example to add a div on the game area
-            document.getElementById('game_play_area').insertAdjacentHTML('beforeend', `
-                <div id="player-tables"></div>DORUKLARIN
-            `);
-            
-            // Setting up player boards
-            Object.values(gamedatas.players).forEach(player => {
-                // example of setting up players boards
-                this.getPlayerPanelElement(player.id).insertAdjacentHTML('beforeend', `
-                    <div id="player-counter-${player.id}">A player counter</div>
-                `);
-
-                // example of adding a div for each player
-                document.getElementById('player-tables').insertAdjacentHTML('beforeend', `
-                    <div id="player-table-${player.id}">
-                        <strong>${player.name}</strong>
-                        <div>Player zone content goes here</div>
-                    </div>
-                `);
-            });
-            
-            // TODO: Set up your game interface here, according to "gamedatas"
-            
- 
-            // Setup game notifications to handle (see "setupNotifications" method below)
-            this.setupNotifications();
-
-            console.log( "Ending game setup" );
-        },
-       
-
-        ///////////////////////////////////////////////////
-        //// Game & client states
-        
-        // onEnteringState: this method is called each time we are entering into a new game state.
-        //                  You can use this method to perform some user interface changes at this moment.
-        //
-        onEnteringState: function( stateName, args )
-        {
-            console.log( 'Entering state: '+stateName, args );
-            
-            switch( stateName )
-            {
-            
-            /* Example:
-            
-            case 'myGameState':
-            
-                // Show some HTML block at this game state
-                dojo.style( 'my_html_block_id', 'display', 'block' );
-                
-                break;
-           */
-           
-           
-            case 'dummy':
-                break;
-            }
-        },
-
-        // onLeavingState: this method is called each time we are leaving a game state.
-        //                 You can use this method to perform some user interface changes at this moment.
-        //
-        onLeavingState: function( stateName )
-        {
-            console.log( 'Leaving state: '+stateName );
-            
-            switch( stateName )
-            {
-            
-            /* Example:
-            
-            case 'myGameState':
-            
-                // Hide the HTML block we are displaying only during this game state
-                dojo.style( 'my_html_block_id', 'display', 'none' );
-                
-                break;
-           */
-           
-           
-            case 'dummy':
-                break;
-            }               
-        }, 
-
-        // onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
-        //                        action status bar (ie: the HTML links in the status bar).
-        //        
-        onUpdateActionButtons: function( stateName, args )
-        {
-            console.log( 'onUpdateActionButtons: '+stateName, args );
-                      
-            if( this.isCurrentPlayerActive() )
-            {            
-                switch( stateName )
-                {
-                 case 'playerTurn':    
-                    const playableCardsIds = args.playableCardsIds; // returned by the argPlayerTurn
-
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+// @ts-ignore
+GameGui = (function () {
+    function GameGui() { }
+    return GameGui;
+})();
+var GameBody = /** @class */ (function (_super) {
+    __extends(GameBody, _super);
+    function GameBody() {
+        var _this = _super.call(this) || this;
+        console.log('yaxha constructor');
+        return _this;
+    }
+    GameBody.prototype.setup = function (gamedatas) {
+        var _this = this;
+        console.log("Starting game setup");
+        // Example to add a div on the game area
+        document.getElementById('game_play_area').insertAdjacentHTML('beforeend', "\n            <div id=\"player-tables\"></div>DORUKLARIN\n        ");
+        // Setting up player boards
+        Object.values(gamedatas.players).forEach(function (player) {
+            // example of setting up players boards
+            _this.getPlayerPanelElement(player.id).insertAdjacentHTML('beforeend', "\n                <div id=\"player-counter-".concat(player.id, "\">A player counter</div>\n            "));
+            // example of adding a div for each player
+            document.getElementById('player-tables').insertAdjacentHTML('beforeend', "\n                <div id=\"player-table-".concat(player.id, "\">\n                    <strong>").concat(player.name, "</strong>\n                    <div>Player zone content goes here</div>\n                </div>\n            "));
+        });
+        // TODO: Set up your game interface here, according to "gamedatas"
+        // Setup game notifications to handle (see "setupNotifications" method below)
+        this.setupNotifications();
+        console.log("Ending game setup");
+    };
+    GameBody.prototype.onEnteringState = function (stateName, args) {
+        console.log('Entering state: ' + stateName, args);
+    };
+    GameBody.prototype.onLeavingState = function (stateName) {
+        console.log('Leaving state: ' + stateName);
+    };
+    GameBody.prototype.onUpdateActionButtons = function (stateName, args) {
+        var _this = this;
+        console.log('onUpdateActionButtons: ' + stateName, args);
+        if (this.isCurrentPlayerActive()) {
+            switch (stateName) {
+                case 'playerTurn':
+                    var playableCardsIds = args.playableCardsIds; // returned by the argPlayerTurn
                     // Add test action buttons in the action status bar, simulating a card click:
-                    playableCardsIds.forEach(
-                        cardId => this.statusBar.addActionButton(_('Play card with id ${card_id}').replace('${card_id}', cardId), () => this.onCardClick(cardId))
-                    ); 
-
-                    this.statusBar.addActionButton(_('Pass'), () => this.bgaPerformAction("actPass"), { color: 'secondary' }); 
+                    playableCardsIds.forEach(function (cardId) { return _this.statusBar.addActionButton(_('Play card with id ${card_id}').replace('${card_id}', cardId), function () { return _this.onCardClick(cardId); }); });
+                    this.statusBar.addActionButton(_('Pass'), function () { return _this.bgaPerformAction("actPass"); }, { color: 'secondary' });
                     break;
+            }
+        }
+    };
+    GameBody.prototype.onCardClick = function (card_id) {
+        console.log('onCardClick', card_id);
+        this.bgaPerformAction("actPlayCard", {
+            card_id: card_id,
+        }).then(function () {
+            // What to do after the server call if it succeeded
+            // (most of the time, nothing, as the game will react to notifs / change of state instead)
+        });
+    };
+    //utility functions
+    GameBody.prototype.format_string_recursive = function (log, args) {
+        try {
+            log = _(log);
+            if (log && args && !args.processed) {
+                args.processed = true;
+                // list of special keys we want to replace with images
+                var keys = ['textPlayerID', 'LOG_CLASS', 'ARROW_LEFT', 'ARROW_DOWN', 'NO_MORE_CARDS', 'PILE_NUM']; //ekmek cok gereksiz var
+                for (var _i = 0, keys_1 = keys; _i < keys_1.length; _i++) {
+                    var key = keys_1[_i];
+                    if (key in args) {
+                        if (key == 'textPlayerID')
+                            args['textPlayerID'] = this.divColoredPlayer(args['textPlayerID']);
+                        else if (key == 'LOG_CLASS')
+                            log = log + '<div log-class-tag="' + args['LOG_CLASS'] + '"></div>';
+                        else if (key == 'ARROW_LEFT')
+                            args['ARROW_LEFT'] = '<i class="log-arrow log-arrow-left fa6 fa-angle-double-left"></i>';
+                        else if (key == 'ARROW_DOWN')
+                            args['ARROW_DOWN'] = '<i class="log-arrow place-under-icon fa6 fa-share"></i>';
+                        else if (key == 'PILE_NUM')
+                            args['PILE_NUM'] = '';
+                    }
                 }
             }
-        },        
-
-        ///////////////////////////////////////////////////
-        //// Utility methods
-        
-        /*
-        
-            Here, you can defines some utility methods that you can use everywhere in your javascript
-            script.
-        
-        */
-
-
-        ///////////////////////////////////////////////////
-        //// Player's action
-        
-        /*
-        
-            Here, you are defining methods to handle player's action (ex: results of mouse click on 
-            game objects).
-            
-            Most of the time, these methods:
-            _ check the action is possible at this game state.
-            _ make a call to the game server
-        
-        */
-        
-        // Example:
-        
-        onCardClick: function( card_id )
-        {
-            console.log( 'onCardClick', card_id );
-
-            this.bgaPerformAction("actPlayCard", { 
-                card_id,
-            }).then(() =>  {                
-                // What to do after the server call if it succeeded
-                // (most of the time, nothing, as the game will react to notifs / change of state instead)
-            });        
-        },    
-
-        
-        ///////////////////////////////////////////////////
-        //// Reaction to cometD notifications
-
-        /*
-            setupNotifications:
-            
-            In this method, you associate each of your game notifications with your local method to handle it.
-            
-            Note: game notification names correspond to "notifyAllPlayers" and "notifyPlayer" calls in
-                  your yaxha.game.php file.
-        
-        */
-        setupNotifications: function()
-        {
-            console.log( 'notifications subscriptions setup' );
-            
-            // TODO: here, associate your game notifications with local methods
-            
-            // Example 1: standard notification handling
-            // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-            
-            // Example 2: standard notification handling + tell the user interface to wait
-            //            during 3 seconds after calling the method in order to let the players
-            //            see what is happening in the game.
-            // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-            // this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
-            // 
-        },  
-        
-        // TODO: from this point and below, you can write your game notifications handling methods
-        
-        /*
-        Example:
-        
-        notif_cardPlayed: function( notif )
-        {
-            console.log( 'notif_cardPlayed' );
-            console.log( notif );
-            
-            // Note: notif.args contains the arguments specified during you "notifyAllPlayers" / "notifyPlayer" PHP call
-            
-            // TODO: play the card in the user interface.
-        },    
-        
-        */
-   });             
+        }
+        catch (e) {
+            console.error(log, args, "Exception thrown", e.stack);
+        }
+        return this.inherited(arguments);
+    };
+    GameBody.prototype.divYou = function (attributes) {
+        if (attributes === void 0) { attributes = {}; }
+        var color = this.gamedatas.players[this.player_id].color;
+        var color_bg = "";
+        if (this.gamedatas.players[this.player_id] && this.gamedatas.players[this.player_id].color_back) {
+            color_bg = "background-color:#" + this.gamedatas.players[this.player_id.toString()].color_back + ";";
+        }
+        attributes['player-color'] = color;
+        var html = "<span style=\"font-weight:bold;color:#" + color + ";" + color_bg + "\" " + this.getAttributesHTML(attributes) + ">" + __("lang_mainsite", "You") + "</span>";
+        return html;
+    };
+    GameBody.prototype.divColoredPlayer = function (player_id, attributes, detectYou) {
+        if (attributes === void 0) { attributes = {}; }
+        if (detectYou === void 0) { detectYou = true; }
+        if (detectYou && parseInt(player_id) === parseInt(this.player_id))
+            return this.divYou(attributes);
+        player_id = player_id.toString();
+        var color = this.gamedatas.players[player_id].color;
+        var color_bg = "";
+        if (this.gamedatas.players[player_id] && this.gamedatas.players[player_id].color_back) {
+            color_bg = "background-color:#" + this.gamedatas.players[player_id].color_back + ";";
+        }
+        attributes['player-color'] = color;
+        var html = "<span style=\"color:#" + color + ";" + color_bg + "\" " + this.getAttributesHTML(attributes) + ">" + this.gamedatas.players[player_id].name + "</span>";
+        return html;
+    };
+    GameBody.prototype.getAttributesHTML = function (attributes) { return Object.entries(attributes || {}).map(function (_a) {
+        var key = _a[0], value = _a[1];
+        return "".concat(key, "=\"").concat(value, "\"");
+    }).join(' '); };
+    GameBody.prototype.isDesktop = function () { return dojo.hasClass(dojo.body(), 'desktop_version'); };
+    GameBody.prototype.isMobile = function () { return dojo.hasClass(dojo.body(), 'mobile_version'); };
+    GameBody.prototype.updateStatusText = function (statusText) { $('gameaction_status').innerHTML = statusText; $('pagemaintitletext').innerHTML = statusText; };
+    GameBody.prototype.ajaxAction = function (action, args, lock, checkAction) {
+        if (args === void 0) { args = {}; }
+        if (lock === void 0) { lock = true; }
+        if (checkAction === void 0) { checkAction = true; }
+        args.version = this.gamedatas.version;
+        this.bgaPerformAction(action, args, { lock: lock, checkAction: checkAction });
+    };
+    GameBody.prototype.isReplay = function () { return typeof g_replayFrom != 'undefined' || g_archive_mode; };
+    GameBody.prototype.remove_px = function (str) {
+        str = str.trim();
+        if (!isNaN(parseInt(str)) && str === parseInt(str).toString())
+            return parseInt(str);
+        var result = parseInt(str.toLowerCase().replace(/px/g, ''));
+        return isNaN(result) ? 0 : result;
+    };
+    GameBody.prototype.printDebug = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        args[0] = typeof args[0] == 'string' ? '*** ' + args[0] : args[0];
+        console.log.apply(console, args);
+    };
+    //notification functions
+    GameBody.prototype.setupNotifications = function () {
+        console.log('notifications subscriptions setup');
+        // TODO: here, associate your game notifications with local methods
+        // Example 1: standard notification handling
+        // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
+        // Example 2: standard notification handling + tell the user interface to wait
+        //            during 3 seconds after calling the method in order to let the players
+        //            see what is happening in the game.
+        // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
+        // this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
+        // 
+    };
+    return GameBody;
+}(GameGui));
+define([
+    "dojo", "dojo/_base/declare",
+    "ebg/core/gamegui",
+    "ebg/counter"
+], function (dojo, declare) {
+    return declare("bgagame.yaxha", ebg.core.gamegui, new GameBody());
 });
