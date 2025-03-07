@@ -32,7 +32,7 @@ declare class GameGui {
     ajaxcall(url: string, args: object, bind: GameGui, resultHandler: (result: any) => void, allHandler: any);
     bgaPerformAction(action: string, args?: object, params?: object);
     getActivePlayerId(): number;
-    getPlayerPanelElement(playerID: number);
+    getPlayerPanelElement(playerID: number | string);
 
     setup(gamedatas: any): void;
     onEnteringState(stateName: string, args: any): void;

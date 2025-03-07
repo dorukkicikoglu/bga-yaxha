@@ -1,4 +1,3 @@
-
 -- ------
 -- BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
 -- yaxha implementation : © <Your name here> <Your email address here>
@@ -33,3 +32,20 @@
 -- Example 2: add a custom field to the standard "player" table
 -- ALTER TABLE `player` ADD `player_my_custom_field` INT UNSIGNED NOT NULL DEFAULT '0';
 
+ALTER TABLE `player` ADD `turn_order` INT NOT NULL;
+
+CREATE TABLE IF NOT EXISTS `bonus_cards` (
+    `bonus_card_position` TINYINT NOT NULL,
+    `bonus_card_id` TINYINT NOT NULL,
+    PRIMARY KEY (`bonus_card_position`)
+);
+
+CREATE TABLE IF NOT EXISTS `cubes` (
+  `card_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `card_type` varchar(16) NOT NULL,
+  `card_type_arg` int(11) NOT NULL,
+  `card_location` ENUM('bag', 'market', 'player') NOT NULL,
+  `card_location_arg` int(11) NOT NULL,
+  `color` TINYINT NOT NULL,
+  PRIMARY KEY (`card_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;

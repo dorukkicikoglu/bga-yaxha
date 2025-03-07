@@ -4,7 +4,11 @@ GameGui = (function () { // this hack required so we fake extend GameGui
     return GameGui;
   })();
 
-  class GameBody extends GameGui { 
+class GameBody extends GameGui { 
+    public players: Record<number, PlayerHandler> = {};
+    public marketHandler: MarketHandler;
+    public CUBE_COLORS: { [key: number]: CubeColor };
+
     constructor() {
         super();
 
@@ -14,28 +18,17 @@ GameGui = (function () { // this hack required so we fake extend GameGui
     public setup(gamedatas: any) {
         console.log( "Starting game setup" );
 
-        // Example to add a div on the game area
-        document.getElementById('game_play_area').insertAdjacentHTML('beforeend', `
-            <div id="player-tables"></div>DORUKLARIN
-        `);
+        document.getElementById('game_play_area').insertAdjacentHTML('beforeend', `<div id="player-tables">
+            <div class="market-container"></div>    
+        </div>`);
 
-        // Setting up player boards
-        Object.values(gamedatas.players).forEach((player: any) => {
-            // example of setting up players boards
-            this.getPlayerPanelElement(player.id).insertAdjacentHTML('beforeend', `
-                <div id="player-counter-${player.id}">A player counter</div>
-            `);
+        for(let player_id in gamedatas.players) {
+            const {name, color, player_no, turn_order} = this.gamedatas.players[player_id];
+            this.players[player_id] = new PlayerHandler(this, parseInt(player_id), name, color, parseInt(player_no), turn_order);
+        }
 
-            // example of adding a div for each player
-            document.getElementById('player-tables').insertAdjacentHTML('beforeend', `
-                <div id="player-table-${player.id}">
-                    <strong>${player.name}</strong>
-                    <div>Player zone content goes here</div>
-                </div>
-            `);
-        });
-
-        // TODO: Set up your game interface here, according to "gamedatas"
+        this.CUBE_COLORS = gamedatas.CUBE_COLORS;
+        this.marketHandler = new MarketHandler(this, gamedatas.marketData);
 
         // Setup game notifications to handle (see "setupNotifications" method below)
         this.setupNotifications();
@@ -57,6 +50,7 @@ GameGui = (function () { // this hack required so we fake extend GameGui
         if(this.isCurrentPlayerActive()){            
             switch( stateName )
             {
+                //ekmek birgun sil
                 case 'playerTurn':    
                 const playableCardsIds = args.playableCardsIds; // returned by the argPlayerTurn
 
@@ -71,7 +65,7 @@ GameGui = (function () { // this hack required so we fake extend GameGui
         }
     } 
 
-    public onCardClick( card_id ) //ekmek sil
+    public onCardClick( card_id ) //ekmek birgun sil
     {
         console.log( 'onCardClick', card_id );
 
@@ -139,6 +133,7 @@ GameGui = (function () { // this hack required so we fake extend GameGui
         return html;
     }
     private getAttributesHTML(attributes): string{ return Object.entries(attributes || {}).map(([key, value]) => `${key}="${value}"`).join(' '); }
+    public getPos(node: HTMLDivElement): Record<string, number> { let pos = this.getBoundingClientRectIgnoreZoom(node); pos.w = pos.width; pos.h = pos.height; return pos; }
     public isDesktop(): boolean { return dojo.hasClass(dojo.body(), 'desktop_version'); }
     public isMobile(): boolean { return dojo.hasClass(dojo.body(), 'mobile_version'); }
     public updateStatusText(statusText): void{ $('gameaction_status').innerHTML = statusText; $('pagemaintitletext').innerHTML = statusText; }
@@ -173,4 +168,16 @@ GameGui = (function () { // this hack required so we fake extend GameGui
         // this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
         // 
     }
+}
+
+interface MarketCube {
+    color: string;
+    cube_id: string;
+    location: string;
+    market_index: string;
+}
+
+interface CubeColor {
+    name: string;
+    colorCode: string;
 }

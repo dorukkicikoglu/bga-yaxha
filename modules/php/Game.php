@@ -18,11 +18,14 @@ declare(strict_types=1);
 
 namespace Bga\Games\yaxha;
 
+use YXHGlobalsManager;
 require_once(APP_GAMEMODULE_PATH . "module/table/table.game.php");
 
 class Game extends \Table
 {
-    private static array $CARD_TYPES;
+    private static array $CARD_TYPES; //ekmek birgun sil
+    public YXHGlobalsManager $globalsManager;
+    private $cubesBag;
 
     /**
      * Your global variables labels:
@@ -38,12 +41,15 @@ class Game extends \Table
     {
         parent::__construct();
 
-        $this->initGameStateLabels([
-            "my_first_global_variable" => 10,
-            "my_second_global_variable" => 11,
-            "my_first_game_variant" => 100,
-            "my_second_game_variant" => 101,
-        ]);        
+        require_once 'material.inc.php'; 
+        require_once 'YXHGlobalsManager.php'; 
+
+        $this->globalsManager = new YXHGlobalsManager($this, 
+            $globalKeys = array(
+                'rounds_remaining' => 20,
+            ),
+            $userPrefs = array()
+        );
 
         self::$CARD_TYPES = [
             1 => [
@@ -55,6 +61,10 @@ class Game extends \Table
             // ...
         ];
 
+        $this->cubesBag = self::getNew("module.common.deck");
+        $this->cubesBag->init("cubes");
+
+        //ekmek bunu yap
         /* example of notification decorator.
         // automatically complete notification args when needed
         $this->notify->addDecorator(function(string $message, array $args) {
@@ -69,8 +79,10 @@ class Game extends \Table
             
             return $args;
         });*/
+
     }
 
+    //ekmek birgun sil
     /**
      * Player action, example content.
      *
@@ -107,6 +119,7 @@ class Game extends \Table
         $this->gamestate->nextState("playCard");
     }
 
+    //ekmek birgun sil
     public function actPass(): void
     {
         // Retrieve the active player ID.
@@ -122,6 +135,7 @@ class Game extends \Table
         $this->gamestate->nextState("pass");
     }
 
+    //ekmek birgun sil
     /**
      * Game state arguments, example content.
      *
@@ -139,6 +153,7 @@ class Game extends \Table
         ];
     }
 
+    //ekmek yap
     /**
      * Compute and return the current game progression.
      *
@@ -156,6 +171,7 @@ class Game extends \Table
         return 0;
     }
 
+    //ekmek birgun sil
     /**
      * Game state action, example content.
      *
@@ -222,11 +238,18 @@ class Game extends \Table
 
         // Get information about players.
         // NOTE: you can retrieve some extra field you added for "player" table in `dbmodel.sql` if you need it.
-        $result["players"] = $this->getCollectionFromDb(
-            "SELECT `player_id` `id`, `player_score` `score` FROM `player`"
+        $result["players"] = $this->getCollectionFromDb("SELECT player_id, player_no, player_score score, turn_order FROM player");
+
+        $result["marketData"] = array_reduce(
+            $this->getCollectionFromDb("SELECT card_id as cube_id, card_location as location, card_location_arg as market_index, color FROM cubes WHERE card_location = 'market'"),
+            function($acc, $cube) {
+                $acc[$cube['market_index']][] = $cube;
+                return $acc;
+            },
+            []
         );
 
-        // TODO: Gather all information about current game situation (visible by player $current_player_id).
+        $result['CUBE_COLORS'] = CUBE_COLORS;
 
         return $result;
     }
@@ -252,24 +275,26 @@ class Game extends \Table
         $gameinfos = $this->getGameinfos();
         $default_colors = $gameinfos['player_colors'];
 
+        // Create and shuffle turn order numbers
+        $turn_order_numbers = range(1, count($players));
+        shuffle($turn_order_numbers);
+
         foreach ($players as $player_id => $player) {
             // Now you can access both $player_id and $player array
-            $query_values[] = vsprintf("('%s', '%s', '%s', '%s', '%s')", [
+            $query_values[] = vsprintf("('%s', '%s', '%s', '%s', '%s', '%s')", [
                 $player_id,
                 array_shift($default_colors),
                 $player["player_canal"],
                 addslashes($player["player_name"]),
                 addslashes($player["player_avatar"]),
+                array_shift($turn_order_numbers)  // Add turn_order to the initial INSERT
             ]);
         }
 
-        // Create players based on generic information.
-        //
-        // NOTE: You can add extra field on player table in the database (see dbmodel.sql) and initialize
-        // additional fields directly here.
+        // Create players based on generic information
         static::DbQuery(
             sprintf(
-                "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES %s",
+                "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar, turn_order) VALUES %s",
                 implode(",", $query_values)
             )
         );
@@ -277,25 +302,46 @@ class Game extends \Table
         $this->reattributeColorsBasedOnPreferences($players, $gameinfos["player_colors"]);
         $this->reloadPlayersBasicInfos();
 
-        // Init global values with their initial values.
-
-        // Dummy content.
-        $this->setGameStateInitialValue("my_first_global_variable", 0);
-
+        $this->globalsManager->initValues(array(
+            "rounds_remaining" => ROUND_COUNT
+        ));
+        
+        //ekmek stat yap
         // Init game statistics.
         //
         // NOTE: statistics used in this file must be defined in your `stats.inc.php` file.
 
-        // Dummy content.
-        // $this->initStat("table", "table_teststat1", 0);
-        // $this->initStat("player", "player_teststat1", 0);
+        // Select 3 random distinct bonus cards
+        $bonus_cards = range(0, 11); //ekmek 12 kart constants tan gelcek
+        shuffle($bonus_cards);
+        
+        // Insert the selected bonus cards into the database
+        $values = implode(',', array_map(
+            fn($position, $card_id) => sprintf("(%d, %d)", $position + 1, $card_id),
+            range(0, BONUS_CARD_COUNT - 1),
+            array_slice($bonus_cards, 0, BONUS_CARD_COUNT)
+        ));
+        $this->DbQuery(sprintf("INSERT INTO bonus_cards (bonus_card_position, bonus_card_id) VALUES %s", $values));
 
-        // TODO: Setup the initial game situation here.
+        // Create cubes for each color
+        $values = [];
+        foreach (array_keys(CUBE_COLORS) as $color) {
+            for ($i = 0; $i < CUBES_PER_COLOR; $i++) {
+                $values[] = sprintf("(NULL, 'cube', 0, 'bag', 0, %d)", $color);
+            }
+        }
+        $this->DbQuery(sprintf("INSERT INTO cubes (card_id, card_type, card_type_arg, card_location, card_location_arg, color) VALUES %s", implode(',', $values)));
+        $this->cubesBag->shuffle('bag');
+
+        // Deal 3 cubes to each market tile
+        for ($i = 0; $i < count($players); $i++)
+            $this->DbQuery( "UPDATE cubes SET card_location = 'market', card_location_arg = $i WHERE card_location = 'bag' ORDER BY card_location_arg LIMIT ".CUBES_PER_MARKET_TILE );
 
         // Activate first player once everything has been initialized and ready.
         $this->activeNextPlayer();
     }
 
+    //ekmek zombie yap
     /**
      * This method is called each time it is the turn of a player who has quit the game (= "zombie" player).
      * You can do whatever you want in order to make sure the turn of this player ends appropriately

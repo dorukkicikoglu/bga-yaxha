@@ -22,22 +22,19 @@ var GameBody = /** @class */ (function (_super) {
     __extends(GameBody, _super);
     function GameBody() {
         var _this = _super.call(this) || this;
+        _this.players = {};
         console.log('yaxha constructor');
         return _this;
     }
     GameBody.prototype.setup = function (gamedatas) {
-        var _this = this;
         console.log("Starting game setup");
-        // Example to add a div on the game area
-        document.getElementById('game_play_area').insertAdjacentHTML('beforeend', "\n            <div id=\"player-tables\"></div>DORUKLARIN\n        ");
-        // Setting up player boards
-        Object.values(gamedatas.players).forEach(function (player) {
-            // example of setting up players boards
-            _this.getPlayerPanelElement(player.id).insertAdjacentHTML('beforeend', "\n                <div id=\"player-counter-".concat(player.id, "\">A player counter</div>\n            "));
-            // example of adding a div for each player
-            document.getElementById('player-tables').insertAdjacentHTML('beforeend', "\n                <div id=\"player-table-".concat(player.id, "\">\n                    <strong>").concat(player.name, "</strong>\n                    <div>Player zone content goes here</div>\n                </div>\n            "));
-        });
-        // TODO: Set up your game interface here, according to "gamedatas"
+        document.getElementById('game_play_area').insertAdjacentHTML('beforeend', "<div id=\"player-tables\">\n            <div class=\"market-container\"></div>    \n        </div>");
+        for (var player_id in gamedatas.players) {
+            var _a = this.gamedatas.players[player_id], name_1 = _a.name, color = _a.color, player_no = _a.player_no, turn_order = _a.turn_order;
+            this.players[player_id] = new PlayerHandler(this, parseInt(player_id), name_1, color, parseInt(player_no), turn_order);
+        }
+        this.CUBE_COLORS = gamedatas.CUBE_COLORS;
+        this.marketHandler = new MarketHandler(this, gamedatas.marketData);
         // Setup game notifications to handle (see "setupNotifications" method below)
         this.setupNotifications();
         console.log("Ending game setup");
@@ -53,6 +50,7 @@ var GameBody = /** @class */ (function (_super) {
         console.log('onUpdateActionButtons: ' + stateName, args);
         if (this.isCurrentPlayerActive()) {
             switch (stateName) {
+                //ekmek birgun sil
                 case 'playerTurn':
                     var playableCardsIds = args.playableCardsIds; // returned by the argPlayerTurn
                     // Add test action buttons in the action status bar, simulating a card click:
@@ -131,6 +129,7 @@ var GameBody = /** @class */ (function (_super) {
         var key = _a[0], value = _a[1];
         return "".concat(key, "=\"").concat(value, "\"");
     }).join(' '); };
+    GameBody.prototype.getPos = function (node) { var pos = this.getBoundingClientRectIgnoreZoom(node); pos.w = pos.width; pos.h = pos.height; return pos; };
     GameBody.prototype.isDesktop = function () { return dojo.hasClass(dojo.body(), 'desktop_version'); };
     GameBody.prototype.isMobile = function () { return dojo.hasClass(dojo.body(), 'mobile_version'); };
     GameBody.prototype.updateStatusText = function (statusText) { $('gameaction_status').innerHTML = statusText; $('pagemaintitletext').innerHTML = statusText; };
@@ -172,6 +171,112 @@ var GameBody = /** @class */ (function (_super) {
     };
     return GameBody;
 }(GameGui));
+var MarketHandler = /** @class */ (function () {
+    function MarketHandler(gameui, marketData) {
+        this.gameui = gameui;
+        this.marketData = marketData;
+        this.marketContainer = document.querySelector('#player-tables .market-container');
+        this.marketTiles = [];
+        this.initMarketContainer();
+    }
+    MarketHandler.prototype.initMarketContainer = function () {
+        var _this = this;
+        Object.keys(this.gameui.players).forEach(function (_, i) {
+            // First loop: Create market tiles
+            _this.marketTiles[i] = document.createElement('div');
+            _this.marketTiles[i].className = 'a-market-tile market-tile-' + i;
+            _this.marketTiles[i].setAttribute('market-index', i.toString());
+            _this.marketContainer.appendChild(_this.marketTiles[i]);
+        });
+        // Second loop: Create and position cubes
+        Object.keys(this.gameui.players).forEach(function (_, i) {
+            var tilesData = _this.marketData[i] || [];
+            var existingCubes = [];
+            tilesData.forEach(function (cube) {
+                var cubeDiv = document.createElement('div');
+                cubeDiv.className = 'a-cube';
+                cubeDiv.setAttribute('cube-id', cube.cube_id.toString());
+                cubeDiv.setAttribute('color', cube.color.toString());
+                cubeDiv.style.setProperty('--bg-color', '#' + _this.gameui.CUBE_COLORS[Number(cube.color)].colorCode);
+                _this.marketTiles[i].appendChild(cubeDiv);
+                var _a = _this.getRandomPositionOnTile(_this.marketTiles[i], existingCubes), x = _a.x, y = _a.y;
+                cubeDiv.style.left = x + '%';
+                cubeDiv.style.top = y + '%';
+                existingCubes.push(cubeDiv);
+            });
+        });
+    };
+    MarketHandler.prototype.getRandomPositionOnTile = function (marketTile, existingCubes) {
+        var tileSize = this.gameui.getPos(marketTile);
+        // Get cube size (fallback if no cubes exist)
+        var sampleCube = dojo.query('.a-cube', marketTile)[0];
+        var cubeSize = sampleCube ? this.gameui.getPos(sampleCube) : { w: 25, h: 25 }; // Default to 40px cubes
+        var marginPercent = 0.16;
+        var margin = tileSize.w * marginPercent; // 20% margin from edges
+        var minSpacing = tileSize.w * 0.06; // Minimum spacing between cubes
+        var maxAttempts = 100; // Avoid infinite loops
+        var attempt = 0;
+        while (attempt < maxAttempts) {
+            // Generate random x, y inside marketTile with margin applied
+            var x = margin + Math.random() * (tileSize.w - 2 * margin - cubeSize.w);
+            var y = margin + Math.random() * (tileSize.h - 2 * margin - cubeSize.h);
+            var isOverlap = false;
+            var ekmekista = [];
+            for (var _i = 0, existingCubes_1 = existingCubes; _i < existingCubes_1.length; _i++) { //check for overlaps
+                var cube = existingCubes_1[_i];
+                var cubePos = {
+                    x: parseInt(cube.style.left) * (tileSize.w / 100) || 0,
+                    y: parseInt(cube.style.top) * (tileSize.h / 100) || 0
+                };
+                ekmekista.push(cubePos);
+                if ( //there is an overlap
+                x > cubePos.x - (cubeSize.w + minSpacing) &&
+                    x < cubePos.x + cubeSize.w + minSpacing &&
+                    y > cubePos.y - (cubeSize.h + minSpacing) &&
+                    y < cubePos.y + cubeSize.h + minSpacing) {
+                    isOverlap = true;
+                    continue;
+                }
+            }
+            if (isOverlap) {
+                console.log('lets make new attempt ekmek !!!!!!!!!!!!!');
+                console.log('random x: ' + x + ', random y: ' + y);
+                console.log('existing cubes positions: ', ekmekista);
+                attempt++;
+            }
+            else
+                return { x: (x / tileSize.w) * 100, y: (y / tileSize.h) * 100 };
+        }
+        alert('sictik ekmek !!!!!!!!!!!!!');
+        return { x: marginPercent, y: marginPercent }; // Fallback if no valid placement is found
+    };
+    return MarketHandler;
+}());
+var PlayerHandler = /** @class */ (function () {
+    function PlayerHandler(gameui, playerID, playerName, playerColor, playerNo, turnOrder) {
+        this.gameui = gameui;
+        this.playerID = playerID;
+        this.playerName = playerName;
+        this.playerColor = playerColor;
+        this.playerNo = playerNo;
+        this.turnOrder = turnOrder;
+        this.overallPlayerBoard = $('overall_player_board_' + this.playerID);
+        this.pyramidContainer = null;
+        this.initPyramidContainer();
+    }
+    PlayerHandler.prototype.initPyramidContainer = function () {
+        var _a;
+        this.pyramidContainer = document.createElement('div');
+        this.pyramidContainer.id = 'pyramid-container-' + this.playerID;
+        this.pyramidContainer.className = 'a-pyramid-container';
+        this.pyramidContainer.setAttribute('player-id', this.playerID.toString());
+        // Set the custom property for player color
+        this.pyramidContainer.style.setProperty('--player-color', '#' + this.playerColor);
+        this.pyramidContainer.innerHTML = "\n\t\t\t<div class=\"player-name-text\">\n\t\t\t\t<div class=\"text-container\">".concat(this.playerName, "</div>\n\t\t\t</div>\n        ");
+        (_a = document.getElementById('player-tables')) === null || _a === void 0 ? void 0 : _a.appendChild(this.pyramidContainer);
+    };
+    return PlayerHandler;
+}());
 define([
     "dojo", "dojo/_base/declare",
     "ebg/core/gamegui",
