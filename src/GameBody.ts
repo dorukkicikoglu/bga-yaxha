@@ -5,9 +5,13 @@ GameGui = (function () { // this hack required so we fake extend GameGui
   })();
 
 class GameBody extends GameGui { 
-    public players: Record<number, PlayerHandler> = {};
     public marketHandler: MarketHandler;
+    public tooltipHandler: TooltipHandler;
+    public logMutationObserver: LogMutationObserver;
+
+    public players: Record<number, PlayerHandler> = {};
     public CUBE_COLORS: { [key: number]: CubeColor };
+    public BONUS_CARDS_DATA: { [key: number]: BonusCardData };
 
     constructor() {
         super();
@@ -18,8 +22,13 @@ class GameBody extends GameGui {
     public setup(gamedatas: any) {
         console.log( "Starting game setup" );
 
+        //ekmek minified images'i yap
+
         document.getElementById('game_play_area').insertAdjacentHTML('beforeend', `<div id="player-tables">
-            <div class="market-container"></div>    
+            <div class="market-container">
+                <div class="market-tiles-container"></div>
+                <div class="bonus-cards-container"></div>
+            </div>    
         </div>`);
 
         for(let player_id in gamedatas.players) {
@@ -28,7 +37,12 @@ class GameBody extends GameGui {
         }
 
         this.CUBE_COLORS = gamedatas.CUBE_COLORS;
-        this.marketHandler = new MarketHandler(this, gamedatas.marketData);
+        this.BONUS_CARDS_DATA = gamedatas.BONUS_CARDS_DATA;
+
+        this.marketHandler = new MarketHandler(this, gamedatas.marketData, gamedatas.bonusCardIDs);
+
+        this.tooltipHandler = new TooltipHandler(this);
+        this.logMutationObserver = new LogMutationObserver(this);
 
         // Setup game notifications to handle (see "setupNotifications" method below)
         this.setupNotifications();
@@ -154,19 +168,26 @@ class GameBody extends GameGui {
     //notification functions
 
     public setupNotifications() {
-        console.log( 'notifications subscriptions setup' );
-            
-        // TODO: here, associate your game notifications with local methods
-        
-        // Example 1: standard notification handling
-        // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-        
-        // Example 2: standard notification handling + tell the user interface to wait
-        //            during 3 seconds after calling the method in order to let the players
-        //            see what is happening in the game.
-        // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-        // this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
-        // 
+        console.log('notifications subscriptions setup');
+
+        this.bgaSetupPromiseNotifications();
+    }
+
+    // Add the notification handler
+    public async notif_marketIndexSelectionConfirmed(args: { confirmed_selected_market_index: number }) {
+        console.log('notif_marketIndexSelectionConfirmed', args);
+        await this.marketHandler.marketTileSelected(args.confirmed_selected_market_index);
+
+        //ekmek sil
+        // Here you can add any visual feedback or animations
+        // For example, highlighting the selected tile
+        // const selectedTile = document.querySelector(`.a-market-tile[market-index="${args.confirmed_selected_market_index}"]`);
+        // if (selectedTile) {
+        //     selectedTile.classList.add('selected');
+        //     // Wait for a short animation if needed
+        //     await this.wait(500);
+        //     selectedTile.classList.remove('selected');
+        // }
     }
 }
 
@@ -180,4 +201,9 @@ interface MarketCube {
 interface CubeColor {
     name: string;
     colorCode: string;
+}
+
+interface BonusCardData {
+    id: number;
+    tooltip_text: string;
 }

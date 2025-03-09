@@ -32,7 +32,10 @@
 -- Example 2: add a custom field to the standard "player" table
 -- ALTER TABLE `player` ADD `player_my_custom_field` INT UNSIGNED NOT NULL DEFAULT '0';
 
-ALTER TABLE `player` ADD `turn_order` INT NOT NULL;
+ALTER TABLE `player` 
+ADD `turn_order` INT NOT NULL,
+ADD `made_market_index_selection_this_round` ENUM('true','false') NOT NULL DEFAULT 'false',
+ADD `selected_market_index` TINYINT UNSIGNED DEFAULT NULL;
 
 CREATE TABLE IF NOT EXISTS `bonus_cards` (
     `bonus_card_position` TINYINT NOT NULL,

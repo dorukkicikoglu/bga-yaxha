@@ -113,6 +113,29 @@ namespace Bga\GameFramework {
             //
         }
     }
+
+    abstract class TableOptions {
+        /**
+         * Get the value of a table option.
+         */
+        public function get(int $optionId): int {
+            return 0;
+        }
+
+        /**
+         * Returns true if the game is turn-based, false if real-time or simultaneous turns.
+         */
+        public function isTurnBased(): bool {
+            return false;
+        }
+
+        /**
+         * Returns true if the game is real-time, false if turn-based or simultaneous turns.
+         */
+        public function isRealTime(): bool {
+            return false;
+        }
+    }
 }
 
 namespace Bga\GameFramework\Db {
@@ -730,6 +753,8 @@ namespace {
 
     abstract class Table extends APP_Object
     {
+        public bool $not_a_move_notification;
+        
         /**
          * Access the underlying game state object.
          */
@@ -744,6 +769,8 @@ namespace {
          * Access the underlying Notify object.
          */
         readonly public \Bga\GameFramework\Notify $notify;
+
+        readonly public \Bga\GameFramework\TableOptions $tableOptions;
 
         /**
          * Default constructor.

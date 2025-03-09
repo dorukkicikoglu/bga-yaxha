@@ -63,8 +63,19 @@ $machinestates = [
     ),
 
     // Note: ID=2 => your first state
-
     2 => [
+        "name" => "allSelectMarketTile",
+        "description" => clienttranslate('Waiting for players to select a market tile'),
+        "descriptionmyturn" => clienttranslate('${you} must select a market tile'),
+        "type" => "multipleactiveplayer",
+        "args" => "argAllSelectMarketTile",
+        "action" => "stAllSelectMarketTile",
+        "possibleactions" => array("actAllSelectMarketTile"),
+        "updateGameProgression" => true,
+        "transitions" => ["displaySelectedCubes" => 3, "zombiePass" => 3]
+    ],
+
+    42 => [ //ekmek sil
         "name" => "playerTurn",
         "description" => clienttranslate('${actplayer} must play a card or pass'),
         "descriptionmyturn" => clienttranslate('${you} must play a card or pass'),
