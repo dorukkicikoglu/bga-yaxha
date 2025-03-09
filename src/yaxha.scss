@@ -1,5 +1,12 @@
+@import 'cubeCords.scss';
+
 @mixin text-shade($color, $size) { text-shadow: #{$size} 0 $color, -#{$size} 0 $color, 0 #{$size} $color, 0 -#{$size} $color, #{($size * 0.5)} #{($size * 0.5)} $color, -#{($size * 0.5)} -#{($size * 0.5)} $color, #{($size * 0.5)} -#{($size * 0.5)} $color, -#{($size * 0.5)} #{($size * 0.5)} $color; }
 @mixin non-selectable() { -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+
+:root {
+    --cube-size: 28px;
+    --bg-gradient-tooltip: linear-gradient(100deg, #ffcae7f7, #ffd6a5fa);
+}
 
 #player-tables{ text-align: center;
     .a-pyramid-container { position: relative; width: 48%; margin: 1%; aspect-ratio: 1; background-color: rgba(255, 255, 255, 0.3); box-shadow: 2px 2px 0 var(--player-color, #000000), -2px 2px 0 var(--player-color, #000000); display: inline-block; max-width: 400px;
@@ -11,20 +18,79 @@
     }
 }
 
-.market-container{ //ekmek belki will-change: transform; sil
-    .a-market-tile { --market-tile-size: 160px; width: var(--market-tile-size); height: var(--market-tile-size); margin: 5px; display: inline-block; border: 2px solid #999; border-radius: 8px; position: relative; cursor: pointer; transition: all 0.2s ease; background-image: url('img/player_cards.png'); background-repeat: no-repeat; background-size: 400%; will-change: transform;
-        &:hover{ transform: scale(1.05); box-shadow: 0 0 10px rgba(0,0,0,0.2); }
+.a-cube{ width: var(--cube-size); height: var(--cube-size); position: absolute; transition: transform 0.2s ease; background-image: url('img/wood_texture_overlay.png'), linear-gradient(rgba(255,255,255,0.2), rgba(255,255,255,0.1)), linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%); background-position: var(--top-bg-x) var(--top-bg-y), 0 0, 150% 150%; background-size: auto, 100% 100%, 300% 300%; background-repeat: no-repeat, no-repeat, no-repeat;
+    &, &::before, &::after{ background-blend-mode: overlay; background-color: var(--cube-color); }
+    &::after{ content: ""; position: absolute; width: 100%; height: 136%; filter: brightness(0.85); clip-path: polygon(86% 20%, 60% 0%, 60% 74%, 86% 88.7%); top: 0%; left: 39.1%; background-position: var(--side-bg-x) var(--side-bg-y); background-image: url('img/wood_texture_overlay.png'), linear-gradient(rgba(255,255,255,0.2), rgba(255,255,255,0.1)); } //side face
+    &:before{ content: ""; position: absolute; width: 139%; height: 71%; filter: brightness(0.9); clip-path: polygon(20% 30%, 90% 30%, 70% 0%, 0% 0%); top: 98.6%; left: 0%; background-position: var(--bottom-bg-x) var(--bottom-bg-y); background-image: url('img/wood_texture_overlay.png'), linear-gradient(rgba(255,255,255,0.2), rgba(255,255,255,0.1)); } //bottom face
+    .cube-background { z-index: -1; width: 145%; height: 138%; top: -8%; left: -9.5%; position: absolute; background-size: contain, 300% 100%; background-repeat: no-repeat, no-repeat; background-image: url(img/cube_background.png), linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%); opacity: 0.7; background-position: center, -100% 0; }
+}
 
-        &[market-index="0"] { background-position: 0% 0; }
-        &[market-index="1"] { background-position: 33.33% 0; }
-        &[market-index="2"] { background-position: 66.66% 0; }
-        &[market-index="3"] { background-position: 100% 0; }
+.market-container{ display: flex; justify-content: center; align-items: flex-start; width: 100%;    
+    .market-tiles-container{ width: calc(var(--cube-size)* 26); display: flex ; flex-wrap: wrap; justify-content: center; margin-right: calc(var(--cube-size)* 1.1); margin-left: calc(var(--cube-size)* 3.9);
+        //ekmek belki will-change: transform; sil
+        .a-market-tile { --market-tile-size: calc(var(--cube-size) * 6); width: var(--market-tile-size); height: var(--market-tile-size); margin: 5px; display: inline-block; border: 2px solid #999; border-radius: 8px; position: relative; cursor: pointer; transition: all 0.2s ease; background-image: url("img/player_cards.png"); background-repeat: no-repeat; background-size: 400%; will-change: transform;
+            &:hover{ transform: scale(1.05); box-shadow: 0 0 10px rgba(0,0,0,0.2); 
+                .a-cube { animation: shine-cube 1.6s ease-in-out; }
+            }
 
-        .a-cube{ --cube-size: calc(var(--market-tile-size) * 0.16); width: var(--cube-size); height: var(--cube-size); position: absolute; transition: transform 0.2s ease; background-color: var(--bg-color); background-image: linear-gradient(rgba(255,255,255,0.2), rgba(255,255,255,0.1));
-            // Right face (darkest)
-            &::after{ content: ""; position: absolute; width: 100%; height: 136%; background-color: var(--bg-color); filter: brightness(0.85); clip-path: polygon(86% 20%, 60% 0%, 60% 74%, 86% 88.7%); background-image: linear-gradient(to right, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.2)); top: 0%; left: 40%; }
-            // Bottom face (medium)
-            &:before{ content: ""; position: absolute; width: 139%; height: 71%; background-color: var(--bg-color); filter: brightness(0.9); clip-path: polygon(20% 30%, 90% 30%, 70% 0%, 0% 0%); background-image: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.1)); top: 98.6%; left: 0%; }
+            &[market-index="0"] { background-position: 0% 0; }
+            &[market-index="1"] { background-position: 33.33% 0; }
+            &[market-index="2"] { background-position: 66.66% 0; }
+            &[market-index="3"] { background-position: 100% 0; }
+
+            &.selected { outline: 3px solid #ffeb3b; outline-offset: -3px; animation: pulse 0.5s ease-in-out; }
         }
     }
+
+    .bonus-cards-container{ width: calc(var(--cube-size) * 3); min-width: 140px; position: relative; margin-left: 0;
+        .a-bonus-card-icon { width: 100%; aspect-ratio: 2.7; margin-top: calc(var(--cube-size) * 0.2); cursor: help; background-color: #002f35; background-image: url("data:image/svg+xml, <svg xmlns='http://www.w3.org/2000/svg' width='180' height='100' viewBox='0 0 180 100'> <polygon points='50,-46 95,40 5,40' fill='%2384b578' transform='rotate(90, 50, 50)'/> </svg>"), url("data:image/svg+xml, <svg xmlns='http://www.w3.org/2000/svg' width='180' height='100' viewBox='0 0 180 100'> <polygon points='94,34 139,120 49,120' fill='%2384b578' transform='rotate(-90, 90, 50)'/> </svg>"); background-size: 10% 18%, 10% 18%; background-repeat: repeat-y, repeat-y; background-position: 2% 0, 95% 0; transform: scaleX(-1); border-radius: 5px; position: relative; overflow: hidden;
+            &::before { content: ""; position: absolute; inset: -5% 12% -13% 12%; background-image: url(img/bonus_card_icons.png); background-size: 500% 400%; background-repeat: no-repeat; transform: scaleX(-1); }
+            &::after { content: ""; position: absolute; inset: -100% -100% -100% -100%; background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0) 35%, rgba(255, 255, 255, 0.6) 43%, rgba(255, 255, 255, 0) 51%, transparent 100%); background-size: 200% 200%; background-position: 0% 0%; pointer-events: none; transform: scaleX(-1); opacity: 0; }
+
+            &:hover::after { opacity: 1; animation: shine-bonus 1.6s ease-out; }
+
+            @for $i from 0 through 18 {
+                &[bonus-card-id="#{$i}"]::before { background-position: #{($i % 5) * 25%} #{floor($i / 5) * 33.33%}; }
+            }
+        }
+    }
+}
+
+.dijitTooltipContainer{
+    &:has(.tooltip-wrapper){ background: none; }
+    .tooltip-wrapper{ background: var(--bg-gradient-tooltip); padding: 10px; margin: -6px -6px -6px -6px;
+        &.bonus-card-tooltip{ max-width: 200px; }
+        .tooltip-text{ font-size: 16px; color: #070031d9; @include text-shade(#ffcae7e0, 2px); text-indent: 6px; text-align: center; }
+        .tooltip-image { width: 200px; height: 280px; background-image: url("img/bonus_cards.png"); background-size: 500% 400%; background-repeat: no-repeat; margin-top: 10px; }
+        @for $i from 0 through 18 {
+            .bonus-card-tooltip[bonus-card-id="#{$i}"] .tooltip-image { background-position: #{($i % 5) * 25%} #{floor($i / 5) * 33.33%}; }
+        }
+    }
+}
+.tundra:has(.tooltip-wrapper){ /* to change the color of the little tooltip arrow */
+    .dijitTooltip {
+        .dijitTooltipConnector{ overflow: hidden; background: none;
+            &:after{ content: ""; position: absolute; width: 86%; background: var(--bg-gradient-tooltip); aspect-ratio: 1;  }
+        }
+        &.dijitTooltipAbove .dijitTooltipConnector::after{ top: -52%; transform: scale(0.75, 1.1) rotate(45deg); box-shadow: -1px -1px 2px 2px #adadad; }
+        &.dijitTooltipBelow .dijitTooltipConnector::after{ bottom: -52%; transform: scale(0.75, 1.1) rotate(45deg); box-shadow: 1px 1px 2px 2px #adadad; }
+        &.dijitTooltipRight .dijitTooltipConnector::after{ right: -47%; transform: scale(1.1, 0.75) rotate(45deg); box-shadow: 1px -1px 2px 2px #adadad; }
+        &.dijitTooltipLeft .dijitTooltipConnector::after{ left: -47%; transform: scale(1.1, 0.75) rotate(45deg); box-shadow: -1px 1px 2px 2px #adadad; }
+    }
+} 
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+@keyframes shine-cube {
+    to { background-position: var(--top-bg-x) var(--top-bg-y), 0 0, -150% -150%; }
+}
+
+@keyframes shine-bonus {
+    0% { background-position: 70% 70%; opacity: 1; }
+    10% { opacity: 1; }
+    100% { background-position: 0% 0%; opacity: 0; }
 }

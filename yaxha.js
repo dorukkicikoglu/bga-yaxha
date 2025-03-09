@@ -13,6 +13,42 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (g && (g = 0, op[0] && (_ = 0)), _) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
 // @ts-ignore
 GameGui = (function () {
     function GameGui() { }
@@ -28,13 +64,17 @@ var GameBody = /** @class */ (function (_super) {
     }
     GameBody.prototype.setup = function (gamedatas) {
         console.log("Starting game setup");
-        document.getElementById('game_play_area').insertAdjacentHTML('beforeend', "<div id=\"player-tables\">\n            <div class=\"market-container\"></div>    \n        </div>");
+        //ekmek minified images'i yap
+        document.getElementById('game_play_area').insertAdjacentHTML('beforeend', "<div id=\"player-tables\">\n            <div class=\"market-container\">\n                <div class=\"market-tiles-container\"></div>\n                <div class=\"bonus-cards-container\"></div>\n            </div>    \n        </div>");
         for (var player_id in gamedatas.players) {
             var _a = this.gamedatas.players[player_id], name_1 = _a.name, color = _a.color, player_no = _a.player_no, turn_order = _a.turn_order;
             this.players[player_id] = new PlayerHandler(this, parseInt(player_id), name_1, color, parseInt(player_no), turn_order);
         }
         this.CUBE_COLORS = gamedatas.CUBE_COLORS;
-        this.marketHandler = new MarketHandler(this, gamedatas.marketData);
+        this.BONUS_CARDS_DATA = gamedatas.BONUS_CARDS_DATA;
+        this.marketHandler = new MarketHandler(this, gamedatas.marketData, gamedatas.bonusCardIDs);
+        this.tooltipHandler = new TooltipHandler(this);
+        this.logMutationObserver = new LogMutationObserver(this);
         // Setup game notifications to handle (see "setupNotifications" method below)
         this.setupNotifications();
         console.log("Ending game setup");
@@ -159,97 +199,191 @@ var GameBody = /** @class */ (function (_super) {
     //notification functions
     GameBody.prototype.setupNotifications = function () {
         console.log('notifications subscriptions setup');
-        // TODO: here, associate your game notifications with local methods
-        // Example 1: standard notification handling
-        // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-        // Example 2: standard notification handling + tell the user interface to wait
-        //            during 3 seconds after calling the method in order to let the players
-        //            see what is happening in the game.
-        // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-        // this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
-        // 
+        this.bgaSetupPromiseNotifications();
+    };
+    // Add the notification handler
+    GameBody.prototype.notif_marketIndexSelectionConfirmed = function (args) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        console.log('notif_marketIndexSelectionConfirmed', args);
+                        return [4 /*yield*/, this.marketHandler.marketTileSelected(args.confirmed_selected_market_index)];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
     };
     return GameBody;
 }(GameGui));
+var LogMutationObserver = /** @class */ (function () {
+    function LogMutationObserver(gameui) {
+        this.gameui = gameui;
+        this.nextTimestampValue = '';
+        this.observeLogs();
+    }
+    LogMutationObserver.prototype.observeLogs = function () {
+        var _this = this;
+        return; //ekmek sil devam et
+        var observer = new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                if (mutation.type === 'childList') {
+                    mutation.addedNodes.forEach(function (node) {
+                        if (node.nodeType === 1 && node.tagName.toLowerCase() === 'div' && node.classList.contains('log')) {
+                            _this.processLogDiv(node);
+                        }
+                    });
+                }
+            });
+        });
+        // Configure the MutationObserver to observe changes to the container's child nodes
+        var config = {
+            childList: true,
+            subtree: true // Set to true if you want to observe all descendants of the container
+        };
+        // Start observing the container
+        observer.observe($('logs'), config);
+        observer.observe($('chatbar'), config); //mobile notifs
+        if (g_archive_mode) { //to observe replayLogs that appears at the bottom of the page on replays
+            var replayLogsObserverStarted_1 = false;
+            var replayLogsObserver = new MutationObserver(function (mutations, obs) {
+                for (var _i = 0, mutations_1 = mutations; _i < mutations_1.length; _i++) {
+                    var mutation = mutations_1[_i];
+                    if (mutation.addedNodes.length) {
+                        mutation.addedNodes.forEach(function (node) {
+                            if (!replayLogsObserverStarted_1 && node instanceof HTMLElement && node.id.startsWith('replaylogs')) {
+                                _this.processLogDiv(node);
+                            }
+                        });
+                    }
+                }
+            });
+            replayLogsObserver.observe(document.body, { childList: true, subtree: true });
+        }
+    };
+    LogMutationObserver.prototype.processLogDiv = function (node) {
+        var _this = this;
+        var classTag = dojo.query('*[log-class-tag]', node);
+        if (classTag.length > 0) {
+            dojo.addClass(node, 'a-game-log ' + dojo.attr(classTag[0], 'log-class-tag'));
+            classTag.forEach(dojo.destroy);
+        }
+        else if (dojo.query('.log-arrow-left, .log-arrow-right, .place-under-icon', node).length > 0) { //guarantee adding class in replay as preserve fields arent loaded
+            dojo.addClass(node, 'a-game-log');
+            if (dojo.query('.log-arrow-right', node).length > 0)
+                dojo.addClass(node, 'selected-cards-log');
+            else
+                dojo.addClass(node, 'take-pile-log');
+        }
+        dojo.query('.playername', node).forEach(function (playerName) { dojo.attr(playerName, 'player-color', _this.gameui.rgbToHex(dojo.style(playerName, 'color'))); });
+        if (dojo.hasClass(node, 'selected-cards-log')) {
+            dojo.attr(node, 'first-selected-cards-log', Array.from(node.parentNode.children).some(function (sibling) { return sibling !== node && sibling.classList.contains("selected-cards-log"); }) ? 'false' : 'true'); //the first new-hand-long will have no margin-top or margin-bottom
+        }
+        else if (dojo.hasClass(node, 'take-pile-log')) {
+            if (this.gameui.isDesktop()) {
+                var cardIcons = dojo.query('.card-icons-container', node)[0];
+                if (dojo.query('.playername', node).length > 0)
+                    cardIcons.style.width = 'calc(100% - ' + (10 + this.gameui.getPos(dojo.query('.playername', node)[0]).w + this.gameui.getPos(dojo.query('.log-arrow', node)[0]).w) + 'px)';
+            }
+        }
+        if (this.gameui.isDesktop() && dojo.hasClass(node, 'a-game-log')) {
+            var timestamp = dojo.query('.timestamp', node);
+            if (timestamp.length > 0) {
+                this.nextTimestampValue = timestamp[0].innerText;
+            }
+            else if (this.observeLogs.hasOwnProperty('nextTimestampValue')) {
+                var newTimestamp = dojo.create('div', { class: 'timestamp' });
+                newTimestamp.innerHTML = this.nextTimestampValue;
+                dojo.place(newTimestamp, node);
+            }
+        }
+    };
+    return LogMutationObserver;
+}());
 var MarketHandler = /** @class */ (function () {
-    function MarketHandler(gameui, marketData) {
+    function MarketHandler(gameui, marketData, bonusCardIDs) {
         this.gameui = gameui;
         this.marketData = marketData;
+        this.bonusCardIDs = bonusCardIDs;
         this.marketContainer = document.querySelector('#player-tables .market-container');
+        // this.waitingPlayersContainer = this.marketContainer.querySelector('.waiting-players-container') as HTMLDivElement; //ekmek sil
+        this.marketTilesContainer = this.marketContainer.querySelector('.market-tiles-container');
+        this.bonusCardIconsContainer = this.marketContainer.querySelector('.bonus-cards-container');
         this.marketTiles = [];
         this.initMarketContainer();
+        this.initBonusCardContainer();
     }
     MarketHandler.prototype.initMarketContainer = function () {
         var _this = this;
+        // Create and shuffle array of numbers 1-60
+        var shuffledIndices = Array.from({ length: 60 }, function (_, i) { return i + 1; })
+            .sort(function () { return Math.random() - 0.5; });
         Object.keys(this.gameui.players).forEach(function (_, i) {
             // First loop: Create market tiles
             _this.marketTiles[i] = document.createElement('div');
             _this.marketTiles[i].className = 'a-market-tile market-tile-' + i;
             _this.marketTiles[i].setAttribute('market-index', i.toString());
-            _this.marketContainer.appendChild(_this.marketTiles[i]);
+            // Use in the loop
+            _this.marketTiles[i].setAttribute('random-placement-index', shuffledIndices[i].toString());
+            _this.marketTiles[i].addEventListener('click', function (event) { return _this.marketTileClicked(event); });
+            _this.marketTilesContainer.appendChild(_this.marketTiles[i]);
         });
         // Second loop: Create and position cubes
         Object.keys(this.gameui.players).forEach(function (_, i) {
             var tilesData = _this.marketData[i] || [];
-            var existingCubes = [];
             tilesData.forEach(function (cube) {
                 var cubeDiv = document.createElement('div');
                 cubeDiv.className = 'a-cube';
+                cubeDiv.innerHTML = '<div class="cube-background"></div>';
                 cubeDiv.setAttribute('cube-id', cube.cube_id.toString());
                 cubeDiv.setAttribute('color', cube.color.toString());
-                cubeDiv.style.setProperty('--bg-color', '#' + _this.gameui.CUBE_COLORS[Number(cube.color)].colorCode);
+                cubeDiv.style.setProperty('--top-bg-x', (Math.random() * 100) + '%');
+                cubeDiv.style.setProperty('--top-bg-y', (Math.random() * 100) + '%');
+                cubeDiv.style.setProperty('--side-bg-x', (Math.random() * 100) + '%');
+                cubeDiv.style.setProperty('--side-bg-y', (Math.random() * 100) + '%');
+                cubeDiv.style.setProperty('--bottom-bg-x', (Math.random() * 100) + '%');
+                cubeDiv.style.setProperty('--bottom-bg-y', (Math.random() * 100) + '%');
+                cubeDiv.style.setProperty('--cube-color', '#' + _this.gameui.CUBE_COLORS[Number(cube.color)].colorCode);
                 _this.marketTiles[i].appendChild(cubeDiv);
-                var _a = _this.getRandomPositionOnTile(_this.marketTiles[i], existingCubes), x = _a.x, y = _a.y;
-                cubeDiv.style.left = x + '%';
-                cubeDiv.style.top = y + '%';
-                existingCubes.push(cubeDiv);
             });
         });
     };
-    MarketHandler.prototype.getRandomPositionOnTile = function (marketTile, existingCubes) {
-        var tileSize = this.gameui.getPos(marketTile);
-        // Get cube size (fallback if no cubes exist)
-        var sampleCube = dojo.query('.a-cube', marketTile)[0];
-        var cubeSize = sampleCube ? this.gameui.getPos(sampleCube) : { w: 25, h: 25 }; // Default to 40px cubes
-        var marginPercent = 0.16;
-        var margin = tileSize.w * marginPercent; // 20% margin from edges
-        var minSpacing = tileSize.w * 0.06; // Minimum spacing between cubes
-        var maxAttempts = 100; // Avoid infinite loops
-        var attempt = 0;
-        while (attempt < maxAttempts) {
-            // Generate random x, y inside marketTile with margin applied
-            var x = margin + Math.random() * (tileSize.w - 2 * margin - cubeSize.w);
-            var y = margin + Math.random() * (tileSize.h - 2 * margin - cubeSize.h);
-            var isOverlap = false;
-            var ekmekista = [];
-            for (var _i = 0, existingCubes_1 = existingCubes; _i < existingCubes_1.length; _i++) { //check for overlaps
-                var cube = existingCubes_1[_i];
-                var cubePos = {
-                    x: parseInt(cube.style.left) * (tileSize.w / 100) || 0,
-                    y: parseInt(cube.style.top) * (tileSize.h / 100) || 0
-                };
-                ekmekista.push(cubePos);
-                if ( //there is an overlap
-                x > cubePos.x - (cubeSize.w + minSpacing) &&
-                    x < cubePos.x + cubeSize.w + minSpacing &&
-                    y > cubePos.y - (cubeSize.h + minSpacing) &&
-                    y < cubePos.y + cubeSize.h + minSpacing) {
-                    isOverlap = true;
-                    continue;
-                }
-            }
-            if (isOverlap) {
-                console.log('lets make new attempt ekmek !!!!!!!!!!!!!');
-                console.log('random x: ' + x + ', random y: ' + y);
-                console.log('existing cubes positions: ', ekmekista);
-                attempt++;
-            }
-            else
-                return { x: (x / tileSize.w) * 100, y: (y / tileSize.h) * 100 };
-        }
-        alert('sictik ekmek !!!!!!!!!!!!!');
-        return { x: marginPercent, y: marginPercent }; // Fallback if no valid placement is found
+    MarketHandler.prototype.marketTileClicked = function (event) {
+        if (!['allSelectMarketTile'].includes(this.gameui.gamedatas.gamestate.name) || this.gameui.isInterfaceLocked())
+            return;
+        if (!dojo.hasClass(event.target, 'a-market-tile'))
+            return;
+        if (!this.gameui.isCurrentPlayerActive())
+            return;
+        console.log('ekmek marketTileClicked', event.target);
+        var marketTile = event.target;
+        var marketIndex = marketTile.getAttribute('market-index');
+        this.gameui.ajaxAction('actAllSelectMarketTile', { marketIndex: marketIndex }, true, false); //ekmek promise yap
+        //ekmek revert de yap
     };
+    MarketHandler.prototype.marketTileSelected = function (marketIndex) {
+        return __awaiter(this, void 0, void 0, function () {
+            var selectedTile;
+            return __generator(this, function (_a) {
+                selectedTile = document.querySelector(".a-market-tile[market-index=\"".concat(marketIndex, "\"]"));
+                console.log('marketTileSelected', selectedTile);
+                if (selectedTile) {
+                    document.querySelectorAll('.a-market-tile').forEach(function (tile) { return tile.classList.remove('selected'); });
+                    selectedTile.classList.add('selected');
+                    // await this.gameui.wait(500); //ekmek sil
+                    // selectedTile.classList.remove('selected');
+                }
+                return [2 /*return*/];
+            });
+        });
+    };
+    MarketHandler.prototype.initBonusCardContainer = function () {
+        this.bonusCardIconsContainer.innerHTML = '';
+        this.bonusCardIconsContainer.innerHTML = this.bonusCardIDs.map(function (id) { return "<div class=\"a-bonus-card-icon\" bonus-card-id=\"".concat(id, "\" id=\"bonus-card-icon-").concat(id, "\"></div>"); }).join('');
+    };
+    MarketHandler.prototype.getBonusCardIconsContainer = function () { return this.bonusCardIconsContainer; };
     return MarketHandler;
 }());
 var PlayerHandler = /** @class */ (function () {
@@ -276,6 +410,24 @@ var PlayerHandler = /** @class */ (function () {
         (_a = document.getElementById('player-tables')) === null || _a === void 0 ? void 0 : _a.appendChild(this.pyramidContainer);
     };
     return PlayerHandler;
+}());
+var TooltipHandler = /** @class */ (function () {
+    function TooltipHandler(gameui) {
+        this.gameui = gameui;
+        this.addTooltipToBonusCards();
+    }
+    TooltipHandler.prototype.addTooltipToBonusCards = function () {
+        var _this = this;
+        var bonusCardIcons = this.gameui.marketHandler.getBonusCardIconsContainer().querySelectorAll('.a-bonus-card-icon');
+        bonusCardIcons.forEach(function (cardIcon) {
+            var cardIconID = cardIcon.getAttribute('id');
+            var cardID = cardIcon.getAttribute('bonus-card-id');
+            var tooltipHTML = _this.gameui.BONUS_CARDS_DATA[cardID].tooltip_text;
+            //ekmek tooltip background guzellestir
+            _this.gameui.addTooltipHtml(cardIconID, "<div class=\"bonus-card-tooltip tooltip-wrapper\" bonus-card-id=\"".concat(cardID, "\">\n                    <div class=\"tooltip-text\">").concat(_(_this.gameui.BONUS_CARDS_DATA[cardID].tooltip_text), "</div>\n                    <div class=\"tooltip-image\"></div>\n                </div>"), 1000);
+        });
+    };
+    return TooltipHandler;
 }());
 define([
     "dojo", "dojo/_base/declare",

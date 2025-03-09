@@ -119,6 +119,38 @@ class Game extends \Table
         $this->gamestate->nextState("playCard");
     }
 
+    
+
+    /**
+     * Player selects a market tile to take cubes from
+     * 
+     * @param int $marketIndex The index of the selected market tile
+     * @throws BgaUserException
+     */
+    public function actAllSelectMarketTile(int $marketIndex): void
+    {
+        $this->message("actAllSelectMarketTile", $marketIndex);
+
+        // Check if market index is valid
+        $players = self::loadPlayersBasicInfos();
+        if ($marketIndex < 0 || $marketIndex >= count($players)) 
+            throw new \BgaUserException(sprintf( clienttranslate('Invalid market tile index: %d. Must be between 0 and %d'), $marketIndex, count($players) - 1 ));
+
+        $currentPlayerID = (int) $this->getCurrentPlayerId();
+    
+        $madeSelectionThisRound = $this->getUniqueValueFromDB("SELECT made_market_index_selection_this_round FROM player WHERE player_id = $currentPlayerID");
+
+        if($madeSelectionThisRound == 'false')
+            $this->giveExtraTime($currentPlayerID);
+        else $this->not_a_move_notification = true; // note: do not increase the move counter
+    
+        $this->DbQuery("UPDATE player SET selected_market_index = $marketIndex, made_market_index_selection_this_round = 'true' WHERE player_id = $currentPlayerID");
+
+        $this->notify->player($currentPlayerID, 'marketIndexSelectionConfirmed', '', ['confirmed_selected_market_index' => $marketIndex]);
+
+        $this->gamestate->setPlayerNonMultiactive($currentPlayerID, 'displaySelectedCubes');
+    }
+
     //ekmek birgun sil
     public function actPass(): void
     {
@@ -151,6 +183,10 @@ class Game extends \Table
         return [
             "playableCardsIds" => [1, 2],
         ];
+    }
+    
+    public function argAllSelectMarketTile(): array{
+        return [];
     }
 
     //ekmek yap
@@ -189,6 +225,10 @@ class Game extends \Table
         // Go to another gamestate
         // Here, we would detect if the game is over, and in this case use "endGame" transition instead 
         $this->gamestate->nextState("nextPlayer");
+    }
+    
+    public function stAllSelectMarketTile(): void {
+        $this->gamestate->setAllPlayersMultiactive();
     }
 
     /**
@@ -249,7 +289,9 @@ class Game extends \Table
             []
         );
 
+        $result['bonusCardIDs'] = $this->getObjectListFromDB("SELECT bonus_card_id FROM bonus_cards ORDER BY bonus_card_position", true);
         $result['CUBE_COLORS'] = CUBE_COLORS;
+        $result['BONUS_CARDS_DATA'] = BONUS_CARDS_DATA;
 
         return $result;
     }
@@ -311,15 +353,25 @@ class Game extends \Table
         //
         // NOTE: statistics used in this file must be defined in your `stats.inc.php` file.
 
-        // Select 3 random distinct bonus cards
-        $bonus_cards = range(0, 11); //ekmek 12 kart constants tan gelcek
-        shuffle($bonus_cards);
+        // Get the bonus cards preference from options
+        $isRandomBonusCardsSetup = (int) $this->tableOptions->get(100) == (int) RANDOM_BONUS_CARDS_OPTION;
+$this->message('isRandomBonusCardsSetup', $isRandomBonusCardsSetup ? 'true' : 'false');
+
+        //ekmek 2 player da 5-6-7-8-9 cikart
+
+        if ($isRandomBonusCardsSetup) { // Random Setup - shuffle and take first 3
+            $bonus_cards = range(0, 11);
+            shuffle($bonus_cards);
+            $selected_bonus_cards = array_slice($bonus_cards, 0, SETUP_BONUS_CARDS_COUNT);
+        } else { // Beginner Setup - fixed cards
+            $selected_bonus_cards = BEGINNER_BONUS_CARDS_IDS;
+        }
         
         // Insert the selected bonus cards into the database
         $values = implode(',', array_map(
             fn($position, $card_id) => sprintf("(%d, %d)", $position + 1, $card_id),
-            range(0, BONUS_CARD_COUNT - 1),
-            array_slice($bonus_cards, 0, BONUS_CARD_COUNT)
+            range(0, SETUP_BONUS_CARDS_COUNT - 1),
+            $selected_bonus_cards
         ));
         $this->DbQuery(sprintf("INSERT INTO bonus_cards (bonus_card_position, bonus_card_id) VALUES %s", $values));
 
@@ -339,6 +391,20 @@ class Game extends \Table
 
         // Activate first player once everything has been initialized and ready.
         $this->activeNextPlayer();
+    }
+
+    function message($txt, $desc = '', $color = 'blue') {
+        if ($this->getBgaEnvironment() != "studio")
+            return;
+
+        if (is_array($txt))
+            $txt = json_encode($txt);
+
+        if($desc != '')
+            $txt .= "   ".json_encode($desc);
+
+        $this->trace("Logging: <span style='color: $color;'>$txt</span>");
+        $this->notify->all('plop',"<textarea style='height: 104px; width: 230px;color:$color'>$txt</textarea>",array());
     }
 
     //ekmek zombie yap

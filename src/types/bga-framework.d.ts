@@ -47,4 +47,11 @@ declare class GameGui {
 
     onScriptError(msg: string, url?: string, linenumber?: number);
     inherited(args: any);
+
+    // Promise-based notification methods
+    bgaSetupPromiseNotifications(): void;
+    bgaSetupPromiseNotifications(args: any): void;
+    bgaAnimationsActive(): boolean;
+    bgaPlayDojoAnimation(animation: any): Promise<void>;
+    wait(ms: number): Promise<void>;
 }
