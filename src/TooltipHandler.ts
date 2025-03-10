@@ -18,7 +18,7 @@ class TooltipHandler{
                     <div class="tooltip-text">${_(this.gameui.BONUS_CARDS_DATA[cardID].tooltip_text)}</div>
                     <div class="tooltip-image"></div>
                 </div>`,
-                1000
+                400
             );
         });
     }

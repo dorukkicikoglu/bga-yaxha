@@ -65,12 +65,12 @@ $machinestates = [
     // Note: ID=2 => your first state
     2 => [
         "name" => "allSelectMarketTile",
-        "description" => clienttranslate('Waiting for players to select a market tile'),
-        "descriptionmyturn" => clienttranslate('${you} must select a market tile'),
+        "description" => clienttranslate('Waiting for players to select a Market Tile'),
+        "descriptionmyturn" => clienttranslate('${you} must select a Market Tile'),
         "type" => "multipleactiveplayer",
         "args" => "argAllSelectMarketTile",
         "action" => "stAllSelectMarketTile",
-        "possibleactions" => array("actAllSelectMarketTile"),
+        "possibleactions" => array("actAllSelectMarketTile", "actRevertAllSelectMarketTile"),
         "updateGameProgression" => true,
         "transitions" => ["displaySelectedCubes" => 3, "zombiePass" => 3]
     ],

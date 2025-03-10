@@ -69,10 +69,12 @@ var GameBody = /** @class */ (function (_super) {
         for (var player_id in gamedatas.players) {
             var _a = this.gamedatas.players[player_id], name_1 = _a.name, color = _a.color, player_no = _a.player_no, turn_order = _a.turn_order;
             this.players[player_id] = new PlayerHandler(this, parseInt(player_id), name_1, color, parseInt(player_no), turn_order);
+            if (player_id == this.player_id)
+                this.myself = this.players[player_id];
         }
         this.CUBE_COLORS = gamedatas.CUBE_COLORS;
         this.BONUS_CARDS_DATA = gamedatas.BONUS_CARDS_DATA;
-        this.marketHandler = new MarketHandler(this, gamedatas.marketData, gamedatas.bonusCardIDs);
+        this.marketHandler = new MarketHandler(this, gamedatas.marketData, gamedatas.bonusCardIDs, gamedatas.playerSelectedMarketIndex);
         this.tooltipHandler = new TooltipHandler(this);
         this.logMutationObserver = new LogMutationObserver(this);
         // Setup game notifications to handle (see "setupNotifications" method below)
@@ -88,9 +90,13 @@ var GameBody = /** @class */ (function (_super) {
     GameBody.prototype.onUpdateActionButtons = function (stateName, args) {
         var _this = this;
         console.log('onUpdateActionButtons: ' + stateName, args);
-        if (this.isCurrentPlayerActive()) {
+        switch (stateName) {
+            case 'allSelectMarketTile':
+                this.marketHandler.updateStatusTextUponCubeSelection();
+                break;
+        }
+        if (this.isCurrentPlayerActive()) { //ekmek birgun sil
             switch (stateName) {
-                //ekmek birgun sil
                 case 'playerTurn':
                     var playableCardsIds = args.playableCardsIds; // returned by the argPlayerTurn
                     // Add test action buttons in the action status bar, simulating a card click:
@@ -101,7 +107,6 @@ var GameBody = /** @class */ (function (_super) {
         }
     };
     GameBody.prototype.onCardClick = function (card_id) {
-        console.log('onCardClick', card_id);
         this.bgaPerformAction("actPlayCard", {
             card_id: card_id,
         }).then(function () {
@@ -170,8 +175,8 @@ var GameBody = /** @class */ (function (_super) {
         return "".concat(key, "=\"").concat(value, "\"");
     }).join(' '); };
     GameBody.prototype.getPos = function (node) { var pos = this.getBoundingClientRectIgnoreZoom(node); pos.w = pos.width; pos.h = pos.height; return pos; };
-    GameBody.prototype.isDesktop = function () { return dojo.hasClass(dojo.body(), 'desktop_version'); };
-    GameBody.prototype.isMobile = function () { return dojo.hasClass(dojo.body(), 'mobile_version'); };
+    GameBody.prototype.isDesktop = function () { return document.body.classList.contains('desktop_version'); };
+    GameBody.prototype.isMobile = function () { return document.body.classList.contains('mobile_version'); };
     GameBody.prototype.updateStatusText = function (statusText) { $('gameaction_status').innerHTML = statusText; $('pagemaintitletext').innerHTML = statusText; };
     GameBody.prototype.ajaxAction = function (action, args, lock, checkAction) {
         if (args === void 0) { args = {}; }
@@ -187,6 +192,20 @@ var GameBody = /** @class */ (function (_super) {
             return parseInt(str);
         var result = parseInt(str.toLowerCase().replace(/px/g, ''));
         return isNaN(result) ? 0 : result;
+    };
+    GameBody.prototype.dotTicks = function (waitingTextContainer) {
+        var dotInterval;
+        var loaderSpan = dojo.create('span', { class: 'loader-span', style: 'display: inline-block; width: 24px; text-align: left;', dots: 0 });
+        dojo.place(loaderSpan, waitingTextContainer, 'after');
+        var dotTick = function () {
+            if (!document.body.contains(waitingTextContainer))
+                return clearInterval(dotInterval);
+            var dotCount = parseInt(dojo.attr(loaderSpan, 'dots'));
+            loaderSpan.innerHTML = '.'.repeat(dotCount);
+            dojo.attr(loaderSpan, 'dots', (dotCount + 1) % 4);
+        };
+        dotTick();
+        dotInterval = setInterval(dotTick, 500);
     };
     GameBody.prototype.printDebug = function () {
         var args = [];
@@ -209,6 +228,20 @@ var GameBody = /** @class */ (function (_super) {
                     case 0:
                         console.log('notif_marketIndexSelectionConfirmed', args);
                         return [4 /*yield*/, this.marketHandler.marketTileSelected(args.confirmed_selected_market_index)];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    GameBody.prototype.notif_marketIndexSelectionReverted = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        console.log('notif_marketIndexSelectionReverted');
+                        return [4 /*yield*/, this.marketHandler.marketTileSelected(null)];
                     case 1:
                         _a.sent();
                         return [2 /*return*/];
@@ -264,49 +297,46 @@ var LogMutationObserver = /** @class */ (function () {
         }
     };
     LogMutationObserver.prototype.processLogDiv = function (node) {
-        var _this = this;
-        var classTag = dojo.query('*[log-class-tag]', node);
-        if (classTag.length > 0) {
-            dojo.addClass(node, 'a-game-log ' + dojo.attr(classTag[0], 'log-class-tag'));
-            classTag.forEach(dojo.destroy);
-        }
-        else if (dojo.query('.log-arrow-left, .log-arrow-right, .place-under-icon', node).length > 0) { //guarantee adding class in replay as preserve fields arent loaded
-            dojo.addClass(node, 'a-game-log');
-            if (dojo.query('.log-arrow-right', node).length > 0)
-                dojo.addClass(node, 'selected-cards-log');
-            else
-                dojo.addClass(node, 'take-pile-log');
-        }
-        dojo.query('.playername', node).forEach(function (playerName) { dojo.attr(playerName, 'player-color', _this.gameui.rgbToHex(dojo.style(playerName, 'color'))); });
-        if (dojo.hasClass(node, 'selected-cards-log')) {
-            dojo.attr(node, 'first-selected-cards-log', Array.from(node.parentNode.children).some(function (sibling) { return sibling !== node && sibling.classList.contains("selected-cards-log"); }) ? 'false' : 'true'); //the first new-hand-long will have no margin-top or margin-bottom
-        }
-        else if (dojo.hasClass(node, 'take-pile-log')) {
-            if (this.gameui.isDesktop()) {
-                var cardIcons = dojo.query('.card-icons-container', node)[0];
-                if (dojo.query('.playername', node).length > 0)
-                    cardIcons.style.width = 'calc(100% - ' + (10 + this.gameui.getPos(dojo.query('.playername', node)[0]).w + this.gameui.getPos(dojo.query('.log-arrow', node)[0]).w) + 'px)';
-            }
-        }
-        if (this.gameui.isDesktop() && dojo.hasClass(node, 'a-game-log')) {
-            var timestamp = dojo.query('.timestamp', node);
-            if (timestamp.length > 0) {
-                this.nextTimestampValue = timestamp[0].innerText;
-            }
-            else if (this.observeLogs.hasOwnProperty('nextTimestampValue')) {
-                var newTimestamp = dojo.create('div', { class: 'timestamp' });
-                newTimestamp.innerHTML = this.nextTimestampValue;
-                dojo.place(newTimestamp, node);
-            }
-        }
+        //ekmek sil
+        //     let classTag = dojo.query('*[log-class-tag]', node);
+        //     if(classTag.length > 0){
+        //         dojo.addClass(node, 'a-game-log ' + dojo.attr(classTag[0], 'log-class-tag'));
+        //         classTag.forEach(dojo.destroy);
+        //     } else if(dojo.query('.log-arrow-left, .log-arrow-right, .place-under-icon', node).length > 0) { //guarantee adding class in replay as preserve fields arent loaded
+        //         dojo.addClass(node, 'a-game-log');
+        //         if(dojo.query('.log-arrow-right', node).length > 0)
+        //             dojo.addClass(node, 'selected-cards-log');
+        //         else dojo.addClass(node, 'take-pile-log');
+        //     }
+        //     dojo.query('.playername', node).forEach((playerName) => { dojo.attr(playerName, 'player-color', this.gameui.rgbToHex(dojo.style(playerName, 'color'))); });
+        //     if(dojo.hasClass(node, 'selected-cards-log')){
+        //         dojo.attr(node, 'first-selected-cards-log', Array.from(node.parentNode.children).some(sibling => sibling !== node && sibling.classList.contains("selected-cards-log")) ? 'false' : 'true'); //the first new-hand-long will have no margin-top or margin-bottom
+        //     } else if(dojo.hasClass(node, 'take-pile-log')){
+        //         if(this.gameui.isDesktop()){
+        //             let cardIcons: HTMLDivElement = dojo.query('.card-icons-container', node)[0];
+        //             if(dojo.query('.playername', node).length > 0)
+        //                 cardIcons.style.width = 'calc(100% - ' + (10 + this.gameui.getPos(dojo.query('.playername', node)[0]).w + this.gameui.getPos(dojo.query('.log-arrow', node)[0]).w)  + 'px)';
+        //         }
+        //     }
+        //     if(this.gameui.isDesktop() && dojo.hasClass(node, 'a-game-log')){
+        //         let timestamp = dojo.query('.timestamp', node);
+        //         if(timestamp.length > 0){
+        //             this.nextTimestampValue = timestamp[0].innerText;
+        //         } else if(this.observeLogs.hasOwnProperty('nextTimestampValue')){
+        //             let newTimestamp: HTMLDivElement = dojo.create('div', {class: 'timestamp'});
+        //             newTimestamp.innerHTML = this.nextTimestampValue;
+        //             dojo.place(newTimestamp, node);
+        //         }
+        //     }
     };
     return LogMutationObserver;
 }());
 var MarketHandler = /** @class */ (function () {
-    function MarketHandler(gameui, marketData, bonusCardIDs) {
+    function MarketHandler(gameui, marketData, bonusCardIDs, playerSelectedMarketIndex) {
         this.gameui = gameui;
         this.marketData = marketData;
         this.bonusCardIDs = bonusCardIDs;
+        this.playerSelectedMarketIndex = playerSelectedMarketIndex;
         this.marketContainer = document.querySelector('#player-tables .market-container');
         // this.waitingPlayersContainer = this.marketContainer.querySelector('.waiting-players-container') as HTMLDivElement; //ekmek sil
         this.marketTilesContainer = this.marketContainer.querySelector('.market-tiles-container');
@@ -314,6 +344,7 @@ var MarketHandler = /** @class */ (function () {
         this.marketTiles = [];
         this.initMarketContainer();
         this.initBonusCardContainer();
+        this.updateStatusTextUponCubeSelection();
     }
     MarketHandler.prototype.initMarketContainer = function () {
         var _this = this;
@@ -323,9 +354,8 @@ var MarketHandler = /** @class */ (function () {
         Object.keys(this.gameui.players).forEach(function (_, i) {
             // First loop: Create market tiles
             _this.marketTiles[i] = document.createElement('div');
-            _this.marketTiles[i].className = 'a-market-tile market-tile-' + i;
+            _this.marketTiles[i].className = 'a-market-tile market-tile-' + i + ' ' + (_this.playerSelectedMarketIndex !== null && Number(_this.playerSelectedMarketIndex) === i ? 'selected-market-tile' : '');
             _this.marketTiles[i].setAttribute('market-index', i.toString());
-            // Use in the loop
             _this.marketTiles[i].setAttribute('random-placement-index', shuffledIndices[i].toString());
             _this.marketTiles[i].addEventListener('click', function (event) { return _this.marketTileClicked(event); });
             _this.marketTilesContainer.appendChild(_this.marketTiles[i]);
@@ -353,31 +383,52 @@ var MarketHandler = /** @class */ (function () {
     MarketHandler.prototype.marketTileClicked = function (event) {
         if (!['allSelectMarketTile'].includes(this.gameui.gamedatas.gamestate.name) || this.gameui.isInterfaceLocked())
             return;
-        if (!dojo.hasClass(event.target, 'a-market-tile'))
+        if (!event.target.classList.contains('a-market-tile'))
             return;
-        if (!this.gameui.isCurrentPlayerActive())
-            return;
-        console.log('ekmek marketTileClicked', event.target);
         var marketTile = event.target;
         var marketIndex = marketTile.getAttribute('market-index');
-        this.gameui.ajaxAction('actAllSelectMarketTile', { marketIndex: marketIndex }, true, false); //ekmek promise yap
-        //ekmek revert de yap
+        if (!marketTile.classList.contains('selected-market-tile'))
+            this.gameui.ajaxAction('actAllSelectMarketTile', { marketIndex: marketIndex }, true, false); //ekmek promise yap
+        else
+            this.gameui.ajaxAction('actRevertAllSelectMarketTile', { marketIndex: marketIndex }, true, false); //ekmek promise yap
     };
     MarketHandler.prototype.marketTileSelected = function (marketIndex) {
         return __awaiter(this, void 0, void 0, function () {
             var selectedTile;
             return __generator(this, function (_a) {
                 selectedTile = document.querySelector(".a-market-tile[market-index=\"".concat(marketIndex, "\"]"));
-                console.log('marketTileSelected', selectedTile);
+                this.marketContainer.querySelectorAll('.a-market-tile').forEach(function (tile) { return tile.classList.remove('selected-market-tile'); });
                 if (selectedTile) {
-                    document.querySelectorAll('.a-market-tile').forEach(function (tile) { return tile.classList.remove('selected'); });
-                    selectedTile.classList.add('selected');
+                    this.playerSelectedMarketIndex = marketIndex;
+                    selectedTile.classList.add('selected-market-tile');
                     // await this.gameui.wait(500); //ekmek sil
                     // selectedTile.classList.remove('selected');
                 }
+                else {
+                    this.playerSelectedMarketIndex = null;
+                }
+                this.updateStatusTextUponCubeSelection();
                 return [2 /*return*/];
             });
         });
+    };
+    MarketHandler.prototype.updateStatusTextUponCubeSelection = function () {
+        if (this.gameui.gamedatas.gamestate.name != 'allSelectMarketTile')
+            return;
+        if (!this.gameui.myself)
+            return;
+        var statusText = '';
+        if (this.playerSelectedMarketIndex !== null) {
+            var marketTileIcon = '<div class="a-market-tile-icon" market-index="' + this.playerSelectedMarketIndex + '"></div>';
+            statusText = dojo.string.substitute(_('${you} selected ${marketTileIcon} Waiting for others'), { you: this.gameui.divYou(), marketTileIcon: marketTileIcon });
+            statusText = '<span class="waiting-text">' + statusText + '</span>';
+        }
+        else {
+            statusText = dojo.string.substitute(_('${you} must select a Market Tile'), { you: this.gameui.divYou() });
+        }
+        this.gameui.updateStatusText(statusText);
+        if (this.playerSelectedMarketIndex)
+            this.gameui.dotTicks(dojo.query('#page-title .waiting-text')[0]);
     };
     MarketHandler.prototype.initBonusCardContainer = function () {
         this.bonusCardIconsContainer.innerHTML = '';
@@ -424,7 +475,7 @@ var TooltipHandler = /** @class */ (function () {
             var cardID = cardIcon.getAttribute('bonus-card-id');
             var tooltipHTML = _this.gameui.BONUS_CARDS_DATA[cardID].tooltip_text;
             //ekmek tooltip background guzellestir
-            _this.gameui.addTooltipHtml(cardIconID, "<div class=\"bonus-card-tooltip tooltip-wrapper\" bonus-card-id=\"".concat(cardID, "\">\n                    <div class=\"tooltip-text\">").concat(_(_this.gameui.BONUS_CARDS_DATA[cardID].tooltip_text), "</div>\n                    <div class=\"tooltip-image\"></div>\n                </div>"), 1000);
+            _this.gameui.addTooltipHtml(cardIconID, "<div class=\"bonus-card-tooltip tooltip-wrapper\" bonus-card-id=\"".concat(cardID, "\">\n                    <div class=\"tooltip-text\">").concat(_(_this.gameui.BONUS_CARDS_DATA[cardID].tooltip_text), "</div>\n                    <div class=\"tooltip-image\"></div>\n                </div>"), 400);
         });
     };
     return TooltipHandler;
