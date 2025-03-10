@@ -8,6 +8,7 @@ class GameBody extends GameGui {
     public marketHandler: MarketHandler;
     public tooltipHandler: TooltipHandler;
     public logMutationObserver: LogMutationObserver;
+    public myself: PlayerHandler;
 
     public players: Record<number, PlayerHandler> = {};
     public CUBE_COLORS: { [key: number]: CubeColor };
@@ -34,12 +35,15 @@ class GameBody extends GameGui {
         for(let player_id in gamedatas.players) {
             const {name, color, player_no, turn_order} = this.gamedatas.players[player_id];
             this.players[player_id] = new PlayerHandler(this, parseInt(player_id), name, color, parseInt(player_no), turn_order);
+
+            if(player_id == this.player_id)
+                this.myself = this.players[player_id];
         }
 
         this.CUBE_COLORS = gamedatas.CUBE_COLORS;
         this.BONUS_CARDS_DATA = gamedatas.BONUS_CARDS_DATA;
 
-        this.marketHandler = new MarketHandler(this, gamedatas.marketData, gamedatas.bonusCardIDs);
+        this.marketHandler = new MarketHandler(this, gamedatas.marketData, gamedatas.bonusCardIDs, gamedatas.playerSelectedMarketIndex);
 
         this.tooltipHandler = new TooltipHandler(this);
         this.logMutationObserver = new LogMutationObserver(this);
@@ -60,11 +64,17 @@ class GameBody extends GameGui {
 
     public onUpdateActionButtons(stateName: string, args: any) {
         console.log( 'onUpdateActionButtons: '+stateName, args );
-        
-        if(this.isCurrentPlayerActive()){            
+                    
+        switch( stateName )
+        {
+            case 'allSelectMarketTile':
+                this.marketHandler.updateStatusTextUponCubeSelection();
+            break;
+        }
+
+        if(this.isCurrentPlayerActive()){ //ekmek birgun sil
             switch( stateName )
             {
-                //ekmek birgun sil
                 case 'playerTurn':    
                 const playableCardsIds = args.playableCardsIds; // returned by the argPlayerTurn
 
@@ -77,12 +87,10 @@ class GameBody extends GameGui {
                 break;
             }
         }
-    } 
+    }
 
     public onCardClick( card_id ) //ekmek birgun sil
     {
-        console.log( 'onCardClick', card_id );
-
         this.bgaPerformAction("actPlayCard", { 
             card_id,
         }).then(() =>  {                
@@ -148,8 +156,8 @@ class GameBody extends GameGui {
     }
     private getAttributesHTML(attributes): string{ return Object.entries(attributes || {}).map(([key, value]) => `${key}="${value}"`).join(' '); }
     public getPos(node: HTMLDivElement): Record<string, number> { let pos = this.getBoundingClientRectIgnoreZoom(node); pos.w = pos.width; pos.h = pos.height; return pos; }
-    public isDesktop(): boolean { return dojo.hasClass(dojo.body(), 'desktop_version'); }
-    public isMobile(): boolean { return dojo.hasClass(dojo.body(), 'mobile_version'); }
+    public isDesktop(): boolean { return document.body.classList.contains('desktop_version'); }
+    public isMobile(): boolean { return document.body.classList.contains('mobile_version'); }
     public updateStatusText(statusText): void{ $('gameaction_status').innerHTML = statusText; $('pagemaintitletext').innerHTML = statusText; }
     public ajaxAction(action: string, args: Record<string, any> = {}, lock: boolean = true, checkAction: boolean = true): void{
         args.version = this.gamedatas.version;
@@ -162,6 +170,24 @@ class GameBody extends GameGui {
             return parseInt(str);
         const result = parseInt(str.toLowerCase().replace(/px/g, ''));
         return isNaN(result) ? 0 : result;
+    }
+    public dotTicks(waitingTextContainer: HTMLDivElement){
+        let dotInterval: number;
+
+        let loaderSpan = dojo.create('span', {class: 'loader-span', style: 'display: inline-block; width: 24px; text-align: left;', dots: 0});
+        dojo.place(loaderSpan, waitingTextContainer, 'after');
+
+        let dotTick = () => {
+            if (!document.body.contains(waitingTextContainer)) 
+                return clearInterval(dotInterval);
+
+            let dotCount = parseInt(dojo.attr(loaderSpan, 'dots'));
+            loaderSpan.innerHTML = '.'.repeat(dotCount);
+
+            dojo.attr(loaderSpan, 'dots', (dotCount + 1) % 4);
+        }
+        dotTick();
+        dotInterval = setInterval(dotTick, 500);
     }
     public printDebug(...args: any[]): void{ args[0] = typeof args[0] == 'string' ? '*** ' + args[0] : args[0]; console.log(...args); }
 
@@ -188,6 +214,11 @@ class GameBody extends GameGui {
         //     await this.wait(500);
         //     selectedTile.classList.remove('selected');
         // }
+    }
+
+    public async notif_marketIndexSelectionReverted() {
+        console.log('notif_marketIndexSelectionReverted');
+        await this.marketHandler.marketTileSelected(null);
     }
 }
 

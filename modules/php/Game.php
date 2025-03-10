@@ -18,6 +18,8 @@ declare(strict_types=1);
 
 namespace Bga\Games\yaxha;
 
+use \Bga\GameFramework\Actions\CheckAction;
+
 use YXHGlobalsManager;
 require_once(APP_GAMEMODULE_PATH . "module/table/table.game.php");
 
@@ -119,17 +121,16 @@ class Game extends \Table
         $this->gamestate->nextState("playCard");
     }
 
-    
-
     /**
      * Player selects a market tile to take cubes from
      * 
      * @param int $marketIndex The index of the selected market tile
      * @throws BgaUserException
      */
+    #[CheckAction(false)]
     public function actAllSelectMarketTile(int $marketIndex): void
     {
-        $this->message("actAllSelectMarketTile", $marketIndex);
+        $this->gamestate->checkPossibleAction('actAllSelectMarketTile');
 
         // Check if market index is valid
         $players = self::loadPlayersBasicInfos();
@@ -149,6 +150,30 @@ class Game extends \Table
         $this->notify->player($currentPlayerID, 'marketIndexSelectionConfirmed', '', ['confirmed_selected_market_index' => $marketIndex]);
 
         $this->gamestate->setPlayerNonMultiactive($currentPlayerID, 'displaySelectedCubes');
+    }
+
+    /**
+     * Revert a player's market tile selection during the simultaneous selection phase
+     * 
+     * This allows a player to undo their market tile selection and make a different choice.
+     * The player will be set back to active status to make a new selection.
+     * 
+     * @throws BgaUserException if the action is not currently allowed
+     */
+    #[CheckAction(false)]
+    public function actRevertAllSelectMarketTile(): void
+    {
+        $this->gamestate->checkPossibleAction('actRevertAllSelectMarketTile');
+
+        $currentPlayerID = (int) $this->getCurrentPlayerId();
+        $this->DbQuery("UPDATE player SET selected_market_index = NULL WHERE player_id = $currentPlayerID");
+
+        $this->notify->player($currentPlayerID, 'marketIndexSelectionReverted', '', []);
+
+        $this->gamestate->setPlayersMultiactive([$currentPlayerID], '');
+
+        $this->not_a_move_notification = true; // note: do not increase the move counter
+        $this->notify->player($currentPlayerID, 'marketIndexSelectionReverted', '', []);
     }
 
     //ekmek birgun sil
@@ -293,6 +318,8 @@ class Game extends \Table
         $result['CUBE_COLORS'] = CUBE_COLORS;
         $result['BONUS_CARDS_DATA'] = BONUS_CARDS_DATA;
 
+        $result['playerSelectedMarketIndex'] = $this->getUniqueValueFromDB("SELECT selected_market_index FROM player WHERE player_id = $current_player_id");
+
         return $result;
     }
 
@@ -355,7 +382,6 @@ class Game extends \Table
 
         // Get the bonus cards preference from options
         $isRandomBonusCardsSetup = (int) $this->tableOptions->get(100) == (int) RANDOM_BONUS_CARDS_OPTION;
-$this->message('isRandomBonusCardsSetup', $isRandomBonusCardsSetup ? 'true' : 'false');
 
         //ekmek 2 player da 5-6-7-8-9 cikart
 

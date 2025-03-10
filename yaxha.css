@@ -814,16 +814,19 @@
 }
 .a-cube .cube-background {
   z-index: -1;
-  width: 145%;
-  height: 138%;
-  top: -8%;
-  left: -9.5%;
+  width: 100%;
+  height: 100%;
+  top: 0%;
+  left: 0%;
+  transform: scale(1.32);
+  transform-origin: 11% 23%;
   position: absolute;
   background-size: contain, 300% 100%;
   background-repeat: no-repeat, no-repeat;
   background-image: url(img/cube_background.png), linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
   opacity: 0.7;
   background-position: center, -100% 0;
+  filter: blur(1px);
 }
 
 .market-container {
@@ -833,7 +836,6 @@
   width: 100%;
 }
 .market-container .market-tiles-container {
-  width: calc(var(--cube-size) * 26);
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -846,39 +848,37 @@
   height: var(--market-tile-size);
   margin: 5px;
   display: inline-block;
-  border: 2px solid #999;
+  box-shadow: 2px 2px 4px #000000;
   border-radius: 8px;
   position: relative;
   cursor: pointer;
-  transition: all 0.2s ease;
   background-image: url("img/player_cards.png");
   background-repeat: no-repeat;
   background-size: 400%;
   will-change: transform;
 }
-.market-container .market-tiles-container .a-market-tile:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-}
 .market-container .market-tiles-container .a-market-tile:hover .a-cube {
   animation: shine-cube 1.6s ease-in-out;
 }
 .market-container .market-tiles-container .a-market-tile[market-index="0"] {
-  background-position: 0% 0;
+  background-position-x: 0%;
 }
 .market-container .market-tiles-container .a-market-tile[market-index="1"] {
-  background-position: 33.33% 0;
+  background-position-x: 33.33%;
 }
 .market-container .market-tiles-container .a-market-tile[market-index="2"] {
-  background-position: 66.66% 0;
+  background-position-x: 66.66%;
 }
 .market-container .market-tiles-container .a-market-tile[market-index="3"] {
-  background-position: 100% 0;
+  background-position-x: 100%;
 }
-.market-container .market-tiles-container .a-market-tile.selected {
-  outline: 3px solid #ffeb3b;
-  outline-offset: -3px;
+.market-container .market-tiles-container .a-market-tile.selected-market-tile {
+  outline: none;
+  box-shadow: 2px 2px 4px #000000, 0 0 0 3px rgba(255, 230, 11, 0.3764705882), 0 0 12px 5px rgba(255, 230, 11, 0.1882352941), 0 0 20px 8px rgba(255, 230, 11, 0.1254901961);
   animation: pulse 0.5s ease-in-out;
+}
+.market-container .market-tiles-container .a-market-tile .a-cube {
+  pointer-events: none;
 }
 .market-container .bonus-cards-container {
   width: calc(var(--cube-size) * 3);
@@ -923,7 +923,7 @@
 }
 .market-container .bonus-cards-container .a-bonus-card-icon:hover::after {
   opacity: 1;
-  animation: shine-bonus 1.6s ease-out;
+  animation: shine-bonus 0.8s ease-out;
 }
 .market-container .bonus-cards-container .a-bonus-card-icon[bonus-card-id="0"]::before {
   background-position: 0% 0%;
@@ -981,6 +981,67 @@
 }
 .market-container .bonus-cards-container .a-bonus-card-icon[bonus-card-id="18"]::before {
   background-position: 75% 99.99%;
+}
+
+#page-title .a-market-tile-icon {
+  width: 38px;
+  height: 38px;
+  display: inline-block;
+  vertical-align: middle;
+  position: relative;
+  margin: -5px 0px;
+  margin-left: 3px;
+}
+#page-title .a-market-tile-icon::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url(img/player_cards.png);
+  background-size: 400%;
+  background-repeat: no-repeat;
+  clip-path: inset(42% 7% 7% 42%);
+  width: 170%;
+  height: 170%;
+  top: -70%;
+  left: -70%;
+  pointer-events: none;
+}
+#page-title .a-market-tile-icon::after {
+  content: "";
+  position: absolute;
+  width: calc(100% - 3px);
+  height: calc(100% - 3px);
+  outline: 4px solid #f0d0d4;
+  border-radius: 5px;
+  top: 0%;
+  left: 0%;
+  outline-offset: -2px;
+}
+#page-title .a-market-tile-icon[market-index="0"]::before {
+  background-position-x: 0%;
+  clip-path: inset(42% 42% 7% 7%);
+  left: -10%;
+}
+#page-title .a-market-tile-icon[market-index="1"]::before {
+  background-position-x: 33.33%;
+}
+#page-title .a-market-tile-icon[market-index="2"]::before {
+  background-position-x: 66.66%;
+}
+#page-title .a-market-tile-icon[market-index="3"]::before {
+  background-position-x: 100%;
+}
+#page-title .a-market-tile-icon[market-index="0"]::after {
+  outline-color: #fbe5b2;
+}
+#page-title .a-market-tile-icon[market-index="1"]::after {
+  outline-color: #cae2cb;
+}
+#page-title .a-market-tile-icon[market-index="2"]::after {
+  outline-color: #f0d0d4;
+}
+#page-title .a-market-tile-icon[market-index="3"]::after {
+  outline-color: #c6dff3;
 }
 
 .dijitTooltipContainer:has(.tooltip-wrapper) {
