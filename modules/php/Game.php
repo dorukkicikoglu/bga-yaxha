@@ -149,7 +149,7 @@ class Game extends \Table
 
         $this->notify->player($currentPlayerID, 'marketIndexSelectionConfirmed', '', ['confirmed_selected_market_index' => $marketIndex]);
 
-        $this->gamestate->setPlayerNonMultiactive($currentPlayerID, 'displaySelectedCubes');
+        $this->gamestate->setPlayerNonMultiactive($currentPlayerID, 'allMarketTileSelectionsMade');
     }
 
     /**
@@ -253,7 +253,94 @@ class Game extends \Table
     }
     
     public function stAllSelectMarketTile(): void {
+        self::DbQuery("UPDATE player SET made_market_index_selection_this_round = 'false', selected_market_index = NULL, collected_market_index = NULL");
         $this->gamestate->setAllPlayersMultiactive();
+    }
+
+    public function stAllMarketTileSelectionsMade(): void {
+        $selectedMarketIndexes = self::getCollectionFromDb("SELECT player_id, selected_market_index, turn_order FROM player WHERE player_zombie = 0");
+        $playersBySelectedMarketIndex = array_reduce($selectedMarketIndexes, function($acc, $player) {
+            $acc[$player['selected_market_index']][] = $player;
+            return $acc;
+        }, []);
+
+        $pendingPlayers = [];
+        $collectingPlayers = [];
+
+        foreach($playersBySelectedMarketIndex as $selectedMarketIndex => $players){
+            if(count($players) == 1) {
+                $collectingPlayers = array_merge($collectingPlayers, $players);
+            } else if(count($players) > 1){
+                $lowestTurnOrder = PHP_INT_MAX;
+                $lowestTurnOrderPlayerIndex = null;
+                
+                foreach ($players as $playerIndex => $player) {
+                    if ($player['turn_order'] < $lowestTurnOrder) {
+                        $lowestTurnOrder = min($lowestTurnOrder, $player['turn_order']);
+                        $lowestTurnOrderPlayerIndex = $playerIndex;
+                    }
+                }
+
+                foreach ($players as $playerIndex => $player) { 
+                    if ($playerIndex == $lowestTurnOrderPlayerIndex)
+                        $collectingPlayers[] = $player;
+                    else $pendingPlayers[] = $player;
+                }
+            }
+        }
+
+        foreach ($collectingPlayers as $player)
+            self::DbQuery("UPDATE player SET collected_market_index = selected_market_index WHERE player_id = " . $player['player_id']);
+
+        $collectedTilesData = []; //needed for the game replay page
+        $pendingTilesData = []; //needed for the game replay page
+        foreach($collectingPlayers as $playerData)
+            $collectedTilesData[] = $this->getPlayerNameById($playerData['player_id']).' ← '.$this->getMarketTileSelectionLogHTML($playerData['selected_market_index']);
+        foreach($pendingPlayers as $playerData)
+            $pendingTilesData[] = $this->getPlayerNameById($playerData['player_id']).' ← - - '.$this->getMarketTileSelectionLogHTML($playerData['selected_market_index']);
+        $marketTilesDataStr = implode(', ', $collectedTilesData).'<br>'.implode(', ', $pendingTilesData);
+
+        $this->notify->all('animateAllMarketTileSelections', '${REVEALED_MARKET_TILES_DATA_STR}', array(
+            'LOG_CLASS' => 'all-selected-tiles-log',
+            'preserve' => ['LOG_CLASS', 'marketTileSelectionsData'],
+            'marketTileSelectionsData' => ['collectingPlayers' => $collectingPlayers, 'pendingPlayers' => $pendingPlayers],
+            'REVEALED_MARKET_TILES_DATA_STR' => $marketTilesDataStr
+        ));
+
+        $this->gamestate->nextState('getNextPendingPlayerToSelectMarketTile');
+    }
+
+    public function stGetNextPendingPlayerToSelectMarketTile(): void {
+        $nextPlayer = self::getObjectFromDB("SELECT * FROM player WHERE player_zombie = 0 AND collected_market_index IS NULL ORDER BY turn_order ASC LIMIT 1");
+
+        if ($nextPlayer === null) { // No more pending players to select market tiles
+            $this->gamestate->nextState('getNextPlayerToBuildPyramid');
+        } else { // Activate next player to make their selection
+            $this->gamestate->changeActivePlayer($nextPlayer['player_id']);
+            $this->gamestate->nextState('individualPlayerSelectMarketTile');
+        }
+    }
+
+    public function stIndividualPlayerSelectMarketTile(): void {
+//ekmek sil?
+    }
+
+    public function stGetNextPlayerToBuildPyramid(): void {
+        $nextPlayer = self::getObjectFromDB("SELECT p.* FROM player p 
+            INNER JOIN cubes c ON p.collected_market_index = c.card_location_arg 
+            WHERE p.player_zombie = 0 AND c.card_location = 'market' AND p.collected_market_index IS NOT NULL ORDER BY p.turn_order ASC LIMIT 1");
+
+        if ($nextPlayer === null) {
+            // No valid players left, go back to market tile selection
+            $this->gamestate->nextState('allSelectMarketTile');
+        } else {
+            $this->gamestate->changeActivePlayer($nextPlayer['player_id']);
+            $this->gamestate->nextState('buildPyramid');
+        }
+    }
+
+    public function stBuildPyramid(): void {
+//ekmek sil?
     }
 
     /**
@@ -317,7 +404,8 @@ class Game extends \Table
         $result['bonusCardIDs'] = $this->getObjectListFromDB("SELECT bonus_card_id FROM bonus_cards ORDER BY bonus_card_position", true);
         $result['CUBE_COLORS'] = CUBE_COLORS;
         $result['BONUS_CARDS_DATA'] = BONUS_CARDS_DATA;
-
+        $result['MARKET_TILE_COLORS'] = MARKET_TILE_COLORS;
+        
         $result['playerSelectedMarketIndex'] = $this->getUniqueValueFromDB("SELECT selected_market_index FROM player WHERE player_id = $current_player_id");
 
         return $result;
@@ -419,6 +507,14 @@ class Game extends \Table
         $this->activeNextPlayer();
     }
 
+    //////////////////////////////////////////////////////////////////////////////
+    ////////////// Debug functions
+    //////////////////////////////////////////////////////////////////////////////
+
+    function getMarketTileSelectionLogHTML($marketIndex){ //ekmek oyun sonu replay page duzgun gorunuyo mu test et
+        return '<span style="position: absolute; opacity: 0; width: 0px; height: 0px;">MARKET TILE </span><span style="background-color:#'.MARKET_TILE_COLORS[$marketIndex].';display: inline-block; width: 18px; height: 18px; text-align: center; line-height: 18px;">'.($marketIndex + 1).'</span>';
+    }
+    
     function message($txt, $desc = '', $color = 'blue') {
         if ($this->getBgaEnvironment() != "studio")
             return;

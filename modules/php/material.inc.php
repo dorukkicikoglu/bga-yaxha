@@ -36,6 +36,8 @@ if (!defined('RANDOM_BONUS_CARDS_OPTION')) { // guard since this included multip
         16 => ['id' => 16, 'tooltip_text' => '5 bonus points for having <b>exactly 3 colors visible</b> on your pyramid'],
         17 => ['id' => 17, 'tooltip_text' => '5 bonus points for having <b>5 colors visible on level 2</b>']
     ]);
+
+    define('MARKET_TILE_COLORS', ['fbe5b2', 'cae2cb', 'f0d0d4', 'c6dff3']);
 }
 
 ?>

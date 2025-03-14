@@ -72,7 +72,51 @@ $machinestates = [
         "action" => "stAllSelectMarketTile",
         "possibleactions" => array("actAllSelectMarketTile", "actRevertAllSelectMarketTile"),
         "updateGameProgression" => true,
-        "transitions" => ["displaySelectedCubes" => 3, "zombiePass" => 3]
+        "transitions" => ["allMarketTileSelectionsMade" => 3, "zombiePass" => 3]
+    ],
+
+    3 => [
+        "name" => "allMarketTileSelectionsMade",
+        "description" => clienttranslate('Revealing selections'),
+        "type" => "game",
+        "action" => "stAllMarketTileSelectionsMade",
+        "transitions" => ["getNextPendingPlayerToSelectMarketTile" => 4]
+    ],
+
+    4 => [
+        "name" => "getNextPendingPlayerToSelectMarketTile",
+        "description" => clienttranslate('Selections revealed'),
+        "type" => "game",
+        "action" => "stGetNextPendingPlayerToSelectMarketTile",
+        "transitions" => ["individualPlayerSelectMarketTile" => 5, "getNextPlayerToBuildPyramid" => 10]
+    ],
+
+    5 => [
+        "name" => "individualPlayerSelectMarketTile",
+        "description" => clienttranslate('${actplayer} must select a Market Tile'),
+        "descriptionmyturn" => clienttranslate('${you} must select a Market Tile'),
+        "type" => "activeplayer",
+        "action" => "stIndividualPlayerSelectMarketTile",
+        "possibleactions" => ["actIndividualSelectMarketTile"],
+        "transitions" => array( "individualMarketTileSelectionMade" => 5, "zombiePass" => 5 )
+    ],
+
+    10 => [
+        "name" => "getNextPlayerToBuildPyramid",
+        "description" => clienttranslate('Time to build!'),
+        "type" => "game",
+        "action" => "stGetNextPlayerToBuildPyramid",
+        "transitions" => ["allSelectMarketTile" => 2, "buildPyramid" => 11]
+    ],
+
+    11 => [
+        "name" => "buildPyramid",
+        "description" => clienttranslate('${actplayer} must build pyramid'),
+        "descriptionmyturn" => clienttranslate('${you} must build pyramid'),
+        "type" => "activeplayer",
+        "action" => "stBuildPyramid",
+        "possibleactions" => ["actBuildPyramid"],
+        "transitions" => array( "getNextPlayerToBuildPyramid" => 10)
     ],
 
     42 => [ //ekmek sil
@@ -89,7 +133,7 @@ $machinestates = [
         "transitions" => ["playCard" => 3, "pass" => 3]
     ],
 
-    3 => [
+    53 => [ //ekmek sil
         "name" => "nextPlayer",
         "description" => '',
         "type" => "game",
