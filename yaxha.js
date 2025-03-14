@@ -1,18 +1,3 @@
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -49,6 +34,87 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var AnimationHandlerPromiseBased = /** @class */ (function () {
+    function AnimationHandlerPromiseBased(gameui) {
+        this.gameui = gameui;
+    }
+    AnimationHandlerPromiseBased.prototype.play = function (animation) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/, this.gameui.bgaPlayDojoAnimation(animation)];
+            });
+        });
+    };
+    AnimationHandlerPromiseBased.prototype.animateProperty = function (args) {
+        args = this.addEasing(args);
+        return dojo.animateProperty(args);
+    };
+    AnimationHandlerPromiseBased.prototype.animateOnObject = function (args, ignoreGoToPositionChange) {
+        var _this = this;
+        if (ignoreGoToPositionChange === void 0) { ignoreGoToPositionChange = false; }
+        var initialGoToPos = args.goTo ? this.gameui.getPos(args.goTo) : null;
+        if (!args.hasOwnProperty('properties'))
+            args.properties = {};
+        var dojoAnim;
+        var arg_beforeBegin = args.hasOwnProperty('beforeBegin') ? args.beforeBegin : function (obj) { return obj; };
+        var arg_onBegin = args.hasOwnProperty('onBegin') ? args.onBegin : function (obj) { return obj; };
+        args.beforeBegin = function (properties) {
+            args = arg_beforeBegin(args);
+            var nodePos = _this.gameui.getPos(args.node);
+            var goToPos = (!ignoreGoToPositionChange && document.contains(args.goTo)) ? _this.gameui.getPos(args.goTo) : initialGoToPos; // animate to initial position if goTo is not contained in DOM anymore
+            var startScaleValues = { x: 1, y: 1 };
+            var nodeTranformMatrix = dojo.style(args.node, 'transform');
+            var match = nodeTranformMatrix.match(/^matrix\(([^\)]+)\)$/);
+            if (match && match.length >= 2) {
+                var values = match[1].split(',').map(parseFloat);
+                startScaleValues = { x: values[0], y: values[3] };
+            }
+            var endScaleValues = { x: startScaleValues.x * goToPos.w / nodePos.w, y: startScaleValues.y * goToPos.h / nodePos.h };
+            var startW = dojo.style(args.node, 'width');
+            var startH = dojo.style(args.node, 'height');
+            var nodeTransformOrigin = dojo.style(args.node, 'transform-origin');
+            var splitValues = nodeTransformOrigin.split(' ');
+            nodeTransformOrigin = { x: parseFloat(splitValues[0]) / startW, y: parseFloat(splitValues[1]) / startH };
+            if (!args.hasOwnProperty('fixX') || !args.fixX)
+                dojoAnim.properties.left = { start: dojo.style(args.node, 'left'), end: dojo.style(args.node, 'left') + (goToPos.x - nodePos.x) + ((endScaleValues.x - startScaleValues.x) * nodeTransformOrigin.x * startW) };
+            if (!args.hasOwnProperty('fixY') || !args.fixY)
+                dojoAnim.properties.top = { start: dojo.style(args.node, 'top'), end: dojo.style(args.node, 'top') + (goToPos.y - nodePos.y) + ((endScaleValues.y - startScaleValues.y) * nodeTransformOrigin.y * startH) };
+            if (JSON.stringify(startScaleValues) != JSON.stringify(endScaleValues))
+                dojoAnim.properties.scale = endScaleValues.x + ' ' + endScaleValues.y;
+        };
+        args.onBegin = function (properties) {
+            args = arg_onBegin(args);
+        };
+        args = this.addEasing(args);
+        dojoAnim = this.animateProperty(args);
+        return dojoAnim;
+    };
+    AnimationHandlerPromiseBased.prototype.addEasing = function (args) {
+        if (!args.hasOwnProperty('easing'))
+            return args;
+        if (dojo.fx.easing.hasOwnProperty(args.easing))
+            args.easing = dojo.fx.easing[args.easing];
+        else
+            delete args.easing;
+        return args;
+    };
+    return AnimationHandlerPromiseBased;
+}());
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 // @ts-ignore
 GameGui = (function () {
     function GameGui() { }
@@ -64,8 +130,9 @@ var GameBody = /** @class */ (function (_super) {
     }
     GameBody.prototype.setup = function (gamedatas) {
         console.log("Starting game setup");
-        //ekmek minified images'i yap
-        document.getElementById('game_play_area').insertAdjacentHTML('beforeend', "<div id=\"player-tables\">\n            <div class=\"market-container\">\n                <div class=\"market-tiles-container\"></div>\n                <div class=\"bonus-cards-container\"></div>\n            </div>    \n        </div>");
+        document.getElementById('game_play_area').insertAdjacentHTML('beforeend', "<div id=\"player-tables\">\n            <div class=\"market-container\">\n                <div class=\"market-tiles-container\"></div>\n                <div class=\"waiting-players-container\"></div>\n                <div class=\"bonus-cards-container\"></div>\n            </div>\n            <div class=\"pyramids-container\"></div>\n        </div>");
+        // this.imageLoader = new ImageLoadHandler(this, ['ninjan-cards', 'bg-front']); //ekmek uncomment - minified images'i yap
+        this.animationHandler = new AnimationHandlerPromiseBased(this);
         for (var player_id in gamedatas.players) {
             var _a = this.gamedatas.players[player_id], name_1 = _a.name, color = _a.color, player_no = _a.player_no, turn_order = _a.turn_order;
             this.players[player_id] = new PlayerHandler(this, parseInt(player_id), name_1, color, parseInt(player_no), turn_order);
@@ -74,6 +141,10 @@ var GameBody = /** @class */ (function (_super) {
         }
         this.CUBE_COLORS = gamedatas.CUBE_COLORS;
         this.BONUS_CARDS_DATA = gamedatas.BONUS_CARDS_DATA;
+        this.MARKET_TILE_COLORS = gamedatas.MARKET_TILE_COLORS;
+        this.MARKET_TILE_COLORS.forEach(function (color, index) {
+            document.documentElement.style.setProperty("--market-tile-color-".concat(index), "#".concat(color));
+        });
         this.marketHandler = new MarketHandler(this, gamedatas.marketData, gamedatas.bonusCardIDs, gamedatas.playerSelectedMarketIndex);
         this.tooltipHandler = new TooltipHandler(this);
         this.logMutationObserver = new LogMutationObserver(this);
@@ -121,20 +192,16 @@ var GameBody = /** @class */ (function (_super) {
             if (log && args && !args.processed) {
                 args.processed = true;
                 // list of special keys we want to replace with images
-                var keys = ['textPlayerID', 'LOG_CLASS', 'ARROW_LEFT', 'ARROW_DOWN', 'NO_MORE_CARDS', 'PILE_NUM']; //ekmek cok gereksiz var
+                var keys = ['textPlayerID', 'REVEALED_MARKET_TILES_DATA_STR', 'LOG_CLASS'];
                 for (var _i = 0, keys_1 = keys; _i < keys_1.length; _i++) {
                     var key = keys_1[_i];
                     if (key in args) {
                         if (key == 'textPlayerID')
                             args['textPlayerID'] = this.divColoredPlayer(args['textPlayerID']);
+                        else if (key == 'REVEALED_MARKET_TILES_DATA_STR')
+                            args['REVEALED_MARKET_TILES_DATA_STR'] = this.logMutationObserver.createLogSelectedMarketTiles(args['marketTileSelectionsData']);
                         else if (key == 'LOG_CLASS')
                             log = log + '<div log-class-tag="' + args['LOG_CLASS'] + '"></div>';
-                        else if (key == 'ARROW_LEFT')
-                            args['ARROW_LEFT'] = '<i class="log-arrow log-arrow-left fa6 fa-angle-double-left"></i>';
-                        else if (key == 'ARROW_DOWN')
-                            args['ARROW_DOWN'] = '<i class="log-arrow place-under-icon fa6 fa-share"></i>';
-                        else if (key == 'PILE_NUM')
-                            args['PILE_NUM'] = '';
                     }
                 }
             }
@@ -193,6 +260,21 @@ var GameBody = /** @class */ (function (_super) {
         var result = parseInt(str.toLowerCase().replace(/px/g, ''));
         return isNaN(result) ? 0 : result;
     };
+    GameBody.prototype.rgbToHex = function (rgb) {
+        var match = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+        if (!match) {
+            this.printDebug('-- rgb --', rgb);
+            throw new Error("Invalid RGB format");
+        }
+        // Convert each component to a two-character hexadecimal
+        var r = match[1], g = match[2], b = match[3];
+        return [r, g, b]
+            .map(function (num) {
+            var hex = parseInt(num, 10).toString(16);
+            return hex.padStart(2, '0'); // Ensure two digits
+        })
+            .join(''); // Combine into a single string
+    };
     GameBody.prototype.dotTicks = function (waitingTextContainer) {
         var dotInterval;
         var loaderSpan = dojo.create('span', { class: 'loader-span', style: 'display: inline-block; width: 24px; text-align: left;', dots: 0 });
@@ -249,8 +331,51 @@ var GameBody = /** @class */ (function (_super) {
             });
         });
     };
+    GameBody.prototype.notif_animateAllMarketTileSelections = function (args) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        console.log('notif_animateAllMarketTileSelections');
+                        return [4 /*yield*/, this.marketHandler.animateAllMarketTileSelections(args.marketTileSelectionsData)];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
     return GameBody;
 }(GameGui));
+var ImageLoadHandler = /** @class */ (function () {
+    function ImageLoadHandler(gameui, propNames) {
+        this.gameui = gameui;
+        this.images = {};
+        var style = getComputedStyle(document.body);
+        for (var _i = 0, propNames_1 = propNames; _i < propNames_1.length; _i++) {
+            var imageTag = propNames_1[_i];
+            var imageCSSURL = style.getPropertyValue('--image-source-' + imageTag);
+            var imageNameMinified = imageCSSURL.match(/url\((?:'|")?.*\/(.*?)(?:'|")?\)/)[1];
+            var imageName = imageNameMinified.replace('_minified', '');
+            this.gameui.dontPreloadImage(imageName);
+            this.images[imageTag] = { imageName: imageName, loaded: false };
+        }
+        for (var imageTag in this.images)
+            this.loadImage(imageTag);
+    }
+    ImageLoadHandler.prototype.loadImage = function (imageTag) {
+        var _this = this;
+        var imageName = this.images[imageTag].imageName;
+        var img = new Image();
+        img.src = g_gamethemeurl + 'img/' + imageName;
+        img.onerror = function () { console.error('Error loading image: ' + imageName); };
+        img.onload = function () {
+            document.documentElement.style.setProperty('--image-source-' + imageTag, 'url(' + img.src + ')');
+            _this.images[imageTag].loaded = true;
+        };
+    };
+    return ImageLoadHandler;
+}());
 var LogMutationObserver = /** @class */ (function () {
     function LogMutationObserver(gameui) {
         this.gameui = gameui;
@@ -259,7 +384,6 @@ var LogMutationObserver = /** @class */ (function () {
     }
     LogMutationObserver.prototype.observeLogs = function () {
         var _this = this;
-        return; //ekmek sil devam et
         var observer = new MutationObserver(function (mutations) {
             mutations.forEach(function (mutation) {
                 if (mutation.type === 'childList') {
@@ -297,40 +421,67 @@ var LogMutationObserver = /** @class */ (function () {
         }
     };
     LogMutationObserver.prototype.processLogDiv = function (node) {
-        //ekmek sil
-        //     let classTag = dojo.query('*[log-class-tag]', node);
-        //     if(classTag.length > 0){
-        //         dojo.addClass(node, 'a-game-log ' + dojo.attr(classTag[0], 'log-class-tag'));
-        //         classTag.forEach(dojo.destroy);
-        //     } else if(dojo.query('.log-arrow-left, .log-arrow-right, .place-under-icon', node).length > 0) { //guarantee adding class in replay as preserve fields arent loaded
-        //         dojo.addClass(node, 'a-game-log');
-        //         if(dojo.query('.log-arrow-right', node).length > 0)
-        //             dojo.addClass(node, 'selected-cards-log');
-        //         else dojo.addClass(node, 'take-pile-log');
-        //     }
-        //     dojo.query('.playername', node).forEach((playerName) => { dojo.attr(playerName, 'player-color', this.gameui.rgbToHex(dojo.style(playerName, 'color'))); });
-        //     if(dojo.hasClass(node, 'selected-cards-log')){
-        //         dojo.attr(node, 'first-selected-cards-log', Array.from(node.parentNode.children).some(sibling => sibling !== node && sibling.classList.contains("selected-cards-log")) ? 'false' : 'true'); //the first new-hand-long will have no margin-top or margin-bottom
-        //     } else if(dojo.hasClass(node, 'take-pile-log')){
-        //         if(this.gameui.isDesktop()){
-        //             let cardIcons: HTMLDivElement = dojo.query('.card-icons-container', node)[0];
-        //             if(dojo.query('.playername', node).length > 0)
-        //                 cardIcons.style.width = 'calc(100% - ' + (10 + this.gameui.getPos(dojo.query('.playername', node)[0]).w + this.gameui.getPos(dojo.query('.log-arrow', node)[0]).w)  + 'px)';
-        //         }
-        //     }
-        //     if(this.gameui.isDesktop() && dojo.hasClass(node, 'a-game-log')){
-        //         let timestamp = dojo.query('.timestamp', node);
-        //         if(timestamp.length > 0){
-        //             this.nextTimestampValue = timestamp[0].innerText;
-        //         } else if(this.observeLogs.hasOwnProperty('nextTimestampValue')){
-        //             let newTimestamp: HTMLDivElement = dojo.create('div', {class: 'timestamp'});
-        //             newTimestamp.innerHTML = this.nextTimestampValue;
-        //             dojo.place(newTimestamp, node);
-        //         }
-        //     }
+        var _this = this;
+        var classTag = dojo.query('*[log-class-tag]', node);
+        if (classTag.length > 0) {
+            dojo.addClass(node, 'a-game-log ' + dojo.attr(classTag[0], 'log-class-tag'));
+            classTag.forEach(dojo.destroy);
+        }
+        else if (dojo.query('.log-arrow-left, .log-arrow-right, .place-under-icon', node).length > 0) { //guarantee adding class in replay as preserve fields arent loaded
+            dojo.addClass(node, 'a-game-log');
+            if (dojo.query('.log-arrow-right', node).length > 0)
+                dojo.addClass(node, 'selected-cards-log');
+            else
+                dojo.addClass(node, 'take-pile-log');
+        }
+        dojo.query('.playername', node).forEach(function (playerName) { dojo.attr(playerName, 'player-color', _this.gameui.rgbToHex(dojo.style(playerName, 'color'))); });
+        if (this.gameui.isDesktop() && dojo.hasClass(node, 'a-game-log')) {
+            var timestamp = dojo.query('.timestamp', node);
+            if (timestamp.length > 0) {
+                this.nextTimestampValue = timestamp[0].innerText;
+            }
+            else if (this.observeLogs.hasOwnProperty('nextTimestampValue')) {
+                var newTimestamp = dojo.create('div', { class: 'timestamp' });
+                newTimestamp.innerHTML = this.nextTimestampValue;
+                dojo.place(newTimestamp, node);
+            }
+        }
+    };
+    LogMutationObserver.prototype.createLogSelectedMarketTiles = function (cardsData) {
+        var _this = this;
+        var logHTML = '';
+        cardsData.collectingPlayers.sort(function (a, b) { return a.turn_order - b.turn_order; });
+        cardsData.pendingPlayers.sort(function (a, b) { return a.turn_order - b.turn_order; });
+        var createPlayerRow = function (cardData, isCollecting) {
+            if (isCollecting === void 0) { isCollecting = true; }
+            return "<div class=\"player-selected-market-tile-row ".concat(isCollecting ? 'collecting' : 'pending', "\">").concat(_this.gameui.divColoredPlayer(cardData.player_id, { class: 'playername' }, false), "<i class=\"log-arrow log-arrow-left fa6 ").concat(isCollecting ? 'fa-arrow-left' : 'fa-ban', "\"></i><div class=\"a-market-tile-icon\" market-index=\"").concat(cardData.selected_market_index, "\"></div></div>");
+        };
+        cardsData.collectingPlayers.forEach(function (cardData) { logHTML += createPlayerRow(cardData, true); });
+        cardsData.pendingPlayers.forEach(function (cardData) { logHTML += createPlayerRow(cardData, false); });
+        return logHTML;
     };
     return LogMutationObserver;
 }());
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 var MarketHandler = /** @class */ (function () {
     function MarketHandler(gameui, marketData, bonusCardIDs, playerSelectedMarketIndex) {
         this.gameui = gameui;
@@ -338,8 +489,8 @@ var MarketHandler = /** @class */ (function () {
         this.bonusCardIDs = bonusCardIDs;
         this.playerSelectedMarketIndex = playerSelectedMarketIndex;
         this.marketContainer = document.querySelector('#player-tables .market-container');
-        // this.waitingPlayersContainer = this.marketContainer.querySelector('.waiting-players-container') as HTMLDivElement; //ekmek sil
         this.marketTilesContainer = this.marketContainer.querySelector('.market-tiles-container');
+        this.waitingPlayersContainer = this.marketContainer.querySelector('.waiting-players-container');
         this.bonusCardIconsContainer = this.marketContainer.querySelector('.bonus-cards-container');
         this.marketTiles = [];
         this.initMarketContainer();
@@ -354,6 +505,7 @@ var MarketHandler = /** @class */ (function () {
         Object.keys(this.gameui.players).forEach(function (_, i) {
             // First loop: Create market tiles
             _this.marketTiles[i] = document.createElement('div');
+            _this.marketTiles[i].innerHTML = '<div class="cubes-container"></div>';
             _this.marketTiles[i].className = 'a-market-tile market-tile-' + i + ' ' + (_this.playerSelectedMarketIndex !== null && Number(_this.playerSelectedMarketIndex) === i ? 'selected-market-tile' : '');
             _this.marketTiles[i].setAttribute('market-index', i.toString());
             _this.marketTiles[i].setAttribute('random-placement-index', shuffledIndices[i].toString());
@@ -376,7 +528,7 @@ var MarketHandler = /** @class */ (function () {
                 cubeDiv.style.setProperty('--bottom-bg-x', (Math.random() * 100) + '%');
                 cubeDiv.style.setProperty('--bottom-bg-y', (Math.random() * 100) + '%');
                 cubeDiv.style.setProperty('--cube-color', '#' + _this.gameui.CUBE_COLORS[Number(cube.color)].colorCode);
-                _this.marketTiles[i].appendChild(cubeDiv);
+                _this.marketTiles[i].querySelector('.cubes-container').appendChild(cubeDiv);
             });
         });
     };
@@ -388,9 +540,9 @@ var MarketHandler = /** @class */ (function () {
         var marketTile = event.target;
         var marketIndex = marketTile.getAttribute('market-index');
         if (!marketTile.classList.contains('selected-market-tile'))
-            this.gameui.ajaxAction('actAllSelectMarketTile', { marketIndex: marketIndex }, true, false); //ekmek promise yap
+            this.gameui.ajaxAction('actAllSelectMarketTile', { marketIndex: marketIndex }, true, false);
         else
-            this.gameui.ajaxAction('actRevertAllSelectMarketTile', { marketIndex: marketIndex }, true, false); //ekmek promise yap
+            this.gameui.ajaxAction('actRevertAllSelectMarketTile', { marketIndex: marketIndex }, true, false);
     };
     MarketHandler.prototype.marketTileSelected = function (marketIndex) {
         return __awaiter(this, void 0, void 0, function () {
@@ -401,8 +553,6 @@ var MarketHandler = /** @class */ (function () {
                 if (selectedTile) {
                     this.playerSelectedMarketIndex = marketIndex;
                     selectedTile.classList.add('selected-market-tile');
-                    // await this.gameui.wait(500); //ekmek sil
-                    // selectedTile.classList.remove('selected');
                 }
                 else {
                     this.playerSelectedMarketIndex = null;
@@ -434,6 +584,83 @@ var MarketHandler = /** @class */ (function () {
         this.bonusCardIconsContainer.innerHTML = '';
         this.bonusCardIconsContainer.innerHTML = this.bonusCardIDs.map(function (id) { return "<div class=\"a-bonus-card-icon\" bonus-card-id=\"".concat(id, "\" id=\"bonus-card-icon-").concat(id, "\"></div>"); }).join('');
     };
+    MarketHandler.prototype.animateAllMarketTileSelections = function (marketTileSelectionsData) {
+        return __awaiter(this, void 0, void 0, function () {
+            var allPlayers, raiseAvatarAnimations, moveCollectingAvatarAnimations, movePendingAvatarAnimations, raiseAvatarsCombinedAnimation, moveCollectingAvatarsCombinedAnimation, movePendingAvatarsCombinedAnimation;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        allPlayers = __spreadArray(__spreadArray([], marketTileSelectionsData.collectingPlayers.map(function (player) { return (__assign(__assign({}, player), { type: 'collecting' })); }), true), marketTileSelectionsData.pendingPlayers.map(function (player) { return (__assign(__assign({}, player), { type: 'pending' })); }), true);
+                        raiseAvatarAnimations = [];
+                        moveCollectingAvatarAnimations = [];
+                        movePendingAvatarAnimations = [];
+                        allPlayers.forEach(function (player, animationOrder) {
+                            var avatarClone = _this.gameui.players[player.player_id].getAvatarClone(true);
+                            var currentTop = parseInt(window.getComputedStyle(avatarClone).top);
+                            var currentLeft = parseInt(window.getComputedStyle(avatarClone).left);
+                            var destAvatar = player.type == 'collecting' ?
+                                _this.addPlayerAvatar(player.player_id, 'collecting', player.selected_market_index, false) :
+                                _this.addPlayerAvatar(player.player_id, 'pending', undefined, false);
+                            var destAvatarRect = destAvatar ? destAvatar.getBoundingClientRect() : { width: 0, height: 0 };
+                            var raiseAvatarClone = _this.gameui.animationHandler.animateProperty({
+                                node: avatarClone,
+                                duration: 200,
+                                delay: animationOrder * 100,
+                                properties: { top: currentTop - 20, width: destAvatarRect.width, height: destAvatarRect.height },
+                                easing: 'sineIn',
+                            });
+                            raiseAvatarAnimations.push(raiseAvatarClone);
+                            var moveAvatarClone = _this.gameui.animationHandler.animateOnObject({
+                                node: avatarClone,
+                                goTo: destAvatar,
+                                delay: (player.type == 'collecting') ? moveCollectingAvatarAnimations.length * 200 : movePendingAvatarAnimations.length * 200,
+                                duration: 500,
+                                easing: "cubic-bezier(".concat(0.1 + Math.random() * 0.2, ", ").concat(0.3 + Math.random() * 0.3, ", ").concat(0.5 + Math.random() * 0.3, ", ").concat(0.7 + Math.random() * 0.2, ")"),
+                                onEnd: function () { destAvatar.style.opacity = null; dojo.destroy(avatarClone); }
+                            });
+                            if (player.type == 'collecting')
+                                moveCollectingAvatarAnimations.push(moveAvatarClone);
+                            else
+                                movePendingAvatarAnimations.push(moveAvatarClone);
+                        });
+                        raiseAvatarsCombinedAnimation = dojo.fx.combine(raiseAvatarAnimations);
+                        moveCollectingAvatarsCombinedAnimation = dojo.fx.combine(moveCollectingAvatarAnimations);
+                        movePendingAvatarsCombinedAnimation = dojo.fx.combine(movePendingAvatarAnimations);
+                        return [4 /*yield*/, this.gameui.animationHandler.play(raiseAvatarsCombinedAnimation)];
+                    case 1:
+                        _a.sent();
+                        return [4 /*yield*/, this.gameui.animationHandler.play(moveCollectingAvatarsCombinedAnimation)];
+                    case 2:
+                        _a.sent();
+                        this.waitingPlayersContainer.style.opacity = '1';
+                        return [4 /*yield*/, this.gameui.animationHandler.play(movePendingAvatarsCombinedAnimation)];
+                    case 3:
+                        _a.sent();
+                        marketTileSelectionsData.pendingPlayers.forEach(function (player) {
+                            var playerBoard = _this.gameui.players[player.player_id].overallPlayerBoard;
+                            console.log('pending playerBoard', playerBoard);
+                        });
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    MarketHandler.prototype.addPlayerAvatar = function (player_id, type, marketTileIndex, isVisible) {
+        if (isVisible === void 0) { isVisible = true; }
+        var avatarClone = this.gameui.players[player_id].getAvatarClone();
+        var newAvatarContainer = type === 'collecting'
+            ? this.marketTiles[marketTileIndex]
+            : this.marketContainer.querySelector('.waiting-players-container');
+        avatarClone.removeAttribute("style");
+        avatarClone.classList.add("".concat(type, "-player-avatar"));
+        avatarClone.classList.remove('avatar-clone');
+        avatarClone.style.setProperty('--player-color', '#' + this.gameui.players[player_id].playerColor);
+        if (!isVisible)
+            avatarClone.style.opacity = '0';
+        newAvatarContainer.appendChild(avatarClone);
+        return avatarClone;
+    };
     MarketHandler.prototype.getBonusCardIconsContainer = function () { return this.bonusCardIconsContainer; };
     return MarketHandler;
 }());
@@ -449,16 +676,55 @@ var PlayerHandler = /** @class */ (function () {
         this.pyramidContainer = null;
         this.initPyramidContainer();
     }
+    PlayerHandler.prototype.getAvatarClone = function (placeOnPlayerBoard, get184by184) {
+        if (placeOnPlayerBoard === void 0) { placeOnPlayerBoard = false; }
+        if (get184by184 === void 0) { get184by184 = true; }
+        var avatar = dojo.query('img.avatar', this.overallPlayerBoard)[0];
+        if (avatar) {
+            // Get dimensions and source from original avatar
+            var avatarRect = avatar.getBoundingClientRect();
+            var avatarSrc_1 = avatar.getAttribute('src');
+            var avatarSrc32_1 = avatarSrc_1;
+            avatarSrc_1 = get184by184 ? avatarSrc_1.replace('32.jpg', '184.jpg') : avatarSrc_1;
+            // Create new avatar clone structure with innerHTML
+            var avatarClone = document.createElement('div');
+            avatarClone.className = 'avatar-clone yaxha-player-avatar';
+            avatarClone.setAttribute('player-id', this.playerID.toString());
+            avatarClone.style.cssText = "width: ".concat(avatarRect.width, "px; height: ").concat(avatarRect.height, "px; position: absolute; --player-color: #").concat(this.playerColor, ";");
+            avatarClone.innerHTML = "<img src=\"".concat(avatarSrc_1, "\" style=\"width: 100%; height: 100%;\">");
+            if (get184by184) { // If requesting 184x184 avatar, handle fallback to 32x32 if larger image fails to load
+                var addedImg_1 = avatarClone.querySelector('img');
+                var tempImg = new Image();
+                tempImg.src = avatarSrc_1;
+                tempImg.onerror = function () {
+                    document.querySelectorAll('img').forEach(function (img) {
+                        if (img.getAttribute('src') === avatarSrc_1)
+                            img.src = avatarSrc32_1;
+                    });
+                    addedImg_1.src = avatarSrc32_1;
+                };
+            }
+            if (placeOnPlayerBoard) { // If requested, place the cloned avatar on the original avatar's position
+                document.getElementById('overall-content').appendChild(avatarClone);
+                this.gameui.placeOnObject(avatarClone, avatar);
+            }
+            return avatarClone;
+        }
+        else {
+            console.log('avatar not found, playerID:', this.playerID);
+            return null;
+        }
+    };
     PlayerHandler.prototype.initPyramidContainer = function () {
-        var _a;
         this.pyramidContainer = document.createElement('div');
         this.pyramidContainer.id = 'pyramid-container-' + this.playerID;
         this.pyramidContainer.className = 'a-pyramid-container';
         this.pyramidContainer.setAttribute('player-id', this.playerID.toString());
         // Set the custom property for player color
         this.pyramidContainer.style.setProperty('--player-color', '#' + this.playerColor);
-        this.pyramidContainer.innerHTML = "\n\t\t\t<div class=\"player-name-text\">\n\t\t\t\t<div class=\"text-container\">".concat(this.playerName, "</div>\n\t\t\t</div>\n        ");
-        (_a = document.getElementById('player-tables')) === null || _a === void 0 ? void 0 : _a.appendChild(this.pyramidContainer);
+        var turnOrderContainerId = "turn-order-".concat(this.playerID);
+        this.pyramidContainer.innerHTML = "\n\t\t\t<div class=\"player-name-text\">\n\t\t\t\t<div class=\"text-container\">".concat(this.playerName, "</div>\n\t\t\t</div>\n\t\t\t<div class=\"turn-order-container\" id=\"").concat(turnOrderContainerId, "\" turn-order=\"").concat(this.turnOrder, "\">").concat(this.turnOrder, "</div>\n        ");
+        document.getElementById('player-tables').querySelector('.pyramids-container').insertAdjacentElement(Number(this.playerID) === Number(this.gameui.player_id) ? 'afterbegin' : 'beforeend', this.pyramidContainer);
     };
     return PlayerHandler;
 }());
@@ -466,6 +732,7 @@ var TooltipHandler = /** @class */ (function () {
     function TooltipHandler(gameui) {
         this.gameui = gameui;
         this.addTooltipToBonusCards();
+        this.addTooltipToTurnOrder();
     }
     TooltipHandler.prototype.addTooltipToBonusCards = function () {
         var _this = this;
@@ -476,6 +743,17 @@ var TooltipHandler = /** @class */ (function () {
             var tooltipHTML = _this.gameui.BONUS_CARDS_DATA[cardID].tooltip_text;
             //ekmek tooltip background guzellestir
             _this.gameui.addTooltipHtml(cardIconID, "<div class=\"bonus-card-tooltip tooltip-wrapper\" bonus-card-id=\"".concat(cardID, "\">\n                    <div class=\"tooltip-text\">").concat(_(_this.gameui.BONUS_CARDS_DATA[cardID].tooltip_text), "</div>\n                    <div class=\"tooltip-image\"></div>\n                </div>"), 400);
+        });
+    };
+    TooltipHandler.prototype.addTooltipToTurnOrder = function () {
+        var _this = this;
+        var turnOrderContainers = document.querySelectorAll('.pyramids-container .turn-order-container');
+        turnOrderContainers.forEach(function (container) {
+            var containerId = container.getAttribute('id');
+            var turnOrder = parseInt(container.getAttribute('turn-order'));
+            var playerId = container.closest('.a-pyramid-container').getAttribute('player-id');
+            var playerDiv = _this.gameui.divColoredPlayer(playerId, {}, false);
+            _this.gameui.addTooltipHtml(containerId, "<div class=\"turn-order-tooltip tooltip-wrapper\">\n                    <div class=\"tooltip-text\">".concat(_('${player}\'s turn order: ${order}').replace('${player}', playerDiv).replace('${order}', turnOrder.toString()), "</div>\n                </div>"), 400);
         });
     };
     return TooltipHandler;

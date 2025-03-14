@@ -5,6 +5,8 @@ GameGui = (function () { // this hack required so we fake extend GameGui
   })();
 
 class GameBody extends GameGui { 
+    private imageLoader: ImageLoadHandler;
+    public animationHandler: AnimationHandlerPromiseBased;
     public marketHandler: MarketHandler;
     public tooltipHandler: TooltipHandler;
     public logMutationObserver: LogMutationObserver;
@@ -13,6 +15,7 @@ class GameBody extends GameGui {
     public players: Record<number, PlayerHandler> = {};
     public CUBE_COLORS: { [key: number]: CubeColor };
     public BONUS_CARDS_DATA: { [key: number]: BonusCardData };
+    public MARKET_TILE_COLORS: string[];
 
     constructor() {
         super();
@@ -23,14 +26,17 @@ class GameBody extends GameGui {
     public setup(gamedatas: any) {
         console.log( "Starting game setup" );
 
-        //ekmek minified images'i yap
-
         document.getElementById('game_play_area').insertAdjacentHTML('beforeend', `<div id="player-tables">
             <div class="market-container">
                 <div class="market-tiles-container"></div>
+                <div class="waiting-players-container"></div>
                 <div class="bonus-cards-container"></div>
-            </div>    
+            </div>
+            <div class="pyramids-container"></div>
         </div>`);
+        
+        // this.imageLoader = new ImageLoadHandler(this, ['ninjan-cards', 'bg-front']); //ekmek uncomment - minified images'i yap
+        this.animationHandler = new AnimationHandlerPromiseBased(this);
 
         for(let player_id in gamedatas.players) {
             const {name, color, player_no, turn_order} = this.gamedatas.players[player_id];
@@ -42,7 +48,12 @@ class GameBody extends GameGui {
 
         this.CUBE_COLORS = gamedatas.CUBE_COLORS;
         this.BONUS_CARDS_DATA = gamedatas.BONUS_CARDS_DATA;
+        this.MARKET_TILE_COLORS = gamedatas.MARKET_TILE_COLORS;
 
+        this.MARKET_TILE_COLORS.forEach((color, index) => {
+            document.documentElement.style.setProperty(`--market-tile-color-${index}`, `#${color}`);
+        });
+        
         this.marketHandler = new MarketHandler(this, gamedatas.marketData, gamedatas.bonusCardIDs, gamedatas.playerSelectedMarketIndex);
 
         this.tooltipHandler = new TooltipHandler(this);
@@ -108,19 +119,15 @@ class GameBody extends GameGui {
                 args.processed = true;
 
                 // list of special keys we want to replace with images
-                let keys = ['textPlayerID', 'LOG_CLASS', 'ARROW_LEFT', 'ARROW_DOWN', 'NO_MORE_CARDS', 'PILE_NUM']; //ekmek cok gereksiz var
+                let keys = ['textPlayerID', 'REVEALED_MARKET_TILES_DATA_STR', 'LOG_CLASS'];
                 for(let key of keys) {
                     if(key in args) {
                         if(key == 'textPlayerID')
                             args['textPlayerID'] = this.divColoredPlayer(args['textPlayerID']);
+                        else if(key == 'REVEALED_MARKET_TILES_DATA_STR')
+                            args['REVEALED_MARKET_TILES_DATA_STR'] = this.logMutationObserver.createLogSelectedMarketTiles(args['marketTileSelectionsData']);
                         else if(key == 'LOG_CLASS')
                             log = log + '<div log-class-tag="' + args['LOG_CLASS'] + '"></div>';
-                        else if(key == 'ARROW_LEFT')
-                            args['ARROW_LEFT'] = '<i class="log-arrow log-arrow-left fa6 fa-angle-double-left"></i>';
-                        else if(key == 'ARROW_DOWN')
-                            args['ARROW_DOWN'] = '<i class="log-arrow place-under-icon fa6 fa-share"></i>';
-                        else if(key == 'PILE_NUM')
-                            args['PILE_NUM'] = '';
                     }
                 }
             }
@@ -171,6 +178,22 @@ class GameBody extends GameGui {
         const result = parseInt(str.toLowerCase().replace(/px/g, ''));
         return isNaN(result) ? 0 : result;
     }
+    public rgbToHex(rgb: string): string { // Extract the numeric values using a regex
+        const match = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+        if (!match){
+            this.printDebug('-- rgb --', rgb);
+            throw new Error("Invalid RGB format");
+        }
+
+        // Convert each component to a two-character hexadecimal
+        const [, r, g, b] = match;
+        return [r, g, b]
+            .map((num) => {
+                const hex = parseInt(num, 10).toString(16);
+                return hex.padStart(2, '0'); // Ensure two digits
+            })
+            .join(''); // Combine into a single string
+    }
     public dotTicks(waitingTextContainer: HTMLDivElement){
         let dotInterval: number;
 
@@ -203,22 +226,16 @@ class GameBody extends GameGui {
     public async notif_marketIndexSelectionConfirmed(args: { confirmed_selected_market_index: number }) {
         console.log('notif_marketIndexSelectionConfirmed', args);
         await this.marketHandler.marketTileSelected(args.confirmed_selected_market_index);
-
-        //ekmek sil
-        // Here you can add any visual feedback or animations
-        // For example, highlighting the selected tile
-        // const selectedTile = document.querySelector(`.a-market-tile[market-index="${args.confirmed_selected_market_index}"]`);
-        // if (selectedTile) {
-        //     selectedTile.classList.add('selected');
-        //     // Wait for a short animation if needed
-        //     await this.wait(500);
-        //     selectedTile.classList.remove('selected');
-        // }
     }
 
     public async notif_marketIndexSelectionReverted() {
         console.log('notif_marketIndexSelectionReverted');
         await this.marketHandler.marketTileSelected(null);
+    }
+
+    public async notif_animateAllMarketTileSelections(args) {
+        console.log('notif_animateAllMarketTileSelections');
+        await this.marketHandler.animateAllMarketTileSelections(args.marketTileSelectionsData);
     }
 }
 
@@ -237,4 +254,10 @@ interface CubeColor {
 interface BonusCardData {
     id: number;
     tooltip_text: string;
+}
+
+interface MarketTileSelectionsData {
+    player_id: number;
+    selected_market_index: number;
+    turn_order: number;
 }

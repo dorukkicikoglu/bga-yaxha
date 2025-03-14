@@ -35,7 +35,8 @@
 ALTER TABLE `player` 
 ADD `turn_order` INT NOT NULL,
 ADD `made_market_index_selection_this_round` ENUM('true','false') NOT NULL DEFAULT 'false',
-ADD `selected_market_index` TINYINT UNSIGNED DEFAULT NULL;
+ADD `selected_market_index` TINYINT UNSIGNED DEFAULT NULL,
+ADD `collected_market_index` TINYINT UNSIGNED DEFAULT NULL;
 
 CREATE TABLE IF NOT EXISTS `bonus_cards` (
     `bonus_card_position` TINYINT NOT NULL,
