@@ -84,43 +84,6 @@ class Game extends \Table
 
     }
 
-    //ekmek birgun sil
-    /**
-     * Player action, example content.
-     *
-     * In this scenario, each time a player plays a card, this method will be called. This method is called directly
-     * by the action trigger on the front side with `bgaPerformAction`.
-     *
-     * @throws BgaUserException
-     */
-    public function actPlayCard(int $card_id): void
-    {
-        // Retrieve the active player ID.
-        $player_id = (int)$this->getActivePlayerId();
-
-        // check input values
-        $args = $this->argPlayerTurn();
-        $playableCardsIds = $args['playableCardsIds'];
-        if (!in_array($card_id, $playableCardsIds)) {
-            throw new \BgaUserException('Invalid card choice');
-        }
-
-        // Add your game logic to play a card here.
-        $card_name = self::$CARD_TYPES[$card_id]['card_name'];
-
-        // Notify all players about the card played.
-        $this->notify->all("cardPlayed", clienttranslate('${player_name} plays ${card_name}'), [
-            "player_id" => $player_id,
-            "player_name" => $this->getActivePlayerName(), // remove this line if you uncomment notification decorator
-            "card_name" => $card_name, // remove this line if you uncomment notification decorator
-            "card_id" => $card_id,
-            "i18n" => ['card_name'], // remove this line if you uncomment notification decorator
-        ]);
-
-        // at the end of the action, move to the next state
-        $this->gamestate->nextState("playCard");
-    }
-
     /**
      * Player selects a market tile to take cubes from
      * 
@@ -133,9 +96,9 @@ class Game extends \Table
         $this->gamestate->checkPossibleAction('actAllSelectMarketTile');
 
         // Check if market index is valid
-        $players = self::loadPlayersBasicInfos();
-        if ($marketIndex < 0 || $marketIndex >= count($players)) 
-            throw new \BgaUserException(sprintf( clienttranslate('Invalid market tile index: %d. Must be between 0 and %d'), $marketIndex, count($players) - 1 ));
+        $playerCount = $this->getPlayersNumber();
+        if ($marketIndex < 0 || $marketIndex >= $playerCount) 
+            throw new \BgaUserException(sprintf( clienttranslate('Invalid market tile index: %d. Must be between 0 and %d'), $marketIndex, $playerCount - 1 ));
 
         $currentPlayerID = (int) $this->getCurrentPlayerId();
     
@@ -176,45 +139,57 @@ class Game extends \Table
         $this->notify->player($currentPlayerID, 'marketIndexSelectionReverted', '', []);
     }
 
-    //ekmek birgun sil
-    public function actPass(): void
-    {
-        // Retrieve the active player ID.
-        $player_id = (int)$this->getActivePlayerId();
-
-        // Notify all players about the choice to pass.
-        $this->notify->all("pass", clienttranslate('${player_name} passes'), [
-            "player_id" => $player_id,
-            "player_name" => $this->getActivePlayerName(), // remove this line if you uncomment notification decorator
-        ]);
-
-        // at the end of the action, move to the next state
-        $this->gamestate->nextState("pass");
-    }
-
-    //ekmek birgun sil
-    /**
-     * Game state arguments, example content.
-     *
-     * This method returns some additional information that is very specific to the `playerTurn` game state.
-     *
-     * @return array
-     * @see ./states.inc.php
-     */
-    public function argPlayerTurn(): array
-    {
-        // Get some values from the current game situation from the database.
-
-        return [
-            "playableCardsIds" => [1, 2],
-        ];
-    }
     
-    public function argAllSelectMarketTile(): array{
-        return [];
+    #[CheckAction(false)]
+    public function actIndividualPlayerSelectMarketTile(int $marketIndex): void
+    {
+        $this->gamestate->checkPossibleAction('actIndividualPlayerSelectMarketTile');
+
+        $currentPlayerID = (int) $this->getCurrentPlayerId();
+
+        if (!$this->gamestate->isPlayerActive($currentPlayerID))
+            throw new \BgaUserException(clienttranslate("It is not your turn to select a market tile"));
+        
+        // Check if market index is valid
+        $playerCount = $this->getPlayersNumber();
+        if ($marketIndex < 0 || $marketIndex >= $playerCount) 
+            throw new \BgaUserException(sprintf( clienttranslate('Invalid market tile index: %d. Must be between 0 and %d'), $marketIndex, $playerCount - 1 ));
+    
+        // Check if market index is already collected by another player
+        $tileAlreadyCollected = $this->getUniqueValueFromDB("SELECT COUNT(*) FROM player WHERE collected_market_index = $marketIndex");
+        if ($tileAlreadyCollected > 0)
+            throw new \BgaUserException(clienttranslate("This market tile has already been collected by another player"));
+
+        // Check that player hasn't already collected a market tile this round
+        $playerAlreadyCollected = $this->getUniqueValueFromDB("SELECT collected_market_index FROM player WHERE player_id = $currentPlayerID");
+        if($playerAlreadyCollected !== null)
+            throw new \BgaUserException(clienttranslate("You have already collected a market tile this round"));
+
+        $this->giveExtraTime($currentPlayerID);
+
+        $this->DbQuery("UPDATE player SET collected_market_index = $marketIndex WHERE player_id = $currentPlayerID");
+
+        $this->notify->all('individualPlayerCollected', '${INDIVIDUAL_MARKET_TILES_COLLECTION_STR}', array(
+            'LOG_CLASS' => 'individual-collected-tiles-log',
+            'preserve' => ['LOG_CLASS', 'player_id', 'market_index'],
+            'player_id' => $currentPlayerID,
+            'collected_market_index' => $marketIndex,
+            'INDIVIDUAL_MARKET_TILES_COLLECTION_STR' => $this->getPlayerNameById($currentPlayerID).' ← '.$this->getMarketTileSelectionLogHTML($marketIndex)
+        ));
+
+        $this->gamestate->nextState('getNextPendingPlayerToSelectMarketTile');
     }
 
-    //ekmek yap
+    public function argIndividualPlayerSelectMarketTile(): array{
+        $possibleMarketIndexes = [];
+        $tileCount = $this->getPlayersNumber(); //tile count is the same as the number of players
+
+        $possibleMarketIndexes = array_diff(range(0, $tileCount - 1), $this->getObjectListFromDB("SELECT collected_market_index FROM player WHERE collected_market_index IS NOT NULL", true));
+        $possibleMarketIndexes = array_values($possibleMarketIndexes);
+
+        return ['possible_market_indexes' => $possibleMarketIndexes, 'ekmek' => 'ekmekler'];
+    }
+
     /**
      * Compute and return the current game progression.
      *
@@ -228,37 +203,17 @@ class Game extends \Table
     public function getGameProgression()
     {
         // TODO: compute and return the game progression
-
+//ekmek yap
         return 0;
     }
 
-    //ekmek birgun sil
-    /**
-     * Game state action, example content.
-     *
-     * The action method of state `nextPlayer` is called everytime the current game state is set to `nextPlayer`.
-     */
-    public function stNextPlayer(): void {
-        // Retrieve the active player ID.
-        $player_id = (int)$this->getActivePlayerId();
-
-        // Give some extra time to the active player when he completed an action
-        $this->giveExtraTime($player_id);
-        
-        $this->activeNextPlayer();
-
-        // Go to another gamestate
-        // Here, we would detect if the game is over, and in this case use "endGame" transition instead 
-        $this->gamestate->nextState("nextPlayer");
-    }
-    
     public function stAllSelectMarketTile(): void {
         self::DbQuery("UPDATE player SET made_market_index_selection_this_round = 'false', selected_market_index = NULL, collected_market_index = NULL");
         $this->gamestate->setAllPlayersMultiactive();
     }
 
     public function stAllMarketTileSelectionsMade(): void {
-        $selectedMarketIndexes = self::getCollectionFromDb("SELECT player_id, selected_market_index, turn_order FROM player WHERE player_zombie = 0");
+        $selectedMarketIndexes = self::getCollectionFromDb("SELECT player_id, selected_market_index, collected_market_index, turn_order FROM player WHERE player_zombie = 0");
         $playersBySelectedMarketIndex = array_reduce($selectedMarketIndexes, function($acc, $player) {
             $acc[$player['selected_market_index']][] = $player;
             return $acc;
@@ -289,8 +244,10 @@ class Game extends \Table
             }
         }
 
-        foreach ($collectingPlayers as $player)
+        foreach ($collectingPlayers as $index => $player){
             self::DbQuery("UPDATE player SET collected_market_index = selected_market_index WHERE player_id = " . $player['player_id']);
+            $collectingPlayers[$index]['collected_market_index'] = $player['selected_market_index'];
+        }
 
         $collectedTilesData = []; //needed for the game replay page
         $pendingTilesData = []; //needed for the game replay page
@@ -302,8 +259,8 @@ class Game extends \Table
 
         $this->notify->all('animateAllMarketTileSelections', '${REVEALED_MARKET_TILES_DATA_STR}', array(
             'LOG_CLASS' => 'all-selected-tiles-log',
-            'preserve' => ['LOG_CLASS', 'marketTileSelectionsData'],
-            'marketTileSelectionsData' => ['collectingPlayers' => $collectingPlayers, 'pendingPlayers' => $pendingPlayers],
+            'preserve' => ['LOG_CLASS', 'collectedMarketTilesData'],
+            'collectedMarketTilesData' => ['collectingPlayers' => $collectingPlayers, 'pendingPlayers' => $pendingPlayers],
             'REVEALED_MARKET_TILES_DATA_STR' => $marketTilesDataStr
         ));
 
@@ -314,15 +271,11 @@ class Game extends \Table
         $nextPlayer = self::getObjectFromDB("SELECT * FROM player WHERE player_zombie = 0 AND collected_market_index IS NULL ORDER BY turn_order ASC LIMIT 1");
 
         if ($nextPlayer === null) { // No more pending players to select market tiles
-            $this->gamestate->nextState('getNextPlayerToBuildPyramid');
+            $this->gamestate->nextState('getNextPlayerToBuildPyramid'); //ekmek devam, bunun multipleactiveplayer olmasi lazim
         } else { // Activate next player to make their selection
             $this->gamestate->changeActivePlayer($nextPlayer['player_id']);
             $this->gamestate->nextState('individualPlayerSelectMarketTile');
         }
-    }
-
-    public function stIndividualPlayerSelectMarketTile(): void {
-//ekmek sil?
     }
 
     public function stGetNextPlayerToBuildPyramid(): void {
@@ -407,6 +360,7 @@ class Game extends \Table
         $result['MARKET_TILE_COLORS'] = MARKET_TILE_COLORS;
         
         $result['playerSelectedMarketIndex'] = $this->getUniqueValueFromDB("SELECT selected_market_index FROM player WHERE player_id = $current_player_id");
+        $result['collectedMarketTilesData'] = $this->getObjectListFromDB("SELECT player_id, selected_market_index, collected_market_index, turn_order, CASE WHEN collected_market_index IS NOT NULL THEN 'collecting' ELSE 'pending' END AS type FROM player ORDER BY turn_order");
 
         return $result;
     }
@@ -471,15 +425,9 @@ class Game extends \Table
         // Get the bonus cards preference from options
         $isRandomBonusCardsSetup = (int) $this->tableOptions->get(100) == (int) RANDOM_BONUS_CARDS_OPTION;
 
-        //ekmek 2 player da 5-6-7-8-9 cikart
-
-        if ($isRandomBonusCardsSetup) { // Random Setup - shuffle and take first 3
-            $bonus_cards = range(0, 11);
-            shuffle($bonus_cards);
-            $selected_bonus_cards = array_slice($bonus_cards, 0, SETUP_BONUS_CARDS_COUNT);
-        } else { // Beginner Setup - fixed cards
-            $selected_bonus_cards = BEGINNER_BONUS_CARDS_IDS;
-        }
+        $bonus_cards = $isRandomBonusCardsSetup ? range(0, 11) : BEGINNER_BONUS_CARDS_IDS;
+        shuffle($bonus_cards);
+        $selected_bonus_cards = array_slice($bonus_cards, 0, SETUP_BONUS_CARDS_COUNT);
         
         // Insert the selected bonus cards into the database
         $values = implode(',', array_map(

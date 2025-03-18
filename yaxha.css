@@ -725,6 +725,10 @@
   --bg-gradient: linear-gradient(130deg, #ffcae7e0, #ffd6a5fa);
   --status-bar-color: #ffe6e6ef;
   --gamearea-avatar-size: 40px;
+  --image-source-market-tiles: url(img/market_tiles_minified.jpg);
+  --image-source-player-order-tiles: url(img/player_order_tiles_minified.jpg);
+  --image-source-bonus-cards: url(img/bonus_cards_minified.jpg);
+  --image-source-bonus-card-icons: url(img/bonus_card_icons_minified.jpg);
 }
 
 #player-tables {
@@ -785,7 +789,7 @@
   right: 2%;
   width: 14%;
   aspect-ratio: 0.7;
-  background-image: url("img/player_order_tiles.jpg");
+  background-image: var(--image-source-player-order-tiles);
   background-size: 400% 100%;
   background-repeat: no-repeat;
   transform: rotate(8deg);
@@ -886,8 +890,7 @@
   box-shadow: 2px 2px 4px #000000;
   border-radius: 8px;
   position: relative;
-  cursor: pointer;
-  background-image: url("img/player_cards.png");
+  background-image: var(--image-source-market-tiles);
   background-repeat: no-repeat;
   background-size: 400%;
   will-change: transform;
@@ -921,6 +924,9 @@
   left: 50%;
   width: var(--gamearea-avatar-size);
   height: var(--gamearea-avatar-size);
+}
+.market-container .market-tiles-container .a-market-tile.selectable-market-tile {
+  cursor: pointer;
 }
 .market-container .waiting-players-container {
   position: absolute;
@@ -963,7 +969,7 @@
   content: "";
   position: absolute;
   inset: -5% 12% -13% 12%;
-  background-image: url(img/bonus_card_icons.png);
+  background-image: var(--image-source-bonus-card-icons);
   background-size: 500% 400%;
   background-repeat: no-repeat;
   transform: scaleX(-1);
@@ -1050,7 +1056,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background-image: url(img/player_cards.png);
+  background-image: var(--image-source-market-tiles);
   background-size: 400%;
   background-repeat: no-repeat;
   clip-path: inset(42% 7% 7% 42%);
@@ -1128,29 +1134,32 @@
   background: var(--bg-gradient);
   padding-bottom: 5px;
 }
-.log.all-selected-tiles-log .a-market-tile-icon {
+.log.all-selected-tiles-log .a-market-tile-icon, .log.individual-collected-tiles-log .a-market-tile-icon {
   width: 30px;
   height: 30px;
   margin: 1px 0px;
 }
-.log.all-selected-tiles-log .a-market-tile-icon::before {
+.log.all-selected-tiles-log .a-market-tile-icon::before, .log.individual-collected-tiles-log .a-market-tile-icon::before {
   clip-path: inset(31% 7% 7% 31%);
   width: 130%;
   height: 130%;
   top: -35%;
   left: -35%;
 }
-.log.all-selected-tiles-log .a-market-tile-icon[market-index="0"]::before {
+.log.all-selected-tiles-log .a-market-tile-icon[market-index="0"]::before, .log.individual-collected-tiles-log .a-market-tile-icon[market-index="0"]::before {
   clip-path: inset(32% 32% 7% 7%);
   left: -4%;
 }
-.log.all-selected-tiles-log .player-selected-market-tile-row {
+.log.all-selected-tiles-log .player-selected-market-tile-row, .log.individual-collected-tiles-log .player-selected-market-tile-row {
   position: relative;
 }
-.log.all-selected-tiles-log .player-selected-market-tile-row.pending:not(:first-child):not(.pending + .log.all-selected-tiles-log .player-selected-market-tile-row.pending) {
+.log.all-selected-tiles-log .player-selected-market-tile-row.pending .log-arrow-left, .log.individual-collected-tiles-log .player-selected-market-tile-row.pending .log-arrow-left {
+  opacity: 0.6;
+}
+.log.all-selected-tiles-log .player-selected-market-tile-row.collecting + .pending, .log.individual-collected-tiles-log .player-selected-market-tile-row.collecting + .pending {
   margin-top: 10px;
 }
-.log.all-selected-tiles-log .player-selected-market-tile-row.pending:not(:first-child):not(.pending + .log.all-selected-tiles-log .player-selected-market-tile-row.pending)::before {
+.log.all-selected-tiles-log .player-selected-market-tile-row.collecting + .pending::before, .log.individual-collected-tiles-log .player-selected-market-tile-row.collecting + .pending::before {
   content: "";
   position: absolute;
   top: -6px;
@@ -1158,9 +1167,6 @@
   width: 85%;
   height: 1px;
   background-color: rgba(0, 0, 0, 0.4392156863);
-}
-.log.all-selected-tiles-log .player-selected-market-tile-row.pending .log-arrow-left {
-  opacity: 0.6;
 }
 .log .log-arrow {
   color: #000 !important;
@@ -1191,66 +1197,66 @@
 .dijitTooltipContainer .tooltip-wrapper .tooltip-image {
   width: 200px;
   height: 280px;
-  background-image: url("img/bonus_cards.png");
+  background-image: var(--image-source-bonus-cards);
   background-size: 500% 400%;
   background-repeat: no-repeat;
   margin-top: 10px;
 }
-.dijitTooltipContainer .tooltip-wrapper .bonus-card-tooltip[bonus-card-id="0"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="0"] .tooltip-image {
   background-position: 0% 0%;
 }
-.dijitTooltipContainer .tooltip-wrapper .bonus-card-tooltip[bonus-card-id="1"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="1"] .tooltip-image {
   background-position: 25% 0%;
 }
-.dijitTooltipContainer .tooltip-wrapper .bonus-card-tooltip[bonus-card-id="2"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="2"] .tooltip-image {
   background-position: 50% 0%;
 }
-.dijitTooltipContainer .tooltip-wrapper .bonus-card-tooltip[bonus-card-id="3"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="3"] .tooltip-image {
   background-position: 75% 0%;
 }
-.dijitTooltipContainer .tooltip-wrapper .bonus-card-tooltip[bonus-card-id="4"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="4"] .tooltip-image {
   background-position: 100% 0%;
 }
-.dijitTooltipContainer .tooltip-wrapper .bonus-card-tooltip[bonus-card-id="5"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="5"] .tooltip-image {
   background-position: 0% 33.33%;
 }
-.dijitTooltipContainer .tooltip-wrapper .bonus-card-tooltip[bonus-card-id="6"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="6"] .tooltip-image {
   background-position: 25% 33.33%;
 }
-.dijitTooltipContainer .tooltip-wrapper .bonus-card-tooltip[bonus-card-id="7"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="7"] .tooltip-image {
   background-position: 50% 33.33%;
 }
-.dijitTooltipContainer .tooltip-wrapper .bonus-card-tooltip[bonus-card-id="8"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="8"] .tooltip-image {
   background-position: 75% 33.33%;
 }
-.dijitTooltipContainer .tooltip-wrapper .bonus-card-tooltip[bonus-card-id="9"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="9"] .tooltip-image {
   background-position: 100% 33.33%;
 }
-.dijitTooltipContainer .tooltip-wrapper .bonus-card-tooltip[bonus-card-id="10"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="10"] .tooltip-image {
   background-position: 0% 66.66%;
 }
-.dijitTooltipContainer .tooltip-wrapper .bonus-card-tooltip[bonus-card-id="11"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="11"] .tooltip-image {
   background-position: 25% 66.66%;
 }
-.dijitTooltipContainer .tooltip-wrapper .bonus-card-tooltip[bonus-card-id="12"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="12"] .tooltip-image {
   background-position: 50% 66.66%;
 }
-.dijitTooltipContainer .tooltip-wrapper .bonus-card-tooltip[bonus-card-id="13"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="13"] .tooltip-image {
   background-position: 75% 66.66%;
 }
-.dijitTooltipContainer .tooltip-wrapper .bonus-card-tooltip[bonus-card-id="14"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="14"] .tooltip-image {
   background-position: 100% 66.66%;
 }
-.dijitTooltipContainer .tooltip-wrapper .bonus-card-tooltip[bonus-card-id="15"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="15"] .tooltip-image {
   background-position: 0% 99.99%;
 }
-.dijitTooltipContainer .tooltip-wrapper .bonus-card-tooltip[bonus-card-id="16"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="16"] .tooltip-image {
   background-position: 25% 99.99%;
 }
-.dijitTooltipContainer .tooltip-wrapper .bonus-card-tooltip[bonus-card-id="17"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="17"] .tooltip-image {
   background-position: 50% 99.99%;
 }
-.dijitTooltipContainer .tooltip-wrapper .bonus-card-tooltip[bonus-card-id="18"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="18"] .tooltip-image {
   background-position: 75% 99.99%;
 }
 
@@ -1321,7 +1327,7 @@
     transform: rotate(8deg);
   }
   50% {
-    transform: rotate(0deg);
+    transform: rotate(2deg);
   }
   100% {
     transform: rotate(8deg);

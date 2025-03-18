@@ -38,16 +38,11 @@ var AnimationHandlerPromiseBased = /** @class */ (function () {
     function AnimationHandlerPromiseBased(gameui) {
         this.gameui = gameui;
     }
-    AnimationHandlerPromiseBased.prototype.play = function (animation) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2 /*return*/, this.gameui.bgaPlayDojoAnimation(animation)];
-            });
-        });
-    };
     AnimationHandlerPromiseBased.prototype.animateProperty = function (args) {
         args = this.addEasing(args);
-        return dojo.animateProperty(args);
+        var dojoAnim = dojo.animateProperty(args);
+        dojoAnim = this.bindStartFunction(dojoAnim);
+        return dojoAnim;
     };
     AnimationHandlerPromiseBased.prototype.animateOnObject = function (args, ignoreGoToPositionChange) {
         var _this = this;
@@ -85,8 +80,24 @@ var AnimationHandlerPromiseBased = /** @class */ (function () {
         args.onBegin = function (properties) {
             args = arg_onBegin(args);
         };
-        args = this.addEasing(args);
         dojoAnim = this.animateProperty(args);
+        return dojoAnim;
+    };
+    AnimationHandlerPromiseBased.prototype.combine = function (dojoAnimArray) {
+        var dojoAnim = dojo.fx.combine(dojoAnimArray);
+        dojoAnim = this.bindStartFunction(dojoAnim);
+        return dojoAnim;
+    };
+    AnimationHandlerPromiseBased.prototype.chain = function (dojoAnimArray) {
+        var dojoAnim = dojo.fx.chain(dojoAnimArray);
+        dojoAnim = this.bindStartFunction(dojoAnim);
+        return dojoAnim;
+    };
+    AnimationHandlerPromiseBased.prototype.bindStartFunction = function (dojoAnim) {
+        var _this = this;
+        dojoAnim.start = function () { return __awaiter(_this, void 0, void 0, function () { return __generator(this, function (_a) {
+            return [2 /*return*/, this.gameui.bgaPlayDojoAnimation(dojoAnim)];
+        }); }); };
         return dojoAnim;
     };
     AnimationHandlerPromiseBased.prototype.addEasing = function (args) {
@@ -131,7 +142,7 @@ var GameBody = /** @class */ (function (_super) {
     GameBody.prototype.setup = function (gamedatas) {
         console.log("Starting game setup");
         document.getElementById('game_play_area').insertAdjacentHTML('beforeend', "<div id=\"player-tables\">\n            <div class=\"market-container\">\n                <div class=\"market-tiles-container\"></div>\n                <div class=\"waiting-players-container\"></div>\n                <div class=\"bonus-cards-container\"></div>\n            </div>\n            <div class=\"pyramids-container\"></div>\n        </div>");
-        // this.imageLoader = new ImageLoadHandler(this, ['ninjan-cards', 'bg-front']); //ekmek uncomment - minified images'i yap
+        this.imageLoader = new ImageLoadHandler(this, ['market-tiles', 'player-order-tiles', 'bonus-cards', 'bonus-card-icons']);
         this.animationHandler = new AnimationHandlerPromiseBased(this);
         for (var player_id in gamedatas.players) {
             var _a = this.gamedatas.players[player_id], name_1 = _a.name, color = _a.color, player_no = _a.player_no, turn_order = _a.turn_order;
@@ -145,7 +156,7 @@ var GameBody = /** @class */ (function (_super) {
         this.MARKET_TILE_COLORS.forEach(function (color, index) {
             document.documentElement.style.setProperty("--market-tile-color-".concat(index), "#".concat(color));
         });
-        this.marketHandler = new MarketHandler(this, gamedatas.marketData, gamedatas.bonusCardIDs, gamedatas.playerSelectedMarketIndex);
+        this.marketHandler = new MarketHandler(this, gamedatas.marketData, gamedatas.bonusCardIDs, gamedatas.playerSelectedMarketIndex, gamedatas.collectedMarketTilesData);
         this.tooltipHandler = new TooltipHandler(this);
         this.logMutationObserver = new LogMutationObserver(this);
         // Setup game notifications to handle (see "setupNotifications" method below)
@@ -154,36 +165,32 @@ var GameBody = /** @class */ (function (_super) {
     };
     GameBody.prototype.onEnteringState = function (stateName, args) {
         console.log('Entering state: ' + stateName, args);
+        switch (stateName) {
+            case 'allSelectMarketTile':
+                this.marketHandler.addSelectableClassToMarketTiles('all');
+                break;
+        }
     };
     GameBody.prototype.onLeavingState = function (stateName) {
         console.log('Leaving state: ' + stateName);
+        this.marketHandler.marketTiles.forEach(function (tile) { tile.classList.remove('selected-market-tile', 'selectable-market-tile'); });
     };
     GameBody.prototype.onUpdateActionButtons = function (stateName, args) {
-        var _this = this;
         console.log('onUpdateActionButtons: ' + stateName, args);
         switch (stateName) {
             case 'allSelectMarketTile':
                 this.marketHandler.updateStatusTextUponCubeSelection();
                 break;
+            case 'individualPlayerSelectMarketTile':
+                if (this.myself) {
+                    var playerCollectedMarketTile = this.marketHandler.getPlayerCollectedMarketTile(this.myself.playerID);
+                    if (this.isCurrentPlayerActive())
+                        this.marketHandler.addSelectableClassToMarketTiles(args.possible_market_indexes);
+                    else if (playerCollectedMarketTile.type === 'collecting')
+                        this.updateStatusText(dojo.string.substitute(_('${you} may build while others are selecting Market Tiles'), { you: this.divYou() }));
+                }
+                break;
         }
-        if (this.isCurrentPlayerActive()) { //ekmek birgun sil
-            switch (stateName) {
-                case 'playerTurn':
-                    var playableCardsIds = args.playableCardsIds; // returned by the argPlayerTurn
-                    // Add test action buttons in the action status bar, simulating a card click:
-                    playableCardsIds.forEach(function (cardId) { return _this.statusBar.addActionButton(_('Play card with id ${card_id}').replace('${card_id}', cardId), function () { return _this.onCardClick(cardId); }); });
-                    this.statusBar.addActionButton(_('Pass'), function () { return _this.bgaPerformAction("actPass"); }, { color: 'secondary' });
-                    break;
-            }
-        }
-    };
-    GameBody.prototype.onCardClick = function (card_id) {
-        this.bgaPerformAction("actPlayCard", {
-            card_id: card_id,
-        }).then(function () {
-            // What to do after the server call if it succeeded
-            // (most of the time, nothing, as the game will react to notifs / change of state instead)
-        });
     };
     //utility functions
     GameBody.prototype.format_string_recursive = function (log, args) {
@@ -192,14 +199,16 @@ var GameBody = /** @class */ (function (_super) {
             if (log && args && !args.processed) {
                 args.processed = true;
                 // list of special keys we want to replace with images
-                var keys = ['textPlayerID', 'REVEALED_MARKET_TILES_DATA_STR', 'LOG_CLASS'];
+                var keys = ['textPlayerID', 'REVEALED_MARKET_TILES_DATA_STR', 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR', 'LOG_CLASS'];
                 for (var _i = 0, keys_1 = keys; _i < keys_1.length; _i++) {
                     var key = keys_1[_i];
                     if (key in args) {
                         if (key == 'textPlayerID')
                             args['textPlayerID'] = this.divColoredPlayer(args['textPlayerID']);
                         else if (key == 'REVEALED_MARKET_TILES_DATA_STR')
-                            args['REVEALED_MARKET_TILES_DATA_STR'] = this.logMutationObserver.createLogSelectedMarketTiles(args['marketTileSelectionsData']);
+                            args['REVEALED_MARKET_TILES_DATA_STR'] = this.logMutationObserver.createLogSelectedMarketTiles(args['collectedMarketTilesData']);
+                        else if (key == 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR')
+                            args['INDIVIDUAL_MARKET_TILES_COLLECTION_STR'] = "<div class=\"player-collected-market-tile-row 'collecting'\">".concat(this.divColoredPlayer(args.player_id, { class: 'playername' }, false), "<i class=\"log-arrow log-arrow-left fa6 fa-arrow-left\"></i><div class=\"a-market-tile-icon\" market-index=\"").concat(args.collected_market_index, "\"></div></div>");
                         else if (key == 'LOG_CLASS')
                             log = log + '<div log-class-tag="' + args['LOG_CLASS'] + '"></div>';
                     }
@@ -337,7 +346,21 @@ var GameBody = /** @class */ (function (_super) {
                 switch (_a.label) {
                     case 0:
                         console.log('notif_animateAllMarketTileSelections');
-                        return [4 /*yield*/, this.marketHandler.animateAllMarketTileSelections(args.marketTileSelectionsData)];
+                        return [4 /*yield*/, this.marketHandler.animateAllMarketTileSelections(args.collectedMarketTilesData)];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    GameBody.prototype.notif_individualPlayerCollected = function (args) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        console.log('notif_individualPlayerCollected');
+                        return [4 /*yield*/, this.marketHandler.animateIndividualPlayerCollected(args.player_id, args.collected_market_index)];
                     case 1:
                         _a.sent();
                         return [2 /*return*/];
@@ -483,11 +506,12 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     return to.concat(ar || Array.prototype.slice.call(from));
 };
 var MarketHandler = /** @class */ (function () {
-    function MarketHandler(gameui, marketData, bonusCardIDs, playerSelectedMarketIndex) {
+    function MarketHandler(gameui, marketData, bonusCardIDs, playerSelectedMarketIndex, collectedMarketTilesData) {
         this.gameui = gameui;
         this.marketData = marketData;
         this.bonusCardIDs = bonusCardIDs;
         this.playerSelectedMarketIndex = playerSelectedMarketIndex;
+        this.collectedMarketTilesData = collectedMarketTilesData;
         this.marketContainer = document.querySelector('#player-tables .market-container');
         this.marketTilesContainer = this.marketContainer.querySelector('.market-tiles-container');
         this.waitingPlayersContainer = this.marketContainer.querySelector('.waiting-players-container');
@@ -531,18 +555,46 @@ var MarketHandler = /** @class */ (function () {
                 _this.marketTiles[i].querySelector('.cubes-container').appendChild(cubeDiv);
             });
         });
+        // Add player avatars to market tiles and show waiting players container if any players are pending
+        if (this.gameui.gamedatas.gamestate.name === 'individualPlayerSelectMarketTile') {
+            this.collectedMarketTilesData.sort(function (a, b) { return a.turn_order - b.turn_order; });
+            this.collectedMarketTilesData.forEach(function (playerCollects) {
+                _this.addPlayerAvatar(playerCollects, true);
+                if (playerCollects.type == 'pending')
+                    _this.waitingPlayersContainer.style.opacity = '1';
+            });
+        }
+    };
+    MarketHandler.prototype.addSelectableClassToMarketTiles = function (possibleMarketIndexes) {
+        var _this = this;
+        this.marketTiles.forEach(function (tile) { return tile.classList.remove('selectable-market-tile'); });
+        var selectableMarketTiles = [];
+        if (possibleMarketIndexes === 'all')
+            selectableMarketTiles = this.marketTiles;
+        else
+            possibleMarketIndexes.forEach(function (i) { return selectableMarketTiles.push(_this.marketTiles[i]); });
+        selectableMarketTiles.forEach(function (tile) { return tile.classList.add('selectable-market-tile'); });
     };
     MarketHandler.prototype.marketTileClicked = function (event) {
-        if (!['allSelectMarketTile'].includes(this.gameui.gamedatas.gamestate.name) || this.gameui.isInterfaceLocked())
-            return;
-        if (!event.target.classList.contains('a-market-tile'))
+        if (!['allSelectMarketTile', 'individualPlayerSelectMarketTile'].includes(this.gameui.gamedatas.gamestate.name) || this.gameui.isInterfaceLocked())
             return;
         var marketTile = event.target;
+        if (!marketTile.classList.contains('a-market-tile') || !marketTile.classList.contains('selectable-market-tile'))
+            return;
         var marketIndex = marketTile.getAttribute('market-index');
-        if (!marketTile.classList.contains('selected-market-tile'))
-            this.gameui.ajaxAction('actAllSelectMarketTile', { marketIndex: marketIndex }, true, false);
-        else
-            this.gameui.ajaxAction('actRevertAllSelectMarketTile', { marketIndex: marketIndex }, true, false);
+        var actionName = '';
+        if (this.gameui.gamedatas.gamestate.name === 'allSelectMarketTile') {
+            if (!marketTile.classList.contains('selected-market-tile'))
+                actionName = 'actAllSelectMarketTile';
+            else
+                actionName = 'actRevertAllSelectMarketTile';
+        }
+        else if (this.gameui.gamedatas.gamestate.name === 'individualPlayerSelectMarketTile')
+            actionName = 'actIndividualPlayerSelectMarketTile';
+        this.gameui.ajaxAction(actionName, { marketIndex: marketIndex }, true, false);
+        // if(!marketTile.classList.contains('selected-market-tile')) //ekmek sil
+        //     this.gameui.ajaxAction('actAllSelectMarketTile', {marketIndex: marketIndex}, true, false);
+        // else this.gameui.ajaxAction('actRevertAllSelectMarketTile', {marketIndex: marketIndex}, true, false);
     };
     MarketHandler.prototype.marketTileSelected = function (marketIndex) {
         return __awaiter(this, void 0, void 0, function () {
@@ -584,24 +636,22 @@ var MarketHandler = /** @class */ (function () {
         this.bonusCardIconsContainer.innerHTML = '';
         this.bonusCardIconsContainer.innerHTML = this.bonusCardIDs.map(function (id) { return "<div class=\"a-bonus-card-icon\" bonus-card-id=\"".concat(id, "\" id=\"bonus-card-icon-").concat(id, "\"></div>"); }).join('');
     };
-    MarketHandler.prototype.animateAllMarketTileSelections = function (marketTileSelectionsData) {
+    MarketHandler.prototype.animateAllMarketTileSelections = function (collectedMarketTilesData) {
         return __awaiter(this, void 0, void 0, function () {
-            var allPlayers, raiseAvatarAnimations, moveCollectingAvatarAnimations, movePendingAvatarAnimations, raiseAvatarsCombinedAnimation, moveCollectingAvatarsCombinedAnimation, movePendingAvatarsCombinedAnimation;
+            var raiseAvatarAnimations, moveCollectingAvatarAnimations, movePendingAvatarAnimations, raiseAvatarsCombinedAnimation, moveCollectingAvatarsCombinedAnimation, movePendingAvatarsCombinedAnimation;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        allPlayers = __spreadArray(__spreadArray([], marketTileSelectionsData.collectingPlayers.map(function (player) { return (__assign(__assign({}, player), { type: 'collecting' })); }), true), marketTileSelectionsData.pendingPlayers.map(function (player) { return (__assign(__assign({}, player), { type: 'pending' })); }), true);
+                        this.collectedMarketTilesData = __spreadArray(__spreadArray([], collectedMarketTilesData.collectingPlayers.map(function (player) { return (__assign(__assign({}, player), { type: 'collecting' })); }), true), collectedMarketTilesData.pendingPlayers.map(function (player) { return (__assign(__assign({}, player), { type: 'pending' })); }), true);
                         raiseAvatarAnimations = [];
                         moveCollectingAvatarAnimations = [];
                         movePendingAvatarAnimations = [];
-                        allPlayers.forEach(function (player, animationOrder) {
-                            var avatarClone = _this.gameui.players[player.player_id].getAvatarClone(true);
+                        this.collectedMarketTilesData.forEach(function (playerCollects, animationOrder) {
+                            var avatarClone = _this.gameui.players[playerCollects.player_id].getAvatarClone(true);
                             var currentTop = parseInt(window.getComputedStyle(avatarClone).top);
                             var currentLeft = parseInt(window.getComputedStyle(avatarClone).left);
-                            var destAvatar = player.type == 'collecting' ?
-                                _this.addPlayerAvatar(player.player_id, 'collecting', player.selected_market_index, false) :
-                                _this.addPlayerAvatar(player.player_id, 'pending', undefined, false);
+                            var destAvatar = _this.addPlayerAvatar(playerCollects, false);
                             var destAvatarRect = destAvatar ? destAvatar.getBoundingClientRect() : { width: 0, height: 0 };
                             var raiseAvatarClone = _this.gameui.animationHandler.animateProperty({
                                 node: avatarClone,
@@ -614,54 +664,91 @@ var MarketHandler = /** @class */ (function () {
                             var moveAvatarClone = _this.gameui.animationHandler.animateOnObject({
                                 node: avatarClone,
                                 goTo: destAvatar,
-                                delay: (player.type == 'collecting') ? moveCollectingAvatarAnimations.length * 200 : movePendingAvatarAnimations.length * 200,
+                                delay: (playerCollects.type == 'collecting') ? moveCollectingAvatarAnimations.length * 200 : movePendingAvatarAnimations.length * 200,
                                 duration: 500,
                                 easing: "cubic-bezier(".concat(0.1 + Math.random() * 0.2, ", ").concat(0.3 + Math.random() * 0.3, ", ").concat(0.5 + Math.random() * 0.3, ", ").concat(0.7 + Math.random() * 0.2, ")"),
                                 onEnd: function () { destAvatar.style.opacity = null; dojo.destroy(avatarClone); }
                             });
-                            if (player.type == 'collecting')
+                            if (playerCollects.type == 'collecting')
                                 moveCollectingAvatarAnimations.push(moveAvatarClone);
                             else
                                 movePendingAvatarAnimations.push(moveAvatarClone);
                         });
-                        raiseAvatarsCombinedAnimation = dojo.fx.combine(raiseAvatarAnimations);
-                        moveCollectingAvatarsCombinedAnimation = dojo.fx.combine(moveCollectingAvatarAnimations);
-                        movePendingAvatarsCombinedAnimation = dojo.fx.combine(movePendingAvatarAnimations);
-                        return [4 /*yield*/, this.gameui.animationHandler.play(raiseAvatarsCombinedAnimation)];
+                        raiseAvatarsCombinedAnimation = this.gameui.animationHandler.combine(raiseAvatarAnimations);
+                        moveCollectingAvatarsCombinedAnimation = this.gameui.animationHandler.combine(moveCollectingAvatarAnimations);
+                        movePendingAvatarsCombinedAnimation = this.gameui.animationHandler.combine(movePendingAvatarAnimations);
+                        return [4 /*yield*/, raiseAvatarsCombinedAnimation.start()];
                     case 1:
                         _a.sent();
-                        return [4 /*yield*/, this.gameui.animationHandler.play(moveCollectingAvatarsCombinedAnimation)];
+                        return [4 /*yield*/, moveCollectingAvatarsCombinedAnimation.start()];
                     case 2:
                         _a.sent();
+                        if (!(movePendingAvatarAnimations.length > 0)) return [3 /*break*/, 4];
                         this.waitingPlayersContainer.style.opacity = '1';
-                        return [4 /*yield*/, this.gameui.animationHandler.play(movePendingAvatarsCombinedAnimation)];
+                        return [4 /*yield*/, movePendingAvatarsCombinedAnimation.start()];
                     case 3:
                         _a.sent();
-                        marketTileSelectionsData.pendingPlayers.forEach(function (player) {
-                            var playerBoard = _this.gameui.players[player.player_id].overallPlayerBoard;
-                            console.log('pending playerBoard', playerBoard);
+                        _a.label = 4;
+                    case 4: return [2 /*return*/];
+                }
+            });
+        });
+    };
+    MarketHandler.prototype.animateIndividualPlayerCollected = function (playerID, collectedMarketIndex) {
+        return __awaiter(this, void 0, void 0, function () {
+            var destAvatar, pendingAvatar, avatarRect, pendingAvatarClone, shrinkPendingAvatar, movePendingAvatarClone;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        destAvatar = this.addPlayerAvatar({ player_id: playerID, collected_market_index: collectedMarketIndex, type: 'collecting' }, false);
+                        pendingAvatar = this.waitingPlayersContainer.querySelector(".yaxha-player-avatar.pending-player-avatar[player-id=\"".concat(playerID, "\"]"));
+                        avatarRect = pendingAvatar.getBoundingClientRect();
+                        pendingAvatarClone = this.gameui.players[playerID].getAvatarClone(false, true, pendingAvatar.querySelector('img'));
+                        document.getElementById('overall-content').appendChild(pendingAvatarClone);
+                        this.gameui.placeOnObject(pendingAvatarClone, pendingAvatar);
+                        pendingAvatar.style.opacity = '0';
+                        destAvatar.style.opacity = '0';
+                        shrinkPendingAvatar = this.gameui.animationHandler.animateProperty({
+                            node: pendingAvatar,
+                            properties: { width: 0, marginLeft: 0, marginRight: 0 },
+                            duration: 500,
+                            easing: 'sineOut',
+                            onEnd: function () { dojo.destroy(pendingAvatar); }
                         });
+                        movePendingAvatarClone = this.gameui.animationHandler.animateOnObject({
+                            node: pendingAvatarClone,
+                            goTo: destAvatar,
+                            duration: 500,
+                            easing: "cubic-bezier(".concat(0.1 + Math.random() * 0.2, ", ").concat(0.3 + Math.random() * 0.3, ", ").concat(0.5 + Math.random() * 0.3, ", ").concat(0.7 + Math.random() * 0.2, ")"),
+                            onEnd: function () { destAvatar.style.opacity = null; dojo.destroy(pendingAvatarClone); }
+                        });
+                        return [4 /*yield*/, this.gameui.animationHandler.combine([shrinkPendingAvatar, movePendingAvatarClone]).start()];
+                    case 1:
+                        _a.sent();
+                        if (this.waitingPlayersContainer.querySelectorAll('.pending-player-avatar').length === 0)
+                            this.waitingPlayersContainer.style.opacity = null;
                         return [2 /*return*/];
                 }
             });
         });
     };
-    MarketHandler.prototype.addPlayerAvatar = function (player_id, type, marketTileIndex, isVisible) {
-        if (isVisible === void 0) { isVisible = true; }
-        var avatarClone = this.gameui.players[player_id].getAvatarClone();
-        var newAvatarContainer = type === 'collecting'
-            ? this.marketTiles[marketTileIndex]
+    MarketHandler.prototype.addPlayerAvatar = function (playerCollects, isVisible) {
+        var avatarClone = this.gameui.players[playerCollects.player_id].getAvatarClone();
+        var newAvatarContainer = playerCollects.type === 'collecting'
+            ? this.marketTiles[playerCollects.collected_market_index]
             : this.marketContainer.querySelector('.waiting-players-container');
         avatarClone.removeAttribute("style");
-        avatarClone.classList.add("".concat(type, "-player-avatar"));
+        avatarClone.classList.add("".concat(playerCollects.type, "-player-avatar"));
         avatarClone.classList.remove('avatar-clone');
-        avatarClone.style.setProperty('--player-color', '#' + this.gameui.players[player_id].playerColor);
+        avatarClone.style.setProperty('--player-color', '#' + this.gameui.players[playerCollects.player_id].playerColor);
         if (!isVisible)
             avatarClone.style.opacity = '0';
         newAvatarContainer.appendChild(avatarClone);
         return avatarClone;
     };
-    MarketHandler.prototype.getBonusCardIconsContainer = function () { return this.bonusCardIconsContainer; };
+    MarketHandler.prototype.getPlayerCollectedMarketTile = function (player_id) {
+        return this.collectedMarketTilesData.find(function (player) { return Number(player.player_id) === Number(player_id); });
+    };
     return MarketHandler;
 }());
 var PlayerHandler = /** @class */ (function () {
@@ -676,21 +763,23 @@ var PlayerHandler = /** @class */ (function () {
         this.pyramidContainer = null;
         this.initPyramidContainer();
     }
-    PlayerHandler.prototype.getAvatarClone = function (placeOnPlayerBoard, get184by184) {
+    PlayerHandler.prototype.getAvatarClone = function (placeOnPlayerBoard, get184by184, srcAvatar) {
         if (placeOnPlayerBoard === void 0) { placeOnPlayerBoard = false; }
         if (get184by184 === void 0) { get184by184 = true; }
-        var avatar = dojo.query('img.avatar', this.overallPlayerBoard)[0];
-        if (avatar) {
+        if (srcAvatar === void 0) { srcAvatar = null; }
+        if (!srcAvatar)
+            srcAvatar = dojo.query('img.avatar', this.overallPlayerBoard)[0];
+        if (srcAvatar) {
             // Get dimensions and source from original avatar
-            var avatarRect = avatar.getBoundingClientRect();
-            var avatarSrc_1 = avatar.getAttribute('src');
+            var avatarRect = srcAvatar.getBoundingClientRect();
+            var avatarSrc_1 = srcAvatar.getAttribute('src');
             var avatarSrc32_1 = avatarSrc_1;
             avatarSrc_1 = get184by184 ? avatarSrc_1.replace('32.jpg', '184.jpg') : avatarSrc_1;
             // Create new avatar clone structure with innerHTML
             var avatarClone = document.createElement('div');
             avatarClone.className = 'avatar-clone yaxha-player-avatar';
             avatarClone.setAttribute('player-id', this.playerID.toString());
-            avatarClone.style.cssText = "width: ".concat(avatarRect.width, "px; height: ").concat(avatarRect.height, "px; position: absolute; --player-color: #").concat(this.playerColor, ";");
+            avatarClone.style.cssText = "position: absolute; width: ".concat(avatarRect.width, "px; height: ").concat(avatarRect.height, "px; --player-color: #").concat(this.playerColor, ";");
             avatarClone.innerHTML = "<img src=\"".concat(avatarSrc_1, "\" style=\"width: 100%; height: 100%;\">");
             if (get184by184) { // If requesting 184x184 avatar, handle fallback to 32x32 if larger image fails to load
                 var addedImg_1 = avatarClone.querySelector('img');
@@ -706,7 +795,7 @@ var PlayerHandler = /** @class */ (function () {
             }
             if (placeOnPlayerBoard) { // If requested, place the cloned avatar on the original avatar's position
                 document.getElementById('overall-content').appendChild(avatarClone);
-                this.gameui.placeOnObject(avatarClone, avatar);
+                this.gameui.placeOnObject(avatarClone, srcAvatar);
             }
             return avatarClone;
         }
@@ -723,7 +812,7 @@ var PlayerHandler = /** @class */ (function () {
         // Set the custom property for player color
         this.pyramidContainer.style.setProperty('--player-color', '#' + this.playerColor);
         var turnOrderContainerId = "turn-order-".concat(this.playerID);
-        this.pyramidContainer.innerHTML = "\n\t\t\t<div class=\"player-name-text\">\n\t\t\t\t<div class=\"text-container\">".concat(this.playerName, "</div>\n\t\t\t</div>\n\t\t\t<div class=\"turn-order-container\" id=\"").concat(turnOrderContainerId, "\" turn-order=\"").concat(this.turnOrder, "\">").concat(this.turnOrder, "</div>\n        ");
+        this.pyramidContainer.innerHTML = "\n\t\t\t<div class=\"player-name-text\">\n\t\t\t\t<div class=\"text-container\">".concat(this.playerName, "</div>\n\t\t\t</div>\n\t\t\t<div class=\"turn-order-container\" id=\"").concat(turnOrderContainerId, "\" turn-order=\"").concat(this.turnOrder, "\"></div>\n        ");
         document.getElementById('player-tables').querySelector('.pyramids-container').insertAdjacentElement(Number(this.playerID) === Number(this.gameui.player_id) ? 'afterbegin' : 'beforeend', this.pyramidContainer);
     };
     return PlayerHandler;
@@ -736,7 +825,7 @@ var TooltipHandler = /** @class */ (function () {
     }
     TooltipHandler.prototype.addTooltipToBonusCards = function () {
         var _this = this;
-        var bonusCardIcons = this.gameui.marketHandler.getBonusCardIconsContainer().querySelectorAll('.a-bonus-card-icon');
+        var bonusCardIcons = this.gameui.marketHandler.bonusCardIconsContainer.querySelectorAll('.a-bonus-card-icon');
         bonusCardIcons.forEach(function (cardIcon) {
             var cardIconID = cardIcon.getAttribute('id');
             var cardID = cardIcon.getAttribute('bonus-card-id');

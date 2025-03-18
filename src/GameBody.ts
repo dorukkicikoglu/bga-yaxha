@@ -34,8 +34,8 @@ class GameBody extends GameGui {
             </div>
             <div class="pyramids-container"></div>
         </div>`);
-        
-        // this.imageLoader = new ImageLoadHandler(this, ['ninjan-cards', 'bg-front']); //ekmek uncomment - minified images'i yap
+
+        this.imageLoader = new ImageLoadHandler(this, ['market-tiles', 'player-order-tiles', 'bonus-cards', 'bonus-card-icons']);
         this.animationHandler = new AnimationHandlerPromiseBased(this);
 
         for(let player_id in gamedatas.players) {
@@ -54,7 +54,7 @@ class GameBody extends GameGui {
             document.documentElement.style.setProperty(`--market-tile-color-${index}`, `#${color}`);
         });
         
-        this.marketHandler = new MarketHandler(this, gamedatas.marketData, gamedatas.bonusCardIDs, gamedatas.playerSelectedMarketIndex);
+        this.marketHandler = new MarketHandler(this, gamedatas.marketData, gamedatas.bonusCardIDs, gamedatas.playerSelectedMarketIndex, gamedatas.collectedMarketTilesData);
 
         this.tooltipHandler = new TooltipHandler(this);
         this.logMutationObserver = new LogMutationObserver(this);
@@ -67,10 +67,18 @@ class GameBody extends GameGui {
 
     public onEnteringState(stateName: string, args: any) {
         console.log( 'Entering state: '+stateName, args );
+
+        switch( stateName )
+        {
+            case 'allSelectMarketTile':
+                this.marketHandler.addSelectableClassToMarketTiles('all');
+            break;
+        }
     }
 
     public onLeavingState(stateName: string) {
         console.log( 'Leaving state: '+stateName );
+        this.marketHandler.marketTiles.forEach(tile => { tile.classList.remove('selected-market-tile', 'selectable-market-tile'); });
     }
 
     public onUpdateActionButtons(stateName: string, args: any) {
@@ -81,33 +89,17 @@ class GameBody extends GameGui {
             case 'allSelectMarketTile':
                 this.marketHandler.updateStatusTextUponCubeSelection();
             break;
+            case 'individualPlayerSelectMarketTile':
+                if(this.myself) {
+                    const playerCollectedMarketTile = this.marketHandler.getPlayerCollectedMarketTile(this.myself.playerID);
+
+                    if(this.isCurrentPlayerActive())
+                        this.marketHandler.addSelectableClassToMarketTiles(args.possible_market_indexes);
+                    else if(playerCollectedMarketTile.type === 'collecting')
+                        this.updateStatusText(dojo.string.substitute(_('${you} may build while others are selecting Market Tiles'), {you: this.divYou()}));
+                }
+            break;
         }
-
-        if(this.isCurrentPlayerActive()){ //ekmek birgun sil
-            switch( stateName )
-            {
-                case 'playerTurn':    
-                const playableCardsIds = args.playableCardsIds; // returned by the argPlayerTurn
-
-                // Add test action buttons in the action status bar, simulating a card click:
-                playableCardsIds.forEach(
-                    cardId => this.statusBar.addActionButton(_('Play card with id ${card_id}').replace('${card_id}', cardId), () => this.onCardClick(cardId))
-                ); 
-
-                this.statusBar.addActionButton(_('Pass'), () => this.bgaPerformAction("actPass"), { color: 'secondary' }); 
-                break;
-            }
-        }
-    }
-
-    public onCardClick( card_id ) //ekmek birgun sil
-    {
-        this.bgaPerformAction("actPlayCard", { 
-            card_id,
-        }).then(() =>  {                
-            // What to do after the server call if it succeeded
-            // (most of the time, nothing, as the game will react to notifs / change of state instead)
-        });        
     }
 
     //utility functions
@@ -119,13 +111,15 @@ class GameBody extends GameGui {
                 args.processed = true;
 
                 // list of special keys we want to replace with images
-                let keys = ['textPlayerID', 'REVEALED_MARKET_TILES_DATA_STR', 'LOG_CLASS'];
+                let keys = ['textPlayerID', 'REVEALED_MARKET_TILES_DATA_STR', 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR', 'LOG_CLASS'];
                 for(let key of keys) {
                     if(key in args) {
                         if(key == 'textPlayerID')
                             args['textPlayerID'] = this.divColoredPlayer(args['textPlayerID']);
                         else if(key == 'REVEALED_MARKET_TILES_DATA_STR')
-                            args['REVEALED_MARKET_TILES_DATA_STR'] = this.logMutationObserver.createLogSelectedMarketTiles(args['marketTileSelectionsData']);
+                            args['REVEALED_MARKET_TILES_DATA_STR'] = this.logMutationObserver.createLogSelectedMarketTiles(args['collectedMarketTilesData']);
+                        else if(key == 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR')
+                            args['INDIVIDUAL_MARKET_TILES_COLLECTION_STR'] = `<div class="player-collected-market-tile-row 'collecting'">${this.divColoredPlayer(args.player_id, {class: 'playername'}, false)}<i class="log-arrow log-arrow-left fa6 fa-arrow-left"></i><div class="a-market-tile-icon" market-index="${args.collected_market_index}"></div></div>`;
                         else if(key == 'LOG_CLASS')
                             log = log + '<div log-class-tag="' + args['LOG_CLASS'] + '"></div>';
                     }
@@ -235,7 +229,12 @@ class GameBody extends GameGui {
 
     public async notif_animateAllMarketTileSelections(args) {
         console.log('notif_animateAllMarketTileSelections');
-        await this.marketHandler.animateAllMarketTileSelections(args.marketTileSelectionsData);
+        await this.marketHandler.animateAllMarketTileSelections(args.collectedMarketTilesData);
+    }
+
+    public async notif_individualPlayerCollected(args) {
+        console.log('notif_individualPlayerCollected');
+        await this.marketHandler.animateIndividualPlayerCollected(args.player_id, args.collected_market_index);
     }
 }
 
@@ -256,8 +255,10 @@ interface BonusCardData {
     tooltip_text: string;
 }
 
-interface MarketTileSelectionsData {
+interface CollectedMarketTilesData {
     player_id: number;
     selected_market_index: number;
+    collected_market_index: number;
     turn_order: number;
+    type: 'collecting' | 'pending';
 }
