@@ -1,13 +1,13 @@
 class AnimationHandlerPromiseBased{
 	constructor(private gameui: GameBody) {}
 
-    public async play(animation: ReturnType<typeof dojo.animateProperty>): Promise<void>{
-        return this.gameui.bgaPlayDojoAnimation(animation);
-    }
-
 	public animateProperty(args): ReturnType<typeof dojo.animateProperty> {
         args = this.addEasing(args);
-        return dojo.animateProperty(args);
+
+        let dojoAnim = dojo.animateProperty(args);
+        dojoAnim = this.bindStartFunction(dojoAnim);
+
+        return dojoAnim;
     }
 
     public animateOnObject(args: Record<string, any>, ignoreGoToPositionChange: boolean = false): ReturnType<typeof dojo.animateProperty>{
@@ -55,9 +55,25 @@ class AnimationHandlerPromiseBased{
             args = arg_onBegin(args);
         }
 
-        args = this.addEasing(args);
-
         dojoAnim = this.animateProperty(args);
+        
+        return dojoAnim;
+    }
+
+    public combine(dojoAnimArray: ReturnType<typeof dojo.animateProperty>[]) {
+        let dojoAnim = dojo.fx.combine(dojoAnimArray);
+        dojoAnim = this.bindStartFunction(dojoAnim);
+        return dojoAnim;
+    }
+
+    public chain(dojoAnimArray: ReturnType<typeof dojo.animateProperty>[]) {
+        let dojoAnim = dojo.fx.chain(dojoAnimArray);
+        dojoAnim = this.bindStartFunction(dojoAnim);
+        return dojoAnim;
+    }
+
+    private bindStartFunction(dojoAnim: ReturnType<typeof dojo.animateProperty>) {
+        dojoAnim.start = async () => { return this.gameui.bgaPlayDojoAnimation(dojoAnim); };
         return dojoAnim;
     }
 

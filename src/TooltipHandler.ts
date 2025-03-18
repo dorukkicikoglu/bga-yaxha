@@ -5,7 +5,7 @@ class TooltipHandler{
 	}
 
 	public addTooltipToBonusCards(){
-        const bonusCardIcons = this.gameui.marketHandler.getBonusCardIconsContainer().querySelectorAll('.a-bonus-card-icon');
+        const bonusCardIcons = this.gameui.marketHandler.bonusCardIconsContainer.querySelectorAll('.a-bonus-card-icon');
         bonusCardIcons.forEach(cardIcon => {
             const cardIconID = cardIcon.getAttribute('id');
             const cardID = cardIcon.getAttribute('bonus-card-id');

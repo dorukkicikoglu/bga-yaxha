@@ -68,7 +68,6 @@ $machinestates = [
         "description" => clienttranslate('Waiting for players to select a Market Tile'),
         "descriptionmyturn" => clienttranslate('${you} must select a Market Tile'),
         "type" => "multipleactiveplayer",
-        "args" => "argAllSelectMarketTile",
         "action" => "stAllSelectMarketTile",
         "possibleactions" => array("actAllSelectMarketTile", "actRevertAllSelectMarketTile"),
         "updateGameProgression" => true,
@@ -93,14 +92,14 @@ $machinestates = [
 
     5 => [
         "name" => "individualPlayerSelectMarketTile",
-        "description" => clienttranslate('${actplayer} must select a Market Tile'),
-        "descriptionmyturn" => clienttranslate('${you} must select a Market Tile'),
+        "description" => clienttranslate('${actplayer} must select an available Market Tile'),
+        "descriptionmyturn" => clienttranslate('${you} must select an available Market Tile'),
         "type" => "activeplayer",
-        "action" => "stIndividualPlayerSelectMarketTile",
-        "possibleactions" => ["actIndividualSelectMarketTile"],
-        "transitions" => array( "individualMarketTileSelectionMade" => 5, "zombiePass" => 5 )
+        "args" => "argIndividualPlayerSelectMarketTile",
+        "possibleactions" => ["actIndividualPlayerSelectMarketTile"],
+        "transitions" => array( "getNextPendingPlayerToSelectMarketTile" => 4, "zombiePass" => 5 )
     ],
-
+     
     10 => [
         "name" => "getNextPlayerToBuildPyramid",
         "description" => clienttranslate('Time to build!'),
@@ -117,29 +116,6 @@ $machinestates = [
         "action" => "stBuildPyramid",
         "possibleactions" => ["actBuildPyramid"],
         "transitions" => array( "getNextPlayerToBuildPyramid" => 10)
-    ],
-
-    42 => [ //ekmek sil
-        "name" => "playerTurn",
-        "description" => clienttranslate('${actplayer} must play a card or pass'),
-        "descriptionmyturn" => clienttranslate('${you} must play a card or pass'),
-        "type" => "activeplayer",
-        "args" => "argPlayerTurn",
-        "possibleactions" => [
-            // these actions are called from the front with bgaPerformAction, and matched to the function on the game.php file
-            "actPlayCard", 
-            "actPass",
-        ],
-        "transitions" => ["playCard" => 3, "pass" => 3]
-    ],
-
-    53 => [ //ekmek sil
-        "name" => "nextPlayer",
-        "description" => '',
-        "type" => "game",
-        "action" => "stNextPlayer",
-        "updateGameProgression" => true,
-        "transitions" => ["endGame" => 99, "nextPlayer" => 2]
     ],
 
     // Final state.

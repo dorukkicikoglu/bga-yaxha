@@ -71,7 +71,7 @@ class LogMutationObserver{
         }
     }
 
-    public createLogSelectedMarketTiles(cardsData: {collectingPlayers: MarketTileSelectionsData[], pendingPlayers: MarketTileSelectionsData[]}): string {
+    public createLogSelectedMarketTiles(cardsData: {collectingPlayers: CollectedMarketTilesData[], pendingPlayers: CollectedMarketTilesData[]}): string {
         let logHTML = '';
 
         cardsData.collectingPlayers.sort((a, b) => a.turn_order - b.turn_order);

@@ -2,7 +2,7 @@
 
 if (!defined('RANDOM_BONUS_CARDS_OPTION')) { // guard since this included multiple times
     define('RANDOM_BONUS_CARDS_OPTION', 2);
-    define('BEGINNER_BONUS_CARDS_IDS', [4, 7, 11]); //ekmek bu sayilari degistir
+    define('BEGINNER_BONUS_CARDS_IDS', [0, 1, 2, 3, 4]);
 
     define('SETUP_BONUS_CARDS_COUNT', 3);
     define('ROUND_COUNT', 10);

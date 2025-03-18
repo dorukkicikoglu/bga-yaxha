@@ -2,8 +2,8 @@
     "100": {
         "name": "Bonus Cards Selection",
         "values": {
-            "1": { "name": "Beginner Setup" },
-            "2": { "name": "Random Cards" }
+            "1": { "name": "First Game Setup" },
+            "2": { "name": "Deal Randomly" }
         },
         "default": 2
     }

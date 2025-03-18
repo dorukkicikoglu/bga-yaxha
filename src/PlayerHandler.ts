@@ -9,12 +9,14 @@ class PlayerHandler{
 		this.initPyramidContainer();
 	}
 
-    public getAvatarClone(placeOnPlayerBoard: boolean = false, get184by184: boolean = true): HTMLDivElement{
-		const avatar = dojo.query('img.avatar', this.overallPlayerBoard)[0];
-		if (avatar) {
+    public getAvatarClone(placeOnPlayerBoard: boolean = false, get184by184: boolean = true, srcAvatar: HTMLImageElement = null): HTMLDivElement{
+		if(!srcAvatar)
+			srcAvatar = dojo.query('img.avatar', this.overallPlayerBoard)[0];
+
+		if (srcAvatar) {
 			// Get dimensions and source from original avatar
-			const avatarRect = avatar.getBoundingClientRect();
-			let avatarSrc = avatar.getAttribute('src');
+			const avatarRect = srcAvatar.getBoundingClientRect();
+			let avatarSrc = srcAvatar.getAttribute('src');
 			const avatarSrc32 = avatarSrc;
 			avatarSrc = get184by184 ? avatarSrc.replace('32.jpg', '184.jpg') : avatarSrc;
 
@@ -22,7 +24,7 @@ class PlayerHandler{
 			const avatarClone = document.createElement('div');
 			avatarClone.className = 'avatar-clone yaxha-player-avatar';
 			avatarClone.setAttribute('player-id', this.playerID.toString());
-			avatarClone.style.cssText = `width: ${avatarRect.width}px; height: ${avatarRect.height}px; position: absolute; --player-color: #${this.playerColor};`;
+			avatarClone.style.cssText = `position: absolute; width: ${avatarRect.width}px; height: ${avatarRect.height}px; --player-color: #${this.playerColor};`;
 			avatarClone.innerHTML = `<img src="${avatarSrc}" style="width: 100%; height: 100%;">`;
 
 			if(get184by184){ // If requesting 184x184 avatar, handle fallback to 32x32 if larger image fails to load
@@ -41,7 +43,7 @@ class PlayerHandler{
 
 			if(placeOnPlayerBoard){ // If requested, place the cloned avatar on the original avatar's position
 				document.getElementById('overall-content').appendChild(avatarClone);
-				this.gameui.placeOnObject(avatarClone, avatar);
+				this.gameui.placeOnObject(avatarClone, srcAvatar);
 			}
 
 			return avatarClone;
@@ -66,7 +68,7 @@ class PlayerHandler{
 			<div class="player-name-text">
 				<div class="text-container">${this.playerName}</div>
 			</div>
-			<div class="turn-order-container" id="${turnOrderContainerId}" turn-order="${this.turnOrder}">${this.turnOrder}</div>
+			<div class="turn-order-container" id="${turnOrderContainerId}" turn-order="${this.turnOrder}"></div>
         `;
 		
 		document.getElementById('player-tables').querySelector('.pyramids-container').insertAdjacentElement(
