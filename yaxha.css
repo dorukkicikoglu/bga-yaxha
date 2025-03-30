@@ -725,6 +725,9 @@
   --bg-gradient: linear-gradient(130deg, #ffcae7e0, #ffd6a5fa);
   --status-bar-color: #ffe6e6ef;
   --gamearea-avatar-size: 40px;
+  --market-tile-glow-color: #2a119ac2;
+  --pyramid-cube-width: 40px;
+  --cubes-container-height: 100px;
   --image-source-market-tiles: url(img/market_tiles_minified.jpg);
   --image-source-player-order-tiles: url(img/player_order_tiles_minified.jpg);
   --image-source-bonus-cards: url(img/bonus_cards_minified.jpg);
@@ -810,6 +813,46 @@
 }
 #player-tables .pyramids-container .a-pyramid-container .turn-order-container[turn-order="4"] {
   background-position-x: 100%;
+}
+#player-tables .pyramids-container .a-pyramid-container .cubes-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+#player-tables .pyramids-container .a-pyramid-container .cubes-container .a-tile, #player-tables .pyramids-container .a-pyramid-container .cubes-container .pyramid-cube-snap-point, #player-tables .pyramids-container .a-pyramid-container .cubes-container .rotate-button {
+  position: absolute;
+  width: var(--pyramid-cube-width, 0px);
+  height: var(--pyramid-cube-width, 0px);
+  max-width: var(--pyramid-cube-width, 0px);
+  max-height: var(--pyramid-cube-width, 0px);
+  transform: translate(-50%, -50%);
+}
+#player-tables .pyramids-container .a-pyramid-container .cubes-container .pyramid-cube-snap-point {
+  opacity: 0;
+  background-color: rgba(0, 0, 0, 0.24);
+  outline: 1px solid;
+  outline-color: rgba(var(--player-color-hex), 0.5);
+  outline-offset: -1px;
+}
+#player-tables .pyramids-container .a-pyramid-container .cubes-container .rotate-button {
+  opacity: 0;
+}
+#player-tables .pyramids-container .a-pyramid-container .cubes-container .rotate-button .rotate-icon {
+  opacity: 0.82;
+  position: absolute;
+  color: #ffffff;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-shadow: 0 0 10px #000;
+  font-size: calc(var(--cubes-container-height, 40px) * 0.21);
+}
+#player-tables .pyramids-container .a-pyramid-container[build-pyramid-enabled=true] .pyramid-cube-snap-point.clickable {
+  cursor: pointer;
+}
+#player-tables .pyramids-container .a-pyramid-container[build-pyramid-enabled=true] .rotate-button {
+  cursor: pointer;
 }
 
 .a-cube {
@@ -914,6 +957,9 @@
   outline: none;
   box-shadow: 2px 2px 4px #000000, 0 0 0 3px rgba(255, 230, 11, 0.3764705882), 0 0 12px 5px rgba(255, 230, 11, 0.1882352941), 0 0 20px 8px rgba(255, 230, 11, 0.1254901961);
   animation: pulse 0.5s ease-in-out;
+}
+.market-container .market-tiles-container .a-market-tile.selectable-market-tile {
+  animation: selectable-market-tile-glow-animation 2.2s ease-out infinite;
 }
 .market-container .market-tiles-container .a-market-tile .cubes-container .a-cube {
   pointer-events: none;
@@ -1045,6 +1091,10 @@
 }
 .market-container .bonus-cards-container .a-bonus-card-icon[bonus-card-id="18"]::before {
   background-position: 75% 99.99%;
+}
+
+.gamestate_allSelectMarketTile .a-market-tile {
+  cursor: pointer;
 }
 
 .a-market-tile-icon {
@@ -1331,6 +1381,20 @@
   }
   100% {
     transform: rotate(8deg);
+  }
+}
+@keyframes selectable-market-tile-glow-animation {
+  0% {
+    box-shadow: 0 0 4px 4px var(--market-tile-glow-color);
+  }
+  40% {
+    box-shadow: 0 0 8px 8px var(--market-tile-glow-color);
+  }
+  80% {
+    box-shadow: 0 0 4px 4px var(--market-tile-glow-color);
+  }
+  100% {
+    box-shadow: 0 0 4px 4px var(--market-tile-glow-color);
   }
 }
 

@@ -16,6 +16,7 @@ class GameBody extends GameGui {
     public CUBE_COLORS: { [key: number]: CubeColor };
     public BONUS_CARDS_DATA: { [key: number]: BonusCardData };
     public MARKET_TILE_COLORS: string[];
+    public PYRAMID_MAX_SIZE: number;
 
     constructor() {
         super();
@@ -38,17 +39,18 @@ class GameBody extends GameGui {
         this.imageLoader = new ImageLoadHandler(this, ['market-tiles', 'player-order-tiles', 'bonus-cards', 'bonus-card-icons']);
         this.animationHandler = new AnimationHandlerPromiseBased(this);
 
+        this.CUBE_COLORS = gamedatas.CUBE_COLORS;
+        this.BONUS_CARDS_DATA = gamedatas.BONUS_CARDS_DATA;
+        this.MARKET_TILE_COLORS = gamedatas.MARKET_TILE_COLORS;
+        this.PYRAMID_MAX_SIZE = gamedatas.PYRAMID_MAX_SIZE;
+
         for(let player_id in gamedatas.players) {
             const {name, color, player_no, turn_order} = this.gamedatas.players[player_id];
-            this.players[player_id] = new PlayerHandler(this, parseInt(player_id), name, color, parseInt(player_no), turn_order);
+            this.players[player_id] = new PlayerHandler(this, parseInt(player_id), name, color, parseInt(player_no), turn_order, gamedatas.pyramidData[player_id]);
 
             if(player_id == this.player_id)
                 this.myself = this.players[player_id];
         }
-
-        this.CUBE_COLORS = gamedatas.CUBE_COLORS;
-        this.BONUS_CARDS_DATA = gamedatas.BONUS_CARDS_DATA;
-        this.MARKET_TILE_COLORS = gamedatas.MARKET_TILE_COLORS;
 
         this.MARKET_TILE_COLORS.forEach((color, index) => {
             document.documentElement.style.setProperty(`--market-tile-color-${index}`, `#${color}`);
@@ -71,7 +73,9 @@ class GameBody extends GameGui {
         switch( stateName )
         {
             case 'allSelectMarketTile':
-                this.marketHandler.addSelectableClassToMarketTiles('all');
+                if(args.args._private.selected_market_index === null)
+                    this.marketHandler.addSelectableClassToMarketTiles('all');
+                else this.marketHandler.addSelectableClassToMarketTiles('none');
             break;
         }
     }
@@ -79,6 +83,14 @@ class GameBody extends GameGui {
     public onLeavingState(stateName: string) {
         console.log( 'Leaving state: '+stateName );
         this.marketHandler.marketTiles.forEach(tile => { tile.classList.remove('selected-market-tile', 'selectable-market-tile'); });
+        
+        switch( stateName )
+        {
+            case 'buildPyramid':
+                if(this.myself)
+                    this.myself.pyramid.disableBuildPyramid();
+            break;
+        }
     }
 
     public onUpdateActionButtons(stateName: string, args: any) {
@@ -95,9 +107,15 @@ class GameBody extends GameGui {
 
                     if(this.isCurrentPlayerActive())
                         this.marketHandler.addSelectableClassToMarketTiles(args.possible_market_indexes);
-                    else if(playerCollectedMarketTile.type === 'collecting')
+                    else if(playerCollectedMarketTile.type === 'collecting'){
+                        this.myself.pyramid.enableBuildPyramid(args.possible_moves[this.myself.playerID]);
                         this.updateStatusText(dojo.string.substitute(_('${you} may build while others are selecting Market Tiles'), {you: this.divYou()}));
+                    }
                 }
+            break;
+            case 'buildPyramid':
+                if(this.myself)
+                    this.myself.pyramid.enableBuildPyramid(args.possible_moves);
             break;
         }
     }
@@ -188,6 +206,8 @@ class GameBody extends GameGui {
             })
             .join(''); // Combine into a single string
     }
+    public hexToRgb(hex: string): string { return hex.replace('#', '').match(/.{1,2}/g).map(x => parseInt(x, 16)).join(','); }
+
     public dotTicks(waitingTextContainer: HTMLDivElement){
         let dotInterval: number;
 

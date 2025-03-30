@@ -10,6 +10,9 @@
     --bg-gradient: linear-gradient(130deg, #ffcae7e0, #ffd6a5fa);
     --status-bar-color: #ffe6e6ef;
     --gamearea-avatar-size: 40px;
+	--market-tile-glow-color: #2a119ac2;
+    --pyramid-cube-width: 40px; //bu hesaplancak galiba
+    --cubes-container-height: 100px; //bu hesaplancak galiba
     --image-source-market-tiles: url(img/market_tiles_minified.jpg);
     --image-source-player-order-tiles: url(img/player_order_tiles_minified.jpg);
     --image-source-bonus-cards: url(img/bonus_cards_minified.jpg);
@@ -18,12 +21,12 @@
 
 #player-tables{ text-align: center;
     .pyramids-container{ margin-top: 40px;
-.a-pyramid-container { position: relative; width: 48%; margin: 1%; aspect-ratio: 1; background-color: rgba(255, 255, 255, 0.3); box-shadow: 2px 2px 0 var(--player-color, #000000), -2px 2px 0 var(--player-color, #000000); display: inline-block; max-width: 400px;
-    .player-name-text { display: flex; align-items: center; width: calc(100% + 4px); position: absolute; font-size: 22px; transform: translateY(-50%); top: 1px; left: -2px;
-        &:before{ content: ""; width: 20px; box-shadow: 0px -2px 0 0px var(--player-color, #000000); margin-right: 10px; height: 2px; top: 2px; position: relative; }
-        &:after{ flex-grow: 1; content: ""; box-shadow: 0px -2px 0 0px var(--player-color, #000000); margin-left: 10px; height: 2px; top: 2px; position: relative; }
-        .text-container{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%; color: var(--player-color, #000000); @include text-shade(#FFFFFF, 2px); }
-    }
+        .a-pyramid-container { position: relative; width: 48%; margin: 1%; aspect-ratio: 1; background-color: rgba(255, 255, 255, 0.3); box-shadow: 2px 2px 0 var(--player-color, #000000), -2px 2px 0 var(--player-color, #000000); display: inline-block; max-width: 400px;
+            .player-name-text { display: flex; align-items: center; width: calc(100% + 4px); position: absolute; font-size: 22px; transform: translateY(-50%); top: 1px; left: -2px;
+                &:before{ content: ""; width: 20px; box-shadow: 0px -2px 0 0px var(--player-color, #000000); margin-right: 10px; height: 2px; top: 2px; position: relative; }
+                &:after{ flex-grow: 1; content: ""; box-shadow: 0px -2px 0 0px var(--player-color, #000000); margin-left: 10px; height: 2px; top: 2px; position: relative; }
+                .text-container{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%; color: var(--player-color, #000000); @include text-shade(#FFFFFF, 2px); }
+            }
             .turn-order-container{ position: absolute; top: -6%; right: 2%; width: 14%; aspect-ratio: 0.7; background-image: var(--image-source-player-order-tiles); background-size: 400% 100%; background-repeat: no-repeat; transform: rotate(8deg); transition: transform 0.2s ease; cursor: help;
 
                 &:hover { animation: wiggle 0.25s ease-in-out 2; }
@@ -32,6 +35,18 @@
                 &[turn-order="2"] { background-position-x: 33.33%; }
                 &[turn-order="3"] { background-position-x: 66.66%; }
                 &[turn-order="4"] { background-position-x: 100%; } 
+            }
+            .cubes-container{ 
+                position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                .a-tile, .pyramid-cube-snap-point, .rotate-button{ position: absolute; width: var(--pyramid-cube-width, 0px); height: var(--pyramid-cube-width, 0px); max-width: var(--pyramid-cube-width, 0px); max-height: var(--pyramid-cube-width, 0px); transform: translate(-50%, -50%);}
+                .pyramid-cube-snap-point{ opacity: 0; background-color: rgba(0, 0, 0, 0.24); outline: 1px solid; outline-color: rgba(var(--player-color-hex), 0.5); outline-offset: -1px; }
+                .rotate-button{ opacity: 0;
+                    .rotate-icon{ opacity: 0.82; position: absolute; color: #ffffff; top: 50%; left: 50%; transform: translate(-50%, -50%); text-shadow: 0 0 10px #000; font-size: calc(var(--cubes-container-height, 40px) * 0.21); }
+                }
+            }
+            &[build-pyramid-enabled=true] { 
+                .pyramid-cube-snap-point.clickable{ cursor: pointer; }
+                .rotate-button{ cursor: pointer; }
             }
         }
     }
@@ -56,7 +71,8 @@
             &[market-index="3"] { background-position-x: 100%; }
 
             &.selected-market-tile { outline: none; box-shadow: 2px 2px 4px #000000, 0 0 0 3px rgba(255, 230, 11, 0.3764705882), 0 0 12px 5px rgba(255, 230, 11, 0.1882352941), 0 0 20px 8px rgba(255, 230, 11, 0.1254901961); animation: pulse 0.5s ease-in-out; }
-
+            &.selectable-market-tile{ animation: selectable-market-tile-glow-animation 2.2s ease-out infinite; }
+            
             .cubes-container .a-cube { pointer-events: none; }
 
             .collecting-player-avatar{ position: absolute; top: -10px; left: 50%; width: var(--gamearea-avatar-size); height: var(--gamearea-avatar-size); }
@@ -82,6 +98,8 @@
         }
     }
 }
+
+.gamestate_allSelectMarketTile .a-market-tile{ cursor: pointer; }
 
 .a-market-tile-icon{ display: inline-block; vertical-align: middle; position: relative;
     &::before { content: ""; position: absolute; inset: 0; background-image: var(--image-source-market-tiles); background-size: 400%; background-repeat: no-repeat; clip-path: inset(42% 7% 7% 42%); width: 170%; height: 170%; top: -70%; left: -70%; pointer-events: none; }
@@ -175,3 +193,10 @@
     50% { transform: rotate(2deg); }
     100% { transform: rotate(8deg); }
 }
+
+@keyframes selectable-market-tile-glow-animation {
+    0% { box-shadow: 0 0 4px 4px var(--market-tile-glow-color); }
+    40% { box-shadow: 0 0 8px 8px var(--market-tile-glow-color); }
+    80% { box-shadow: 0 0 4px 4px var(--market-tile-glow-color); }
+    100% { box-shadow: 0 0 4px 4px var(--market-tile-glow-color); }
+  }

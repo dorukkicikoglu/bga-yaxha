@@ -21,12 +21,14 @@ namespace Bga\Games\yaxha;
 use \Bga\GameFramework\Actions\CheckAction;
 
 use YXHGlobalsManager;
+use YXHPyramidManager;
 require_once(APP_GAMEMODULE_PATH . "module/table/table.game.php");
 
 class Game extends \Table
 {
-    private static array $CARD_TYPES; //ekmek birgun sil
+    // private static array $CARD_TYPES; //ekmek birgun sil
     public YXHGlobalsManager $globalsManager;
+    public YXHPyramidManager $pyramidManager;
     private $cubesBag;
 
     /**
@@ -45,6 +47,7 @@ class Game extends \Table
 
         require_once 'material.inc.php'; 
         require_once 'YXHGlobalsManager.php'; 
+        require_once 'YXHPyramidManager.php'; 
 
         $this->globalsManager = new YXHGlobalsManager($this, 
             $globalKeys = array(
@@ -53,15 +56,17 @@ class Game extends \Table
             $userPrefs = array()
         );
 
-        self::$CARD_TYPES = [
-            1 => [
-                "card_name" => clienttranslate('Troll'), // ...
-            ],
-            2 => [
-                "card_name" => clienttranslate('Goblin'), // ...
-            ],
-            // ...
-        ];
+        $this->pyramidManager = new YXHPyramidManager($this);
+
+        // self::$CARD_TYPES = [ //ekmek silß
+        //     1 => [
+        //         "card_name" => clienttranslate('Troll'), // ...
+        //     ],
+        //     2 => [
+        //         "card_name" => clienttranslate('Goblin'), // ...
+        //     ],
+        //     // ...
+        // ];
 
         $this->cubesBag = self::getNew("module.common.deck");
         $this->cubesBag->init("cubes");
@@ -180,6 +185,16 @@ class Game extends \Table
         $this->gamestate->nextState('getNextPendingPlayerToSelectMarketTile');
     }
 
+    public function argAllSelectMarketTile(): array{
+        $selectedMarketIndexes = $this->getCollectionFromDb("SELECT player_id, selected_market_index FROM player", true);
+
+        $privateData = [];
+        foreach($selectedMarketIndexes as $playerID => $marketIndex)
+            $privateData[$playerID]['selected_market_index'] = $marketIndex;
+
+        return ['_private' => $privateData];
+    }
+
     public function argIndividualPlayerSelectMarketTile(): array{
         $possibleMarketIndexes = [];
         $tileCount = $this->getPlayersNumber(); //tile count is the same as the number of players
@@ -187,7 +202,10 @@ class Game extends \Table
         $possibleMarketIndexes = array_diff(range(0, $tileCount - 1), $this->getObjectListFromDB("SELECT collected_market_index FROM player WHERE collected_market_index IS NOT NULL", true));
         $possibleMarketIndexes = array_values($possibleMarketIndexes);
 
-        return ['possible_market_indexes' => $possibleMarketIndexes, 'ekmek' => 'ekmekler'];
+        return [
+            'possible_market_indexes' => $possibleMarketIndexes,
+            'possible_moves' => $this->pyramidManager->getPossibleMoves()
+        ];
     }
 
     /**
@@ -271,26 +289,26 @@ class Game extends \Table
         $nextPlayer = self::getObjectFromDB("SELECT * FROM player WHERE player_zombie = 0 AND collected_market_index IS NULL ORDER BY turn_order ASC LIMIT 1");
 
         if ($nextPlayer === null) { // No more pending players to select market tiles
-            $this->gamestate->nextState('getNextPlayerToBuildPyramid'); //ekmek devam, bunun multipleactiveplayer olmasi lazim
+            $this->gamestate->nextState('buildPyramid'); //ekmek devam, bunun multipleactiveplayer olmasi lazim
         } else { // Activate next player to make their selection
             $this->gamestate->changeActivePlayer($nextPlayer['player_id']);
             $this->gamestate->nextState('individualPlayerSelectMarketTile');
         }
     }
 
-    public function stGetNextPlayerToBuildPyramid(): void {
-        $nextPlayer = self::getObjectFromDB("SELECT p.* FROM player p 
-            INNER JOIN cubes c ON p.collected_market_index = c.card_location_arg 
-            WHERE p.player_zombie = 0 AND c.card_location = 'market' AND p.collected_market_index IS NOT NULL ORDER BY p.turn_order ASC LIMIT 1");
+    // public function stGetNextPlayerToBuildPyramid(): void {
+    //     $nextPlayer = self::getObjectFromDB("SELECT p.* FROM player p 
+    //         INNER JOIN cubes c ON p.collected_market_index = c.card_location_arg 
+    //         WHERE p.player_zombie = 0 AND c.card_location = 'market' AND p.collected_market_index IS NOT NULL ORDER BY p.turn_order ASC LIMIT 1");
 
-        if ($nextPlayer === null) {
-            // No valid players left, go back to market tile selection
-            $this->gamestate->nextState('allSelectMarketTile');
-        } else {
-            $this->gamestate->changeActivePlayer($nextPlayer['player_id']);
-            $this->gamestate->nextState('buildPyramid');
-        }
-    }
+    //     if ($nextPlayer === null) {
+    //         // No valid players left, go back to market tile selection
+    //         $this->gamestate->nextState('allSelectMarketTile');
+    //     } else {
+    //         $this->gamestate->changeActivePlayer($nextPlayer['player_id']);
+    //         $this->gamestate->nextState('buildPyramid');
+    //     }
+    // }
 
     public function stBuildPyramid(): void {
 //ekmek sil?
@@ -358,7 +376,9 @@ class Game extends \Table
         $result['CUBE_COLORS'] = CUBE_COLORS;
         $result['BONUS_CARDS_DATA'] = BONUS_CARDS_DATA;
         $result['MARKET_TILE_COLORS'] = MARKET_TILE_COLORS;
-        
+        $result['PYRAMID_MAX_SIZE'] = PYRAMID_MAX_SIZE;
+        $result['pyramidData'] = $this->pyramidManager->getPyramidsData();
+
         $result['playerSelectedMarketIndex'] = $this->getUniqueValueFromDB("SELECT selected_market_index FROM player WHERE player_id = $current_player_id");
         $result['collectedMarketTilesData'] = $this->getObjectListFromDB("SELECT player_id, selected_market_index, collected_market_index, turn_order, CASE WHEN collected_market_index IS NOT NULL THEN 'collecting' ELSE 'pending' END AS type FROM player ORDER BY turn_order");
 
