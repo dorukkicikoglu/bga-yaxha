@@ -51,5 +51,8 @@ CREATE TABLE IF NOT EXISTS `cubes` (
   `card_location` ENUM('bag', 'market', 'player') NOT NULL,
   `card_location_arg` int(11) NOT NULL,
   `color` TINYINT NOT NULL,
+  `pos_x` TINYINT NULL,
+  `pos_y` TINYINT NULL,
+  `pos_z` TINYINT NULL,
   PRIMARY KEY (`card_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;

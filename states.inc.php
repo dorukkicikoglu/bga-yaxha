@@ -68,6 +68,7 @@ $machinestates = [
         "description" => clienttranslate('Waiting for players to select a Market Tile'),
         "descriptionmyturn" => clienttranslate('${you} must select a Market Tile'),
         "type" => "multipleactiveplayer",
+        "args" => "argAllSelectMarketTile",
         "action" => "stAllSelectMarketTile",
         "possibleactions" => array("actAllSelectMarketTile", "actRevertAllSelectMarketTile"),
         "updateGameProgression" => true,
@@ -87,7 +88,7 @@ $machinestates = [
         "description" => clienttranslate('Selections revealed'),
         "type" => "game",
         "action" => "stGetNextPendingPlayerToSelectMarketTile",
-        "transitions" => ["individualPlayerSelectMarketTile" => 5, "getNextPlayerToBuildPyramid" => 10]
+        "transitions" => ["individualPlayerSelectMarketTile" => 5, "buildPyramid" => 10]
     ],
 
     5 => [
@@ -100,22 +101,22 @@ $machinestates = [
         "transitions" => array( "getNextPendingPlayerToSelectMarketTile" => 4, "zombiePass" => 5 )
     ],
      
-    10 => [
-        "name" => "getNextPlayerToBuildPyramid",
-        "description" => clienttranslate('Time to build!'),
-        "type" => "game",
-        "action" => "stGetNextPlayerToBuildPyramid",
-        "transitions" => ["allSelectMarketTile" => 2, "buildPyramid" => 11]
-    ],
+    // 6 => [
+    //     "name" => "getNextPlayerToBuildPyramid",
+    //     "description" => clienttranslate('Time to build!'),
+    //     "type" => "game",
+    //     "action" => "stGetNextPlayerToBuildPyramid",
+    //     "transitions" => ["allSelectMarketTile" => 2, "buildPyramid" => 11]
+    // ],
 
-    11 => [
+    10 => [
         "name" => "buildPyramid",
         "description" => clienttranslate('${actplayer} must build pyramid'),
         "descriptionmyturn" => clienttranslate('${you} must build pyramid'),
         "type" => "activeplayer",
         "action" => "stBuildPyramid",
         "possibleactions" => ["actBuildPyramid"],
-        "transitions" => array( "getNextPlayerToBuildPyramid" => 10)
+        "transitions" => array( "pyramidsBuilt" => 11)
     ],
 
     // Final state.

@@ -1,12 +1,11 @@
 class PlayerHandler{
     public overallPlayerBoard: HTMLDivElement;
-    private pyramidContainer: HTMLDivElement;
+    public pyramid: PyramidHandler;
 
-	constructor(private gameui: GameBody, public playerID: number, private playerName: string, public playerColor: string, private playerNo: number, private turnOrder: number) {
+	constructor(private gameui: GameBody, public playerID: number, private playerName: string, public playerColor: string, private playerNo: number, private turnOrder: number, private pyramidData: any) { //ekmek change type pyramidData
 		this.overallPlayerBoard = $('overall_player_board_' + this.playerID);
-		this.pyramidContainer = null;
 
-		this.initPyramidContainer();
+		this.pyramid = new PyramidHandler(this.gameui, this, this.gameui.PYRAMID_MAX_SIZE, pyramidData);
 	}
 
     public getAvatarClone(placeOnPlayerBoard: boolean = false, get184by184: boolean = true, srcAvatar: HTMLImageElement = null): HTMLDivElement{
@@ -51,29 +50,5 @@ class PlayerHandler{
 			console.log('avatar not found, playerID:', this.playerID);
 			return null;
 		}
-    }
-
-    private initPyramidContainer(){
-        this.pyramidContainer = document.createElement('div');
-        this.pyramidContainer.id = 'pyramid-container-' + this.playerID;
-		this.pyramidContainer.className = 'a-pyramid-container';
-        this.pyramidContainer.setAttribute('player-id', this.playerID.toString());
-
-		// Set the custom property for player color
-        this.pyramidContainer.style.setProperty('--player-color', '#' + this.playerColor);
-
-        const turnOrderContainerId = `turn-order-${this.playerID}`;
-
-		this.pyramidContainer.innerHTML = `
-			<div class="player-name-text">
-				<div class="text-container">${this.playerName}</div>
-			</div>
-			<div class="turn-order-container" id="${turnOrderContainerId}" turn-order="${this.turnOrder}"></div>
-        `;
-		
-		document.getElementById('player-tables').querySelector('.pyramids-container').insertAdjacentElement(
-			Number(this.playerID) === Number(this.gameui.player_id) ? 'afterbegin' : 'beforeend',
-			this.pyramidContainer
-		);
     }
 }

@@ -27,7 +27,7 @@ class MarketHandler{
             // First loop: Create market tiles
             this.marketTiles[i] = document.createElement('div');
             this.marketTiles[i].innerHTML = '<div class="cubes-container"></div>';
-            this.marketTiles[i].className = 'a-market-tile market-tile-' + i + ' ' + (this.playerSelectedMarketIndex !== null && Number(this.playerSelectedMarketIndex) === i ? 'selected-market-tile' : '');
+            this.marketTiles[i].className = 'a-market-tile market-tile-' + i + ' ' + (this.gameui.gamedatas.gamestate.name === 'allSelectMarketTile' && this.playerSelectedMarketIndex !== null && Number(this.playerSelectedMarketIndex) === i ? 'selected-market-tile' : '');
             this.marketTiles[i].setAttribute('market-index', i.toString());
             this.marketTiles[i].setAttribute('random-placement-index', shuffledIndices[i].toString());
 
@@ -70,10 +70,14 @@ class MarketHandler{
         }
     }
 
-    public addSelectableClassToMarketTiles(possibleMarketIndexes: number[] | 'all') {
+    public addSelectableClassToMarketTiles(possibleMarketIndexes: number[] | 'all' | 'none') {
         this.marketTiles.forEach(tile => tile.classList.remove('selectable-market-tile'));
 
+        if (possibleMarketIndexes === 'none')
+            return;
+        
         let selectableMarketTiles = [];
+        
         if (possibleMarketIndexes === 'all')
             selectableMarketTiles = this.marketTiles;
         else possibleMarketIndexes.forEach((i) => selectableMarketTiles.push(this.marketTiles[i]));
@@ -86,7 +90,10 @@ class MarketHandler{
             return;
         
         const marketTile = event.target as HTMLDivElement;
-        if(!marketTile.classList.contains('a-market-tile') || !marketTile.classList.contains('selectable-market-tile'))
+        if(!marketTile.classList.contains('a-market-tile'))
+            return;
+        
+        if(this.gameui.gamedatas.gamestate.name === 'individualPlayerSelectMarketTile' && !marketTile.classList.contains('selectable-market-tile'))
             return;
 
         const marketIndex = marketTile.getAttribute('market-index');
@@ -100,10 +107,6 @@ class MarketHandler{
             actionName = 'actIndividualPlayerSelectMarketTile';
         
         this.gameui.ajaxAction(actionName, {marketIndex: marketIndex}, true, false);
-
-            // if(!marketTile.classList.contains('selected-market-tile')) //ekmek sil
-            //     this.gameui.ajaxAction('actAllSelectMarketTile', {marketIndex: marketIndex}, true, false);
-            // else this.gameui.ajaxAction('actRevertAllSelectMarketTile', {marketIndex: marketIndex}, true, false);
     }
 
     public async marketTileSelected(marketIndex: number) {
@@ -114,8 +117,10 @@ class MarketHandler{
         if (selectedTile) {
             this.playerSelectedMarketIndex = marketIndex;
             selectedTile.classList.add('selected-market-tile');
+            this.addSelectableClassToMarketTiles('none');
         } else {
             this.playerSelectedMarketIndex = null;
+            this.addSelectableClassToMarketTiles('all');
         }
         
         this.updateStatusTextUponCubeSelection();

@@ -38,6 +38,7 @@ if (!defined('RANDOM_BONUS_CARDS_OPTION')) { // guard since this included multip
     ]);
 
     define('MARKET_TILE_COLORS', ['fbe5b2', 'cae2cb', 'f0d0d4', 'c6dff3']);
+    define('PYRAMID_MAX_SIZE', 4);
 }
 
 ?>
