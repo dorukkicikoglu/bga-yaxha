@@ -5,7 +5,7 @@ class TooltipHandler{
 	}
 
 	public addTooltipToBonusCards(){
-        const bonusCardIcons = this.gameui.marketHandler.bonusCardIconsContainer.querySelectorAll('.a-bonus-card-icon');
+        const bonusCardIcons = this.gameui.marketHandler.getBonusCardIconsContainer().querySelectorAll('.a-bonus-card-icon');
         bonusCardIcons.forEach(cardIcon => {
             const cardIconID = cardIcon.getAttribute('id');
             const cardID = cardIcon.getAttribute('bonus-card-id');
@@ -34,7 +34,7 @@ class TooltipHandler{
             this.gameui.addTooltipHtml(
                 containerId,
                 `<div class="turn-order-tooltip tooltip-wrapper">
-                    <div class="tooltip-text">${_('${player}\'s turn order: ${order}').replace('${player}', playerDiv).replace('${order}', turnOrder.toString())}</div>
+                    <div class="tooltip-text">${_('${player}\'s turn order is ${order}').replace('${player}', playerDiv).replace('${order}', '<b>' + turnOrder.toString() + '</b>')}</div>
                 </div>`,
                 400
             );

@@ -141,16 +141,28 @@ var GameBody = /** @class */ (function (_super) {
     }
     GameBody.prototype.setup = function (gamedatas) {
         console.log("Starting game setup");
-        document.getElementById('game_play_area').insertAdjacentHTML('beforeend', "<div id=\"player-tables\">\n            <div class=\"market-container\">\n                <div class=\"market-tiles-container\"></div>\n                <div class=\"waiting-players-container\"></div>\n                <div class=\"bonus-cards-container\"></div>\n            </div>\n            <div class=\"pyramids-container\"></div>\n        </div>");
-        this.imageLoader = new ImageLoadHandler(this, ['market-tiles', 'player-order-tiles', 'bonus-cards', 'bonus-card-icons']);
-        this.animationHandler = new AnimationHandlerPromiseBased(this);
         this.CUBE_COLORS = gamedatas.CUBE_COLORS;
         this.BONUS_CARDS_DATA = gamedatas.BONUS_CARDS_DATA;
         this.MARKET_TILE_COLORS = gamedatas.MARKET_TILE_COLORS;
         this.PYRAMID_MAX_SIZE = gamedatas.PYRAMID_MAX_SIZE;
+        this.CUBES_PER_MARKET_TILE = gamedatas.CUBES_PER_MARKET_TILE;
+        var pyramidCSSRange = [];
+        for (var i = -1 * (this.PYRAMID_MAX_SIZE - 1); i <= this.PYRAMID_MAX_SIZE - 1; i++)
+            pyramidCSSRange.push(i);
+        var cubeColorCSS = '';
+        for (var colorIndex in this.CUBE_COLORS) {
+            cubeColorCSS += ".a-cube[color=\"".concat(colorIndex, "\"] { --cube-color: #").concat(this.CUBE_COLORS[colorIndex].colorCode, "; }\n            ");
+        }
+        var pyramidCSS = '';
+        pyramidCSSRange.forEach(function (n) {
+            pyramidCSS += "\n            .pyramids-container .a-pyramid-container .cubes-container *[pos-x=\"".concat(n, "\"] {\n            left: calc(min(var(--pyramid-cube-width), var(--max-cube-width)) * ").concat(n, ");\n            }\n            .pyramids-container .a-pyramid-container .cubes-container *[pos-y=\"").concat(n, "\"] {\n            bottom: calc(min(var(--pyramid-cube-width), var(--max-cube-width)) * ").concat(n, ");\n            }\n            ");
+        }); //ekmek pos-z ekle
+        document.getElementById('game_play_area').insertAdjacentHTML('beforeend', "\n            <style>\n                ".concat(cubeColorCSS, "\n                ").concat(pyramidCSS, "\n            </style>\n            <div id=\"player-tables\">\n            <div class=\"market-container\">\n                <div class=\"market-tiles-container\"></div>\n                <div class=\"waiting-players-container\"></div>\n                <div class=\"bonus-cards-container\"></div>\n            </div>\n            <div class=\"pyramids-container\"></div>\n        </div>"));
+        this.imageLoader = new ImageLoadHandler(this, ['market-tiles', 'player-order-tiles', 'bonus-cards', 'bonus-card-icons']);
+        this.animationHandler = new AnimationHandlerPromiseBased(this);
         for (var player_id in gamedatas.players) {
-            var _a = this.gamedatas.players[player_id], name_1 = _a.name, color = _a.color, player_no = _a.player_no, turn_order = _a.turn_order;
-            this.players[player_id] = new PlayerHandler(this, parseInt(player_id), name_1, color, parseInt(player_no), turn_order, gamedatas.pyramidData[player_id]);
+            var _a = this.gamedatas.players[player_id], name_1 = _a.name, color = _a.color, player_no = _a.player_no, turn_order = _a.turn_order, built_cubes_this_round = _a.built_cubes_this_round;
+            this.players[player_id] = new PlayerHandler(this, parseInt(player_id), name_1, color, parseInt(player_no), turn_order, gamedatas.pyramidData[player_id], built_cubes_this_round == '1');
             if (player_id == this.player_id)
                 this.myself = this.players[player_id];
         }
@@ -177,7 +189,7 @@ var GameBody = /** @class */ (function (_super) {
     };
     GameBody.prototype.onLeavingState = function (stateName) {
         console.log('Leaving state: ' + stateName);
-        this.marketHandler.marketTiles.forEach(function (tile) { tile.classList.remove('selected-market-tile', 'selectable-market-tile'); });
+        this.marketHandler.getMarketTiles().forEach(function (tile) { tile.classList.remove('selected-market-tile', 'selectable-market-tile'); });
         switch (stateName) {
             case 'buildPyramid':
                 if (this.myself)
@@ -189,22 +201,21 @@ var GameBody = /** @class */ (function (_super) {
         console.log('onUpdateActionButtons: ' + stateName, args);
         switch (stateName) {
             case 'allSelectMarketTile':
-                this.marketHandler.updateStatusTextUponCubeSelection();
+                this.marketHandler.updateStatusTextUponMarketTileSelection();
                 break;
             case 'individualPlayerSelectMarketTile':
+                this.marketHandler.setCollectedMarketTilesData(args.collectedMarketTilesData);
                 if (this.myself) {
-                    var playerCollectedMarketTile = this.marketHandler.getPlayerCollectedMarketTile(this.myself.playerID);
+                    var playerCollectedMarketTile = this.myself.getCollectedMarketTileData();
                     if (this.isCurrentPlayerActive())
                         this.marketHandler.addSelectableClassToMarketTiles(args.possible_market_indexes);
-                    else if (playerCollectedMarketTile.type === 'collecting') {
-                        this.myself.pyramid.enableBuildPyramid(args.possible_moves[this.myself.playerID]);
-                        this.updateStatusText(dojo.string.substitute(_('${you} may build while others are selecting Market Tiles'), { you: this.divYou() }));
-                    }
+                    else if (playerCollectedMarketTile.type === 'collecting')
+                        this.myself.pyramid.enableBuildPyramid(args._private.possible_moves);
                 }
                 break;
             case 'buildPyramid':
                 if (this.myself)
-                    this.myself.pyramid.enableBuildPyramid(args.possible_moves);
+                    this.myself.pyramid.enableBuildPyramid(args._private.possible_moves);
                 break;
         }
     };
@@ -262,6 +273,14 @@ var GameBody = /** @class */ (function (_super) {
         var html = "<span style=\"color:#" + color + ";" + color_bg + "\" " + this.getAttributesHTML(attributes) + ">" + this.gamedatas.players[player_id].name + "</span>";
         return html;
     };
+    GameBody.prototype.divActivePlayer = function (attributes, detectYou) {
+        if (attributes === void 0) { attributes = {}; }
+        if (detectYou === void 0) { detectYou = true; }
+        var activePlayerID = this.getActivePlayerId();
+        if (!activePlayerID)
+            return null;
+        return this.divColoredPlayer(activePlayerID, attributes, detectYou);
+    };
     GameBody.prototype.getAttributesHTML = function (attributes) { return Object.entries(attributes || {}).map(function (_a) {
         var key = _a[0], value = _a[1];
         return "".concat(key, "=\"").concat(value, "\"");
@@ -300,9 +319,7 @@ var GameBody = /** @class */ (function (_super) {
         })
             .join(''); // Combine into a single string
     };
-    GameBody.prototype.hexToRgb = function (hex) {
-        return hex.replace('#', '').match(/.{1,2}/g).map(function (x) { return parseInt(x, 16); }).join(',');
-    };
+    GameBody.prototype.hexToRgb = function (hex) { return hex.replace('#', '').match(/.{1,2}/g).map(function (x) { return parseInt(x, 16); }).join(','); };
     GameBody.prototype.dotTicks = function (waitingTextContainer) {
         var dotInterval;
         var loaderSpan = dojo.create('span', { class: 'loader-span', style: 'display: inline-block; width: 24px; text-align: left;', dots: 0 });
@@ -317,6 +334,27 @@ var GameBody = /** @class */ (function (_super) {
         dotTick();
         dotInterval = setInterval(dotTick, 500);
     };
+    GameBody.prototype.getContentsRectangle = function (node, excludeClass) {
+        if (excludeClass === void 0) { excludeClass = null; }
+        var children = node.children;
+        if (children.length === 0)
+            return null; // No children, return coordinates (0,0)
+        var minX = Infinity;
+        var minY = Infinity;
+        var maxX = -Infinity;
+        var maxY = -Infinity;
+        for (var _i = 0, _a = Array.from(children); _i < _a.length; _i++) {
+            var child = _a[_i];
+            if (excludeClass && child.classList.contains(excludeClass))
+                continue;
+            var rect = child.getBoundingClientRect();
+            minX = Math.min(minX, rect.left);
+            minY = Math.min(minY, rect.top);
+            maxX = Math.max(maxX, rect.right);
+            maxY = Math.max(maxY, rect.bottom);
+        }
+        return { minX: minX, minY: minY, maxX: maxX, maxY: maxY, width: maxX - minX, height: maxY - minY };
+    };
     GameBody.prototype.printDebug = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
@@ -324,6 +362,22 @@ var GameBody = /** @class */ (function (_super) {
         }
         args[0] = typeof args[0] == 'string' ? '*** ' + args[0] : args[0];
         console.log.apply(console, args);
+    };
+    //game specific utility functions
+    GameBody.prototype.createCubeDiv = function (cube) {
+        var cubeDiv = document.createElement('div');
+        cubeDiv.className = 'a-cube';
+        cubeDiv.innerHTML = '<div class="cube-background"></div><div class="top-side"></div><div class="right-side"></div><div class="bottom-side"></div>';
+        cubeDiv.setAttribute('cube-id', cube.cube_id.toString());
+        cubeDiv.setAttribute('color', cube.color.toString());
+        cubeDiv.style.setProperty('--top-bg-x', (Math.random() * 100) + '%');
+        cubeDiv.style.setProperty('--top-bg-y', (Math.random() * 100) + '%');
+        cubeDiv.style.setProperty('--side-bg-x', (Math.random() * 100) + '%');
+        cubeDiv.style.setProperty('--side-bg-y', (Math.random() * 100) + '%');
+        cubeDiv.style.setProperty('--bottom-bg-x', (Math.random() * 100) + '%');
+        cubeDiv.style.setProperty('--bottom-bg-y', (Math.random() * 100) + '%');
+        // cubeDiv.style.setProperty('--cube-color', '#' + this.CUBE_COLORS[Number(cube.color)].colorCode); //ekmek sil
+        return cubeDiv;
     };
     //notification functions
     GameBody.prototype.setupNotifications = function () {
@@ -384,6 +438,33 @@ var GameBody = /** @class */ (function (_super) {
                         _a.sent();
                         return [2 /*return*/];
                 }
+            });
+        });
+    };
+    GameBody.prototype.notif_cubePlacedInPyramid = function (args) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                console.log('notif_cubePlacedInPyramid');
+                this.myself.pyramid.enableBuildPyramid(args.possible_moves);
+                return [2 /*return*/];
+            });
+        });
+    };
+    GameBody.prototype.notif_undoneBuildPyramid = function (args) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                console.log('notif_undoneBuildPyramid');
+                this.myself.pyramid.enableBuildPyramid(args.possible_moves);
+                return [2 /*return*/];
+            });
+        });
+    };
+    GameBody.prototype.notif_confirmedBuildPyramid = function (args) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                console.log('notif_confirmedBuildPyramid');
+                this.myself.pyramid.confirmedBuildPyramid();
+                return [2 /*return*/];
             });
         });
     };
@@ -538,7 +619,7 @@ var MarketHandler = /** @class */ (function () {
         this.marketTiles = [];
         this.initMarketContainer();
         this.initBonusCardContainer();
-        this.updateStatusTextUponCubeSelection();
+        this.updateStatusTextUponMarketTileSelection();
     }
     MarketHandler.prototype.initMarketContainer = function () {
         var _this = this;
@@ -546,7 +627,7 @@ var MarketHandler = /** @class */ (function () {
         var shuffledIndices = Array.from({ length: 60 }, function (_, i) { return i + 1; })
             .sort(function () { return Math.random() - 0.5; });
         Object.keys(this.gameui.players).forEach(function (_, i) {
-            // First loop: Create market tiles
+            // First loop: Create Market Tiles
             _this.marketTiles[i] = document.createElement('div');
             _this.marketTiles[i].innerHTML = '<div class="cubes-container"></div>';
             _this.marketTiles[i].className = 'a-market-tile market-tile-' + i + ' ' + (_this.gameui.gamedatas.gamestate.name === 'allSelectMarketTile' && _this.playerSelectedMarketIndex !== null && Number(_this.playerSelectedMarketIndex) === i ? 'selected-market-tile' : '');
@@ -556,30 +637,28 @@ var MarketHandler = /** @class */ (function () {
             _this.marketTilesContainer.appendChild(_this.marketTiles[i]);
         });
         // Second loop: Create and position cubes
-        Object.keys(this.gameui.players).forEach(function (_, i) {
-            var tilesData = _this.marketData[i] || [];
-            tilesData.forEach(function (cube) {
-                var cubeDiv = document.createElement('div');
-                cubeDiv.className = 'a-cube';
-                cubeDiv.innerHTML = '<div class="cube-background"></div>';
-                cubeDiv.setAttribute('cube-id', cube.cube_id.toString());
-                cubeDiv.setAttribute('color', cube.color.toString());
-                cubeDiv.style.setProperty('--top-bg-x', (Math.random() * 100) + '%');
-                cubeDiv.style.setProperty('--top-bg-y', (Math.random() * 100) + '%');
-                cubeDiv.style.setProperty('--side-bg-x', (Math.random() * 100) + '%');
-                cubeDiv.style.setProperty('--side-bg-y', (Math.random() * 100) + '%');
-                cubeDiv.style.setProperty('--bottom-bg-x', (Math.random() * 100) + '%');
-                cubeDiv.style.setProperty('--bottom-bg-y', (Math.random() * 100) + '%');
-                cubeDiv.style.setProperty('--cube-color', '#' + _this.gameui.CUBE_COLORS[Number(cube.color)].colorCode);
-                _this.marketTiles[i].querySelector('.cubes-container').appendChild(cubeDiv);
-            });
+        Object.keys(this.marketData).forEach(function (_, marketIndex) {
+            var _a;
+            var tilesData = _this.marketData[marketIndex] || [];
+            var cubesContainer = _this.marketTiles[marketIndex].querySelector('.cubes-container');
+            for (var _i = 0, tilesData_1 = tilesData; _i < tilesData_1.length; _i++) {
+                var cube = tilesData_1[_i];
+                var cubeDiv = _this.gameui.createCubeDiv(cube);
+                if (_this.gameui.myself && marketIndex == _this.playerSelectedMarketIndex) {
+                    if (cube.cube_id === ((_a = _this.gameui.myself.pyramid.getUnplacedCube()) === null || _a === void 0 ? void 0 : _a.cube_id))
+                        cubeDiv.classList.add('selected-for-pyramid');
+                    else if (cube.cube_id in _this.gameui.myself.pyramid.getCubesInConstruction())
+                        cubeDiv.classList.add('built-in-pyramid');
+                }
+                cubesContainer.appendChild(cubeDiv);
+            }
         });
-        // Add player avatars to market tiles and show waiting players container if any players are pending
-        if (this.gameui.gamedatas.gamestate.name === 'individualPlayerSelectMarketTile') {
+        // Add player avatars to Market Tiles and show waiting players container if any players are pending
+        if (this.collectedMarketTilesData.length > 0) {
             this.collectedMarketTilesData.sort(function (a, b) { return a.turn_order - b.turn_order; });
             this.collectedMarketTilesData.forEach(function (playerCollects) {
-                _this.addPlayerAvatar(playerCollects, true);
-                if (playerCollects.type == 'pending')
+                var playerAvatar = _this.addPlayerAvatar(playerCollects, true);
+                if (playerAvatar && playerCollects.type == 'pending')
                     _this.waitingPlayersContainer.style.opacity = '1';
             });
         }
@@ -631,12 +710,12 @@ var MarketHandler = /** @class */ (function () {
                     this.playerSelectedMarketIndex = null;
                     this.addSelectableClassToMarketTiles('all');
                 }
-                this.updateStatusTextUponCubeSelection();
+                this.updateStatusTextUponMarketTileSelection();
                 return [2 /*return*/];
             });
         });
     };
-    MarketHandler.prototype.updateStatusTextUponCubeSelection = function () {
+    MarketHandler.prototype.updateStatusTextUponMarketTileSelection = function () {
         if (this.gameui.gamedatas.gamestate.name != 'allSelectMarketTile')
             return;
         if (!this.gameui.myself)
@@ -716,15 +795,22 @@ var MarketHandler = /** @class */ (function () {
             });
         });
     };
+    // public async animateIndividualPlayerCollected(playerID: number, collectedMarketIndex: number) { //ekmek sil
     MarketHandler.prototype.animateIndividualPlayerCollected = function (playerID, collectedMarketIndex) {
         return __awaiter(this, void 0, void 0, function () {
-            var destAvatar, pendingAvatar, avatarRect, pendingAvatarClone, shrinkPendingAvatar, movePendingAvatarClone;
+            var playerIndex, destAvatar, pendingAvatar, pendingAvatarClone, shrinkPendingAvatar, movePendingAvatarClone;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        playerIndex = this.collectedMarketTilesData.findIndex(function (data) { return Number(data.player_id) === Number(playerID); });
+                        if (playerIndex === -1) {
+                            console.error('Could not find player in collectedMarketTilesData');
+                            return [2 /*return*/];
+                        }
+                        this.collectedMarketTilesData[playerIndex].type = 'collecting';
+                        this.collectedMarketTilesData[playerIndex].collected_market_index = collectedMarketIndex;
                         destAvatar = this.addPlayerAvatar({ player_id: playerID, collected_market_index: collectedMarketIndex, type: 'collecting' }, false);
                         pendingAvatar = this.waitingPlayersContainer.querySelector(".yaxha-player-avatar.pending-player-avatar[player-id=\"".concat(playerID, "\"]"));
-                        avatarRect = pendingAvatar.getBoundingClientRect();
                         pendingAvatarClone = this.gameui.players[playerID].getAvatarClone(false, true, pendingAvatar.querySelector('img'));
                         document.getElementById('overall-content').appendChild(pendingAvatarClone);
                         this.gameui.placeOnObject(pendingAvatarClone, pendingAvatar);
@@ -755,6 +841,8 @@ var MarketHandler = /** @class */ (function () {
         });
     };
     MarketHandler.prototype.addPlayerAvatar = function (playerCollects, isVisible) {
+        if (!['pending', 'collecting'].includes(playerCollects.type))
+            return null;
         var avatarClone = this.gameui.players[playerCollects.player_id].getAvatarClone();
         var newAvatarContainer = playerCollects.type === 'collecting'
             ? this.marketTiles[playerCollects.collected_market_index]
@@ -771,17 +859,25 @@ var MarketHandler = /** @class */ (function () {
     MarketHandler.prototype.getPlayerCollectedMarketTile = function (player_id) {
         return this.collectedMarketTilesData.find(function (player) { return Number(player.player_id) === Number(player_id); });
     };
+    MarketHandler.prototype.getPlayerCollectedMarketTileDiv = function (player_id) {
+        return this.marketTiles[this.getPlayerCollectedMarketTile(player_id).collected_market_index];
+    };
+    // public getCubesOfMarketTile(market_index: number): MarketCube[] { return this.marketData[market_index]; } //ekmek sil
+    MarketHandler.prototype.getMarketTiles = function () { return this.marketTiles; };
+    MarketHandler.prototype.setCollectedMarketTilesData = function (collectedMarketTilesData) { this.collectedMarketTilesData = collectedMarketTilesData; };
+    MarketHandler.prototype.getBonusCardIconsContainer = function () { return this.bonusCardIconsContainer; };
     return MarketHandler;
 }());
 var PlayerHandler = /** @class */ (function () {
-    function PlayerHandler(gameui, playerID, playerName, playerColor, playerNo, turnOrder, pyramidData) {
+    // public collectedMarketTileIndex: number; //ekmek sil
+    function PlayerHandler(gameui, playerID, playerName, playerColor, playerNo, turnOrder, pyramidData, built_cubes_this_round) {
         this.gameui = gameui;
         this.playerID = playerID;
         this.playerName = playerName;
         this.playerColor = playerColor;
         this.playerNo = playerNo;
         this.turnOrder = turnOrder;
-        this.pyramidData = pyramidData;
+        this.built_cubes_this_round = built_cubes_this_round;
         this.overallPlayerBoard = $('overall_player_board_' + this.playerID);
         this.pyramid = new PyramidHandler(this.gameui, this, this.gameui.PYRAMID_MAX_SIZE, pyramidData);
     }
@@ -826,6 +922,9 @@ var PlayerHandler = /** @class */ (function () {
             return null;
         }
     };
+    PlayerHandler.prototype.getCollectedMarketTileData = function () {
+        return this.gameui.marketHandler.getPlayerCollectedMarketTile(this.playerID);
+    };
     return PlayerHandler;
 }());
 var PyramidHandler = /** @class */ (function () {
@@ -834,11 +933,15 @@ var PyramidHandler = /** @class */ (function () {
         this.owner = owner;
         this.PYRAMID_MAX_SIZE = PYRAMID_MAX_SIZE;
         this.pyramidData = pyramidData;
-        this.unplacedCube = {}; //ekmek define type
         this.possibleMoves = []; //ekmek define type
+        // public collectedMarketTileIndex: number; //ekmek sil
+        this.rollingCubeColorIndex = 0;
+        this.availableColors = [];
+        this.cubesInConstruction = {};
         this.initPyramidContainer();
     }
     PyramidHandler.prototype.initPyramidContainer = function () {
+        var _this = this;
         this.pyramidContainer = document.createElement('div');
         this.pyramidContainer.id = 'pyramid-container-' + this.owner.playerID;
         this.pyramidContainer.className = 'a-pyramid-container';
@@ -850,69 +953,406 @@ var PyramidHandler = /** @class */ (function () {
         this.pyramidContainer.innerHTML = "\n\t\t\t<div class=\"player-name-text\">\n\t\t\t\t<div class=\"text-container\">".concat(this.owner.playerName, "</div>\n\t\t\t</div>\n\t\t\t<div class=\"turn-order-container\" id=\"").concat(turnOrderContainerId, "\" turn-order=\"").concat(this.owner.turnOrder, "\"></div>\n            <div class=\"cubes-container\"></div>\n        ");
         document.getElementById('player-tables').querySelector('.pyramids-container').insertAdjacentElement(Number(this.owner.playerID) === Number(this.gameui.player_id) ? 'afterbegin' : 'beforeend', this.pyramidContainer);
         this.cubesContainer = this.pyramidContainer.querySelector('.cubes-container');
+        // Create cubes from pyramid data
+        var maxOrderCubeInConstruction = null;
+        this.pyramidData.forEach(function (cube) {
+            cube.div = _this.gameui.createCubeDiv(cube);
+            cube.div.setAttribute('pos-x', cube.pos_x.toString());
+            cube.div.setAttribute('pos-y', cube.pos_y.toString());
+            cube.div.setAttribute('pos-z', cube.pos_z.toString());
+            _this.cubesContainer.appendChild(cube.div);
+            if (cube.order_in_construction) {
+                _this.cubesInConstruction[cube.cube_id] = cube;
+                if (!maxOrderCubeInConstruction || cube.order_in_construction > maxOrderCubeInConstruction.order_in_construction) {
+                    maxOrderCubeInConstruction = cube;
+                }
+            }
+        });
+        if (!this.owner.built_cubes_this_round && maxOrderCubeInConstruction)
+            this.unplacedCube = maxOrderCubeInConstruction;
+        this.arrangeCubesZIndex();
+        this.centerCubesContainer();
     };
     PyramidHandler.prototype.enableBuildPyramid = function (possibleMoves) {
-        var _this = this;
-        this.pyramidContainer.setAttribute('build-pyramid-enabled', 'true');
+        this.updatePyramidStatusText();
+        // this.owner.collectedMarketTileIndex = this.gameui.marketHandler.getPlayerCollectedMarketTile(this.owner.playerID).collected_market_index; //ekmek sil
+        if (this.owner.built_cubes_this_round)
+            return;
         this.possibleMoves = possibleMoves;
-        dojo.query('.pyramid-cubd-snap-point', this.pyramidContainer).forEach(dojo.destroy);
+        this.pyramidContainer.setAttribute('build-pyramid-enabled', 'true');
+        // this.collectedCubes = this.gameui.marketHandler.getCubesOfMarketTile(this.collectedMarketTileIndex); //ekmek sil
+        // this.rollingCubeColorIndex = 0; //ekmek sil
+        this.calcAvailableColors();
+        // dojo.query('.pyramid-cube-snap-point', this.pyramidContainer).forEach( dojo.destroy ); //ekmek sil
+        this.drawSnapPoints();
+        this.displaySwitchColorButton();
+    };
+    PyramidHandler.prototype.disableBuildPyramid = function () {
+        this.pyramidContainer.removeAttribute('build-pyramid-enabled');
+        this.cubesContainer.querySelectorAll('.pyramid-cube-snap-point').forEach(function (el) { return el.remove(); });
+        this.cubesContainer.querySelectorAll('.switch-color-button').forEach(function (el) { return el.remove(); });
+        this.centerCubesContainer();
+        this.updatePyramidStatusText();
+    };
+    PyramidHandler.prototype.onSnapPointClicked = function (args, doNotify) {
+        var _this = this;
+        if (doNotify === void 0) { doNotify = true; }
+        //ekmek doNotify gerekli mi?
         var myPyramid = this.owner.playerID == this.gameui.player_id;
+        if (!myPyramid)
+            return;
+        var lastBuiltCube = this.unplacedCube;
+        if (this.unplacedCube) { //save the last built cube
+            var marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
+            marketTile.querySelectorAll('.a-cube').forEach(function (cube) {
+                cube.classList.remove('selected-for-pyramid');
+                if (cube.getAttribute('cube-id') === _this.unplacedCube.cube_id)
+                    cube.classList.add('built-in-pyramid');
+            });
+            this.unplacedCube = null;
+            this.rollingCubeColorIndex = 0;
+            this.calcAvailableColors();
+        }
+        var posX, posY, posZ;
+        // if(Array.isArray(args)){ //ekmek sil? gerekli mi?
+        //     posX = args[0];
+        //     posY = args[1];
+        //     posZ = args[2];
+        // } else {
+        posX = Number(args.target.getAttribute('pos-x'));
+        posY = Number(args.target.getAttribute('pos-y'));
+        posZ = Number(args.target.getAttribute('pos-z'));
+        // }
+        var marketCubeData = this.getCurrentUnplacedMarketCube();
+        var moveType = marketCubeData ? 'from_market' : 'from_last_built';
+        var cubeData;
+        if (moveType == 'from_market') {
+            cubeData = {
+                pos_x: posX,
+                pos_y: posY,
+                pos_z: posZ,
+                color: marketCubeData.color,
+                cube_id: marketCubeData.cube_id,
+                order_in_construction: Object.keys(this.cubesInConstruction).length + 1,
+                div: null
+            };
+        }
+        else {
+            cubeData = lastBuiltCube;
+            cubeData.pos_x = posX;
+            cubeData.pos_y = posY;
+            cubeData.pos_z = posZ;
+        }
+        this.cubesInConstruction[cubeData.cube_id] = cubeData; //ekmek buildleme bitince resetle
+        this.animateCubeToPyramid(cubeData, moveType);
+        if (doNotify) //ekmek gerekli mi?
+            this.notifyCubeMovedOnGrid();
+    };
+    PyramidHandler.prototype.drawSnapPoints = function () {
+        var _this = this;
+        var myPyramid = this.owner.playerID == this.gameui.player_id;
+        if (!myPyramid)
+            return;
+        this.cubesContainer.querySelectorAll('.pyramid-cube-snap-point').forEach(function (el) { return el.classList.add('to-remove'); });
         this.possibleMoves.forEach(function (pos) {
-            // Create snap point element
+            var existingSnapPoint = Array.from(_this.cubesContainer.querySelectorAll('.pyramid-cube-snap-point')).find(function (el) {
+                return el.getAttribute('pos-x') === pos[0].toString() &&
+                    el.getAttribute('pos-y') === pos[1].toString() &&
+                    el.getAttribute('pos-z') === pos[2].toString();
+            });
+            if (existingSnapPoint) {
+                existingSnapPoint.classList.remove('to-remove');
+                return;
+            }
             var snapPoint = document.createElement('div');
             snapPoint.className = 'pyramid-cube-snap-point';
             snapPoint.setAttribute('pos-x', pos[0].toString());
             snapPoint.setAttribute('pos-y', pos[1].toString());
             snapPoint.setAttribute('pos-z', pos[2].toString());
-            // Add to container
             _this.cubesContainer.appendChild(snapPoint);
-            // Add clickable class
-            snapPoint.classList.add('clickable');
-            if (myPyramid)
-                snapPoint.addEventListener('click', _this.onSnapPointClicked);
+            snapPoint.addEventListener('click', function (args) { return _this.onSnapPointClicked(args); });
             _this.gameui.animationHandler.animateProperty({ node: snapPoint, properties: { opacity: 1 }, duration: 300 }).play();
         });
+        this.cubesContainer.querySelectorAll('.pyramid-cube-snap-point.to-remove').forEach(function (el) { return el.remove(); });
+        this.centerCubesContainer();
     };
-    PyramidHandler.prototype.disableBuildPyramid = function () { this.pyramidContainer.removeAttribute('build-pyramid-enabled'); };
-    PyramidHandler.prototype.onSnapPointClicked = function (args, doNotify) {
-        if (doNotify === void 0) { doNotify = true; }
-        debugger;
-        //ekmek doNotify gerekli mi?
-        var myGrid = this.owner.playerID == this.gameui.player_id;
-        if (!myGrid)
+    PyramidHandler.prototype.updatePyramidStatusText = function () {
+        var _this = this;
+        var _a, _b;
+        var statusText = null;
+        if (this.gameui.gamedatas.gamestate.name === 'individualPlayerSelectMarketTile') {
+            if (this.owner.built_cubes_this_round)
+                statusText = dojo.string.substitute(_('${actplayer} must select an available Market Tile'), { actplayer: this.gameui.divActivePlayer() });
+            else
+                statusText = dojo.string.substitute(_('${you} may build while others are selecting Market Tiles'), { you: this.gameui.divYou() });
+        }
+        else if (this.gameui.gamedatas.gamestate.name === 'buildPyramid') {
+            if (this.owner.built_cubes_this_round)
+                statusText = dojo.string.substitute(_('Waiting for other players to build Pyramids'), { you: this.gameui.divYou() });
+            else
+                statusText = dojo.string.substitute(_('${you} need to build your Pyramid'), { you: this.gameui.divYou() });
+        }
+        if (!statusText)
             return;
-        var posX, posY, posZ;
-        if (Array.isArray(args)) {
-            posX = args[0];
-            posY = args[1];
-            posZ = args[2];
+        var showConfirmButton = !this.owner.built_cubes_this_round && Object.keys(this.cubesInConstruction).length == this.gameui.CUBES_PER_MARKET_TILE; //ekmek test
+        var showUndoButton = Object.keys(this.cubesInConstruction).length > 0;
+        if (showConfirmButton || showUndoButton) {
+            var buttonHTML = '';
+            if (showConfirmButton) {
+                var cubeIconsHTML = '';
+                var sortedCubes = Object.values(this.cubesInConstruction).sort(function (a, b) { return a.order_in_construction - b.order_in_construction; });
+                for (var _i = 0, sortedCubes_1 = sortedCubes; _i < sortedCubes_1.length; _i++) {
+                    var cube = sortedCubes_1[_i];
+                    cubeIconsHTML += this.gameui.createCubeDiv(cube).outerHTML;
+                }
+                cubeIconsHTML = '<div class="cube-wrapper">' + cubeIconsHTML + '</div>';
+                statusText = dojo.string.substitute(_('Place${cubeIcons}'), { cubeIcons: cubeIconsHTML });
+                buttonHTML += '<a class="confirm-place-cube-button bgabutton bgabutton_blue">' + _('Confirm') + '</a>';
+            }
+            if (showUndoButton)
+                buttonHTML += '<a class="undo-place-cube-button bgabutton bgabutton_gray">' + _('Undo Build') + '</a>';
+            statusText += buttonHTML;
+        }
+        this.gameui.updateStatusText(statusText);
+        (_a = document.querySelector('#page-title .confirm-place-cube-button')) === null || _a === void 0 ? void 0 : _a.addEventListener('click', function () { return _this.confirmPlaceCubeButtonClicked(); });
+        (_b = document.querySelector('#page-title .undo-place-cube-button')) === null || _b === void 0 ? void 0 : _b.addEventListener('click', function () { return _this.undoPlaceCubeButtonClicked(); });
+    };
+    PyramidHandler.prototype.animateCubeToPyramid = function (cubeData, moveType) {
+        var _this = this;
+        console.log('animateCubeToPyramid');
+        this.centerCubesContainer(false);
+        this.cubesContainer.querySelectorAll('.switch-color-button').forEach(function (el) { return el.remove(); });
+        this.unplacedCube = cubeData;
+        var slideMarketAnim = false;
+        var animSpeed = 400;
+        if (!this.unplacedCube.div) { //search Market Tiles
+            var marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
+            var marketCubeDiv = marketTile.querySelector(".a-cube[cube-id=\"".concat(cubeData.cube_id, "\"]"));
+            var cubeClone = marketCubeDiv.cloneNode(true);
+            marketCubeDiv.parentNode.insertBefore(cubeClone, marketCubeDiv.nextSibling);
+            marketCubeDiv.classList.add('selected-for-pyramid');
+            this.gameui.placeOnObject(cubeClone, marketCubeDiv);
+            this.unplacedCube.div = this.gameui.attachToNewParent(cubeClone, this.cubesContainer);
+            animSpeed = 600;
+        }
+        if (this.cubeAnim)
+            this.cubeAnim.stop();
+        var goTo = this.cubesContainer.querySelector(".pyramid-cube-snap-point[pos-x=\"".concat(this.unplacedCube.pos_x, "\"][pos-y=\"").concat(this.unplacedCube.pos_y, "\"][pos-z=\"").concat(this.unplacedCube.pos_z, "\"]"));
+        this.cubeAnim = this.gameui.animationHandler.animateOnObject({
+            node: this.unplacedCube.div,
+            goTo: goTo,
+            duration: animSpeed,
+            onBegin: function () {
+                _this.unplacedCube.div.classList.add('animating-cube');
+            },
+            onEnd: function () {
+                // this.container.style.zIndex = null; //ekmek sil
+                _this.unplacedCube.div.classList.remove('animating-cube'); //ekmek sil? baska yerde kullanmadiysan
+                _this.unplacedCube.div.setAttribute('pos-x', _this.unplacedCube.pos_x.toString());
+                _this.unplacedCube.div.setAttribute('pos-y', _this.unplacedCube.pos_y.toString());
+                _this.unplacedCube.div.setAttribute('pos-z', _this.unplacedCube.pos_z.toString());
+                _this.cubeAnim = null;
+                _this.arrangeCubesZIndex();
+                _this.updatePyramidStatusText();
+                _this.gameui.ajaxAction(moveType == 'from_market' ? 'actAddCubeToPyramid' : 'actMoveCubeInPyramid', { cube_id: _this.unplacedCube.cube_id, pos_x: _this.unplacedCube.pos_x, pos_y: _this.unplacedCube.pos_y, pos_z: _this.unplacedCube.pos_z }, false, false);
+            }
+        });
+        if (slideMarketAnim)
+            this.cubeAnim = dojo.fx.combine([this.cubeAnim, slideMarketAnim]);
+        this.cubeAnim.start();
+    };
+    PyramidHandler.prototype.confirmPlaceCubeButtonClicked = function () {
+        console.log('confirmPlaceCubeButtonClicked');
+        this.gameui.ajaxAction('actConfirmBuildPyramid', {}, true, false);
+    };
+    PyramidHandler.prototype.confirmedBuildPyramid = function () {
+        console.log('confirmedBuildPyramid');
+        this.owner.built_cubes_this_round = true;
+        var marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
+        marketTile.querySelectorAll('.a-cube').forEach(function (element) {
+            element.classList.remove('selected-for-pyramid');
+            element.classList.add('built-in-pyramid');
+        });
+        this.disableBuildPyramid();
+    };
+    PyramidHandler.prototype.undoPlaceCubeButtonClicked = function () {
+        var _this = this;
+        console.log('undoPlaceCubeButtonClicked');
+        // this.gameui.ajaxAction('actUndoBuildPyramid', {}, true, false); //ekmek burda olmali
+        this.cubesContainer.querySelectorAll('.switch-color-button').forEach(function (el) { return el.remove(); }); //ekmek sil
+        var marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
+        var undoAnimArray = [];
+        // Get all cubes in construction and animate them back to their market positions
+        Object.values(this.cubesInConstruction).forEach(function (cube) {
+            var goTo = marketTile.querySelector(".a-cube[cube-id=\"".concat(cube.cube_id, "\"]"));
+            if (!goTo)
+                return;
+            undoAnimArray.push(_this.gameui.animationHandler.animateOnObject({
+                node: cube.div,
+                goTo: goTo,
+                duration: 500,
+                onBegin: function () {
+                    cube.div.classList.add('animating-cube');
+                },
+                onEnd: function () {
+                    cube.div.remove();
+                    goTo.classList.remove('selected-for-pyramid', 'built-in-pyramid');
+                }
+            }));
+        });
+        this.cubesInConstruction = {};
+        this.unplacedCube = null;
+        this.owner.built_cubes_this_round = false;
+        var undoAnim = this.gameui.animationHandler.combine(undoAnimArray);
+        undoAnim.onEnd = function () {
+            _this.calcAvailableColors();
+            _this.rollingCubeColorIndex = 0;
+            _this.centerCubesContainer();
+            _this.updatePyramidStatusText();
+            _this.gameui.ajaxAction('actUndoBuildPyramid', {}, true, false);
+        };
+        undoAnim.start();
+    };
+    PyramidHandler.prototype.centerCubesContainer = function (doAnimate) {
+        if (doAnimate === void 0) { doAnimate = true; }
+        console.log('centerCubesContainer');
+        var contentsRect = this.gameui.getContentsRectangle(this.cubesContainer, 'animating-cube');
+        if (!contentsRect)
+            return;
+        var centerPointDiv = document.createElement('div');
+        centerPointDiv.style.width = '1px';
+        centerPointDiv.style.height = '1px';
+        this.cubesContainer.appendChild(centerPointDiv);
+        var centerPoint = centerPointDiv.getBoundingClientRect();
+        centerPointDiv.remove();
+        var offsetX = centerPoint.x - ((contentsRect.maxX + contentsRect.minX) / 2);
+        var offsetY = centerPoint.y - ((contentsRect.maxY + contentsRect.minY) / 2);
+        if (this.centerTilesAnim)
+            this.centerTilesAnim.stop();
+        if (doAnimate) {
+            this.centerTilesAnim = this.gameui.animationHandler.animateProperty({
+                node: this.cubesContainer,
+                duration: 400, //make animation 1 sec faster so the clicks near the end also work
+                properties: { marginLeft: offsetX, marginTop: offsetY }
+            }).play();
         }
         else {
-            if (!args.target.classList.contains('clickable'))
-                return;
-            posX = this.gameui.getAttr(args.target, 'pos-x');
-            posY = this.gameui.getAttr(args.target, 'pos-y');
-            posZ = this.gameui.getAttr(args.target, 'pos-z');
-            args.target.classList.remove('clickable');
+            this.cubesContainer.style.marginLeft = offsetX + 'px';
+            this.cubesContainer.style.marginTop = offsetY + 'px';
         }
-        this.unplacedCube.pos = { x: posX, y: posY, z: posZ };
-        this.cubeBuilt(false, false);
-        dojo.query('.pyramid-cube-snap-point', this.pyramidContainer).forEach(function (snapPoint) {
-            if (Number(snapPoint.getAttribute('pos-x')) == posX && Number(snapPoint.getAttribute('pos-y')) == posY && Number(snapPoint.getAttribute('pos-z')) == posZ)
-                snapPoint.classList.remove('clickable');
-            else
-                snapPoint.classList.add('clickable');
+    };
+    PyramidHandler.prototype.arrangeCubesZIndex = function () {
+        console.log('arrangeCubesZIndex');
+        var cubes = Array.from(this.cubesContainer.querySelectorAll('.a-cube'));
+        //ekmek sil
+        // const cubePositions = {}; // Create a dictionary mapping cube coordinates to cubes
+        // cubes.forEach(cube => { cubePositions[cube.getAttribute('pos-x') + '_' + cube.getAttribute('pos-y') + '_' + cube.getAttribute('pos-z')] = 1; });
+        cubes.sort(function (a, b) {
+            var posXA = parseInt(a.getAttribute("pos-x"));
+            var posYA = parseInt(a.getAttribute("pos-y"));
+            var posZA = parseInt(a.getAttribute("pos-z"));
+            var posXB = parseInt(b.getAttribute("pos-x"));
+            var posYB = parseInt(b.getAttribute("pos-y"));
+            var posZB = parseInt(b.getAttribute("pos-z"));
+            if (posZA !== posZB)
+                return posZA - posZB;
+            if (posXA !== posXB)
+                return posXA - posXB;
+            return posYB - posYA;
         });
-        if (doNotify)
-            this.notifyTileMovedOnGrid();
+        cubes.forEach(function (cube, index) {
+            dojo.style(cube, "z-index", index + 1);
+            //ekmek sil
+            // // Check if there is a cube to the right
+            // const posX = parseInt(cube.getAttribute("pos-x"));
+            // const posY = parseInt(cube.getAttribute("pos-y")); 
+            // const posZ = parseInt(cube.getAttribute("pos-z"));
+            // const rightCubeKey = `${posX + 1}_${posY}_${posZ}`;
+            // const bottomCubeKey = `${posX}_${posY}_${posZ + 1}`;
+            // if (cubePositions[rightCubeKey])
+            //     cube.classList.add('hide-right-side');
+            // if (cubePositions[bottomCubeKey])
+            //     cube.classList.add('hide-bottom-side');
+        });
     };
-    PyramidHandler.prototype.cubeBuilt = function (tileData, savePlacement, onAnimationEnd) {
-        if (onAnimationEnd === void 0) { onAnimationEnd = function () { }; }
-        console.log('cubeBuilt');
+    PyramidHandler.prototype.displaySwitchColorButton = function () {
+        var _this = this;
+        console.log('displaySwitchColorButton');
+        this.cubesContainer.querySelectorAll('.switch-color-button').forEach(function (el) { return el.remove(); });
+        if (!this.unplacedCube)
+            return;
+        this.calcAvailableColors();
+        if (this.availableColors.length <= 1)
+            return;
+        this.rollingCubeColorIndex = this.availableColors.indexOf(this.unplacedCube.color);
+        var switchColorButton = document.createElement('div');
+        switchColorButton.innerHTML = "<div class=\"switch-color-button\" pos-x=\"".concat(this.unplacedCube.pos_x, "\" pos-y=\"").concat(this.unplacedCube.pos_y, "\" pos-z=\"").concat(this.unplacedCube.pos_z, "\"><i class=\"fa6 fa6-exchange switch-color-icon\"></i></div>");
+        switchColorButton = switchColorButton.firstElementChild;
+        this.cubesContainer.appendChild(switchColorButton);
+        switchColorButton.style.opacity = '0.82';
+        switchColorButton.addEventListener('click', function () { return _this.onSwitchColorButtonClicked(); });
     };
-    PyramidHandler.prototype.notifyTileMovedOnGrid = function () {
-        console.log('notifyTileMovedOnGrid');
+    // private getNextUnplacedCube(){ //ekmek sil? bu tekrarlanmis olabilir
+    //     const cubeColor = this.availableColors[this.rollingCubeColorIndex];
+    //     const cubeData = this.gameui.marketHandler.getCubesOfMarketTile(this.collectedMarketTileIndex).find((cube) => cube.color === cubeColor);
+    //     return cubeData;
+    // }
+    PyramidHandler.prototype.getCurrentUnplacedMarketCube = function () { return this.getNextUnplacedMarketCube(0); };
+    PyramidHandler.prototype.getNextUnplacedMarketCube = function (offset) {
+        if (offset === void 0) { offset = 1; }
+        this.rollingCubeColorIndex = (this.rollingCubeColorIndex + offset) % this.availableColors.length;
+        var nextColor = this.availableColors[this.rollingCubeColorIndex];
+        var collectedMarketTileIndex = this.owner.getCollectedMarketTileData().collected_market_index;
+        var marketTile = this.gameui.marketHandler.marketTiles[collectedMarketTileIndex];
+        var nextCubeDiv = Array.from(marketTile.querySelectorAll('.a-cube')).find(function (cube) {
+            return !cube.classList.contains('selected-for-pyramid') &&
+                !cube.classList.contains('built-in-pyramid') &&
+                cube.getAttribute('color') === nextColor;
+        });
+        if (!nextCubeDiv)
+            return null;
+        var cubeID = nextCubeDiv.getAttribute('cube-id');
+        var cubeData = this.gameui.marketHandler.marketData[collectedMarketTileIndex].find(function (cube) { return cube.cube_id === cubeID; });
+        return cubeData;
     };
+    PyramidHandler.prototype.calcAvailableColors = function () {
+        var marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
+        var availableCubes = Array.from(marketTile.querySelectorAll('.a-cube:not(.built-in-pyramid)'));
+        var availableColorsDict = {};
+        availableCubes.forEach(function (cube) {
+            var cubeColor = cube.getAttribute('color');
+            availableColorsDict[cubeColor] = 1;
+        });
+        if (this.unplacedCube) //also add unplaced cube color to available colors
+            availableColorsDict[this.unplacedCube.color] = 1;
+        this.availableColors = Object.keys(availableColorsDict);
+    };
+    PyramidHandler.prototype.onSwitchColorButtonClicked = function () {
+        console.log('onSwitchColorButtonClicked');
+        var myPyramid = this.owner.playerID == this.gameui.player_id;
+        if (!myPyramid)
+            return;
+        var nextCubeData = this.getNextUnplacedMarketCube();
+        delete this.cubesInConstruction[this.unplacedCube.cube_id];
+        this.unplacedCube.cube_id = nextCubeData.cube_id;
+        this.unplacedCube.color = nextCubeData.color;
+        this.unplacedCube.div.setAttribute('color', nextCubeData.color);
+        this.unplacedCube.div.setAttribute('cube-id', nextCubeData.cube_id);
+        this.cubesInConstruction[nextCubeData.cube_id] = this.unplacedCube;
+        var marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
+        marketTile.querySelectorAll('.a-cube').forEach(function (cube) {
+            if (cube.getAttribute('cube-id') === nextCubeData.cube_id)
+                cube.classList.add('selected-for-pyramid');
+            else
+                cube.classList.remove('selected-for-pyramid');
+        });
+        this.gameui.ajaxAction('actPyramidCubeColorSwitched', { cube_id: this.unplacedCube.cube_id, pos_x: this.unplacedCube.pos_x, pos_y: this.unplacedCube.pos_y, pos_z: this.unplacedCube.pos_z }, false, false);
+    };
+    PyramidHandler.prototype.notifyCubeMovedOnGrid = function () {
+        console.log('notifyCubeMovedOnGrid');
+    };
+    PyramidHandler.prototype.getUnplacedCube = function () { return this.unplacedCube; };
+    PyramidHandler.prototype.getCubesInConstruction = function () { return this.cubesInConstruction; };
     return PyramidHandler;
 }());
 var TooltipHandler = /** @class */ (function () {
@@ -923,7 +1363,7 @@ var TooltipHandler = /** @class */ (function () {
     }
     TooltipHandler.prototype.addTooltipToBonusCards = function () {
         var _this = this;
-        var bonusCardIcons = this.gameui.marketHandler.bonusCardIconsContainer.querySelectorAll('.a-bonus-card-icon');
+        var bonusCardIcons = this.gameui.marketHandler.getBonusCardIconsContainer().querySelectorAll('.a-bonus-card-icon');
         bonusCardIcons.forEach(function (cardIcon) {
             var cardIconID = cardIcon.getAttribute('id');
             var cardID = cardIcon.getAttribute('bonus-card-id');
@@ -940,7 +1380,7 @@ var TooltipHandler = /** @class */ (function () {
             var turnOrder = parseInt(container.getAttribute('turn-order'));
             var playerId = container.closest('.a-pyramid-container').getAttribute('player-id');
             var playerDiv = _this.gameui.divColoredPlayer(playerId, {}, false);
-            _this.gameui.addTooltipHtml(containerId, "<div class=\"turn-order-tooltip tooltip-wrapper\">\n                    <div class=\"tooltip-text\">".concat(_('${player}\'s turn order: ${order}').replace('${player}', playerDiv).replace('${order}', turnOrder.toString()), "</div>\n                </div>"), 400);
+            _this.gameui.addTooltipHtml(containerId, "<div class=\"turn-order-tooltip tooltip-wrapper\">\n                    <div class=\"tooltip-text\">".concat(_('${player}\'s turn order is ${order}').replace('${player}', playerDiv).replace('${order}', '<b>' + turnOrder.toString() + '</b>'), "</div>\n                </div>"), 400);
         });
     };
     return TooltipHandler;

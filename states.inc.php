@@ -111,9 +111,10 @@ $machinestates = [
 
     10 => [
         "name" => "buildPyramid",
-        "description" => clienttranslate('${actplayer} must build pyramid'),
-        "descriptionmyturn" => clienttranslate('${you} must build pyramid'),
-        "type" => "activeplayer",
+        "description" => clienttranslate('Waiting for players to build their Pyramids'),
+        "descriptionmyturn" => clienttranslate('${you} must place your cubes in your Pyramid'),
+        "type" => "multipleactiveplayer",
+        "args" => "argBuildPyramid",
         "action" => "stBuildPyramid",
         "possibleactions" => ["actBuildPyramid"],
         "transitions" => array( "pyramidsBuilt" => 11)

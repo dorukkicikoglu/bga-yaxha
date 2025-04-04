@@ -7,121 +7,203 @@ class YXHPyramidManager extends APP_DbObject{
         $this->parent = $parent;
     }
 
-    public function getPyramidsData($players = false) {
+    public function getPyramidsData(array $players = [], bool $includeInConstruction = false): array {
         $pyramidsData = [];
 
-        if(!$players)
+        if(empty($players))
             $players = self::getObjectListFromDB("SELECT player_id FROM player", true);
 
-        foreach ($players as $player_id) {
+        foreach ($players as $player_id)
             $pyramidsData[$player_id] = [];
+
+        $sql = "SELECT card_id as cube_id, card_location = 'pyramid' as is_cube_built, card_location_arg as owner_id, color, pos_x, pos_y, pos_z, order_in_construction FROM cubes WHERE card_location IN ('pyramid', 'in_construction') AND card_location_arg IN (" . implode(',', $players) . ")";
+        if(!$includeInConstruction)
+            $sql .= " AND card_location != 'in_construction'";
+
+        $cubes = self::getObjectListFromDB($sql);
+
+        foreach($cubes as $cube)
+            $pyramidsData[$cube['owner_id']][] = $cube;
+
+        foreach ($pyramidsData as $player_id => &$cubes) {
+            usort($cubes, function($a, $b) {
+                return (int) $a['pos_z'] - (int) $b['pos_z'];
+            });
         }
 
         return $pyramidsData;
-        return; //ekmek devam et
-        // $gridsData = array();
-
-        // if(!$players){ //ekmek sil
-        //     $players = self::getObjectListFromDB("SELECT player_id FROM player", true);
-        //     $cardLocation = 'LIKE grid_%';
-        // } else {
-        //     if(!is_array($players))
-        //         $players = array($players);
-        //     $locations = array();
-        //     foreach ($players as $player_id)
-        //         $locations[] = "grid_$player_id";
-    
-        //     $cardLocation = 'IN '.implode(',', $locations);
-        // }
-
-        // $playersGotBonus = self::getCollectionFromDB("SELECT player_id, got_bonus FROM player", true);
-
-        // foreach($players as $player_id)
-        //     $gridsData[$player_id] = array('tiles' => array(), 'statues' => array(), 'gotBonus' => $playersGotBonus[$player_id] == 'true');
-
-        // $placedTiles = $this->parent->getTiles(array('card_location' => $cardLocation, 'card_location_arg' => PLACED_PERM_TILE_STATUS));
-
-        // foreach($placedTiles as $tileRow){
-        //     $tileOwnerID = mb_split('^grid_', $tileRow['location'])[1];
-        //     $gridsData[$tileOwnerID]['tiles'][$tileRow['tile_id']] = $tileRow;
-
-        //     if(isset($tileRow['statues'])){
-        //         $statues = str_split($tileRow['statues']);
-        //         foreach ($statues as $statue) {
-        //             $gridsData[$tileOwnerID]['statues'][$statue] ??= 0;
-        //             $gridsData[$tileOwnerID]['statues'][$statue]++;
-        //         }   
-        //     }
-        // }
-
-        // return $gridsData;
     }
-    function getPlayerPyramidData($ownerID){ $pyramids = $this->getPyramidsData([$ownerID]); return (isset($pyramids[$ownerID]) ? $pyramids[$ownerID] : null); }
+    function getPlayerPyramidData(int $ownerID, bool $includeInConstruction = false){ $pyramids = $this->getPyramidsData([$ownerID], $includeInConstruction); return (isset($pyramids[$ownerID]) ? $pyramids[$ownerID] : []); }
 
-    public function getPossibleMoves() {
-        $players = self::getObjectListFromDB("SELECT player_id FROM player", true);
-        $possibleMoves = [];
+    public function getPossibleMoves(?int $player_id_arg = null): array {
+        if(!$player_id_arg)
+            $players = self::getObjectListFromDB("SELECT player_id FROM player", true);
+        else $players = [$player_id_arg];
+
+        $allPossibleMoves = [];
         foreach ($players as $player_id) {
-            $pyramidData = $this->getPlayerPyramidData($player_id);
+            $pyramidData = $this->getPlayerPyramidData($player_id, true);
 
             if(!$pyramidData){
-                $possibleMoves[$player_id] = [[0, 0, 0]];
+                $allPossibleMoves[$player_id] = [[0, 0, 0]];
                 continue;
             }
 
-            $possibleMovesDict = array();
-            $tileCoordsDict = array();
+            $possibleMovesDict = [];
+            $cubeCoordsDict = [];
 
-            // $minX = INF; $minY = INF;
-            // $maxX = -INF; $maxY = -INF;
+            $minX = INF; $minY = INF;
+            $maxX = -INF; $maxY = -INF;
 
-            // foreach($gridData['tiles'] as $tileID => $tile){
-            //     $posX = (int) $tile['pos_x'];
-            //     $posY = (int) $tile['pos_y'];
-            //     $tileCoordsDict[$posX] = $tileCoordsDict[$posX] ?? array();
-            //     $tileCoordsDict[$posX][$posY] = 1;
+            foreach($pyramidData as $cubeID => $cube){
+                if($cube['order_in_construction'] == CUBES_PER_MARKET_TILE) //the final cube does not add to the possible moves
+                    continue;
 
-            //     $possibleMovesDict[$posX][$posY + 1] = 1;
-            //     $possibleMovesDict[$posX][$posY - 1] = 1;
-            //     $possibleMovesDict[$posX + 1][$posY] = 1;
-            //     $possibleMovesDict[$posX - 1][$posY] = 1;
+                $posX = (int) $cube['pos_x'];
+                $posY = (int) $cube['pos_y'];
+                
+                $cubeCoordsDict[$posX] = $cubeCoordsDict[$posX] ?? [];
+                $cubeCoordsDict[$posX][$posY] = 1;
 
-            //     $minX = min($minX, $posX); $minY = min($minY, $posY);
-            //     $maxX = max($maxX, $posX); $maxY = max($maxY, $posY);
-            // }
+                $possibleMovesDict[$posX][$posY + 1] = 1;
+                $possibleMovesDict[$posX][$posY - 1] = 1;
+                $possibleMovesDict[$posX + 1][$posY] = 1;
+                $possibleMovesDict[$posX - 1][$posY] = 1;
 
-            // $xFilled = ($maxX - $minX) >= GRID_MAX_SIZE - 1;
-            // $yFilled = ($maxY - $minY) >= GRID_MAX_SIZE - 1;
+                $minX = min($minX, $posX); $minY = min($minY, $posY);
+                $maxX = max($maxX, $posX); $maxY = max($maxY, $posY);
+            }
 
-            // if($xFilled){
-            //     unset($possibleMovesDict[$minX - 1]);
-            //     unset($possibleMovesDict[$maxX + 1]);
-            // }
+            $xFilled = ($maxX - $minX) >= PYRAMID_MAX_SIZE - 1;
+            $yFilled = ($maxY - $minY) >= PYRAMID_MAX_SIZE - 1;
+
+            if($xFilled){
+                unset($possibleMovesDict[$minX - 1]);
+                unset($possibleMovesDict[$maxX + 1]);
+            }
             
-            // if($yFilled){
-            //     foreach($possibleMovesDict as $x => $row){
-            //         unset($possibleMovesDict[$x][$minY - 1]);
-            //         unset($possibleMovesDict[$x][$maxY + 1]);
-            //     }
-            // }
+            if($yFilled){
+                foreach($possibleMovesDict as $x => $row){
+                    unset($possibleMovesDict[$x][$minY - 1]);
+                    unset($possibleMovesDict[$x][$maxY + 1]);
+                }
+            }
 
-            // //remove occupied cells
-            // foreach($tileCoordsDict as $posX => $row)
-            //     foreach($row as $posY => $val)
-            //         unset($possibleMovesDict[$posX][$posY]);
+            $posZ = 0; //ekmek pos_z durumlarina da bak
 
-            // if($returnDict)
-            //     return $possibleMovesDict;
+            //remove occupied cells
+            foreach($cubeCoordsDict as $posX => $row)
+                foreach($row as $posY => $val)
+                    unset($possibleMovesDict[$posX][$posY]);
 
-            // $possibleMoves = array();
-            // foreach($possibleMovesDict as $posX => $row)
-            //     foreach($row as $posY => $val)
-            //         $possibleMoves[] = [$posX, $posY];
+            $playerPossibleMoves = [];
+            foreach($possibleMovesDict as $posX => $row)
+                foreach($row as $posY => $val)
+                    $playerPossibleMoves[] = [$posX, $posY, $posZ];
             
-            $possibleMoves[$player_id] = [];
+            $allPossibleMoves[$player_id] = $playerPossibleMoves;
         }
+
+        if($player_id_arg)
+            return $allPossibleMoves[$player_id_arg];
+        return $allPossibleMoves;
+    }
+
+    public function addCubeToPyramid($player_id, $cube_id, $pos_x, $pos_y, $pos_z) {
+        $this->checkBuildableState();
+        $this->doesPlayerOwnCubeOnMarketTile($player_id, $cube_id);
         
-        return $possibleMoves;
+        // Get highest order_in_construction value for this player's cubes, defaulting to 0 if none exist
+        $newOrderInConstruction = 1 + $this->getUniqueValueFromDB("SELECT COALESCE(MAX(order_in_construction), 0) FROM cubes WHERE card_location = 'in_construction' AND card_location_arg = $player_id");
+
+        $possibleMoves = $this->getPossibleMoves($player_id);
+        $moveIsValid = in_array([$pos_x, $pos_y, $pos_z], $possibleMoves);
+        if (!$moveIsValid)
+            throw new \BgaUserException(clienttranslate("Invalid cube position"));
+
+        $this->DbQuery("UPDATE cubes SET pos_x = $pos_x, pos_y = $pos_y, pos_z = $pos_z, card_location = 'in_construction', card_location_arg = $player_id, order_in_construction = $newOrderInConstruction WHERE card_id = $cube_id");
+        $this->parent->notify->player($player_id, 'cubePlacedInPyramid', '', ['possible_moves' => $this->getPossibleMoves($player_id)]);
+    }
+
+    public function moveCubeInPyramid($player_id, $cube_id, $pos_x, $pos_y, $pos_z) {
+        $this->checkBuildableState();
+        $cube = $this->getObjectFromDB("SELECT card_location, card_location_arg, order_in_construction FROM cubes WHERE card_id = $cube_id");
+        
+        if ($cube['card_location'] != 'in_construction' || $cube['card_location_arg'] != $player_id)
+            throw new \BgaUserException(clienttranslate("You can only move cubes that you have placed in your pyramid"));
+
+        if ($cube['order_in_construction'] != CUBES_PER_MARKET_TILE) 
+            throw new \BgaUserException(clienttranslate("You can only move the last cube placed"));
+
+        $possibleMoves = $this->getPossibleMoves($player_id);
+        $moveIsValid = in_array([$pos_x, $pos_y, $pos_z], $possibleMoves);
+        if (!$moveIsValid)
+            throw new \BgaUserException(clienttranslate("Moving to invalid cube position"));
+        
+        $this->DbQuery("UPDATE cubes SET pos_x = $pos_x, pos_y = $pos_y, pos_z = $pos_z WHERE card_id = $cube_id");
+    }
+
+    public function switchCubeColor($player_id, $cube_id): void {
+        $this->checkBuildableState();
+        $this->doesPlayerOwnCubeOnMarketTile($player_id, $cube_id);
+
+        $playerMarketIndex = $this->getUniqueValueFromDB("SELECT collected_market_index FROM player WHERE player_id = $player_id");
+        
+        $lastAddedCube = $this->getObjectFromDB("SELECT * FROM cubes WHERE card_location = 'in_construction' AND card_location_arg = $player_id ORDER BY order_in_construction DESC LIMIT 1");
+        if (!$lastAddedCube)
+            throw new \BgaUserException(clienttranslate("No cube found in construction"));
+
+        $this->DbQuery("UPDATE cubes SET 
+            card_location = 'market', 
+            card_location_arg = $playerMarketIndex, 
+            pos_x = NULL, 
+            pos_y = NULL, 
+            pos_z = NULL, 
+            order_in_construction = NUll
+            WHERE card_id = ".$lastAddedCube['card_id']);
+
+        $this->DbQuery("UPDATE cubes SET pos_x = ".$lastAddedCube['pos_x'].", pos_y = ".$lastAddedCube['pos_y'].", pos_z = ".$lastAddedCube['pos_z'].", card_location = 'in_construction', card_location_arg = $player_id, order_in_construction = ".$lastAddedCube['order_in_construction']." WHERE card_id = $cube_id");
+    }
+
+    public function undoBuildPyramid($player_id): void {
+        $this->checkBuildableState();
+        $playerMarketIndex = $this->getUniqueValueFromDB("SELECT collected_market_index FROM player WHERE player_id = $player_id");
+
+        if($playerMarketIndex === null)
+            throw new \BgaUserException(clienttranslate("You have not selected any Market Tile to undo build"));
+
+        $this->DbQuery("UPDATE cubes SET card_location = 'market', card_location_arg = $playerMarketIndex, pos_x = NULL, pos_y = NULL, pos_z = NULL, order_in_construction = NULL WHERE order_in_construction IS NOT NULL AND card_location_arg = $player_id");
+        $this->DbQuery("UPDATE player SET built_cubes_this_round = 'false' WHERE player_id = $player_id");
+        $this->parent->notify->player($player_id, 'undoneBuildPyramid', '', ['possible_moves' => $this->getPossibleMoves($player_id)]);
+    }
+
+    private function doesPlayerOwnCubeOnMarketTile($player_id, $cube_id): void{
+        $playerMarketIndex = $this->getUniqueValueFromDB("SELECT collected_market_index FROM player WHERE player_id = $player_id");
+        
+        if ($playerMarketIndex === null)
+            throw new \BgaUserException(clienttranslate("You have not selected any Market Tile yet"));
+
+        $cubeRow = $this->getObjectFromDB("SELECT card_location, card_location_arg FROM cubes WHERE card_id = $cube_id");
+        
+        if ($cubeRow['card_location'] !== 'market' || $cubeRow['card_location_arg'] !== $playerMarketIndex)
+            throw new \BgaUserException(clienttranslate("You can only place cubes from your collected Market Tile"));
+    }
+
+    public function confirmBuildPyramid($player_id): void {
+        $cubesInConstruction = $this->getUniqueValueFromDB("SELECT COUNT(*) FROM cubes WHERE card_location = 'in_construction' AND card_location_arg = $player_id");
+        
+        if ($cubesInConstruction != CUBES_PER_MARKET_TILE)
+            throw new \BgaUserException(clienttranslate("You must place exactly 3 cubes before confirming"));
+
+        $this->DbQuery("UPDATE cubes SET card_location = 'pyramid' WHERE card_location = 'in_construction' AND card_location_arg = $player_id");
+        $this->DbQuery("UPDATE player SET built_cubes_this_round = 'true' WHERE player_id = $player_id");
+        $this->parent->notify->player($player_id, 'confirmedBuildPyramid', '');
+    }
+
+    public function checkBuildableState() {
+        $state = $this->parent->gamestate->state();
+        if (!in_array($state['name'], ['individualPlayerSelectMarketTile', 'buildPyramid']))
+            throw new \BgaUserException(clienttranslate("Not allowed at this game state"));
     }
 }
 

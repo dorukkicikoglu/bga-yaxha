@@ -13,10 +13,11 @@ class GameBody extends GameGui {
     public myself: PlayerHandler;
 
     public players: Record<number, PlayerHandler> = {};
-    public CUBE_COLORS: { [key: number]: CubeColor };
+    public CUBE_COLORS: CubeColor[];
     public BONUS_CARDS_DATA: { [key: number]: BonusCardData };
     public MARKET_TILE_COLORS: string[];
     public PYRAMID_MAX_SIZE: number;
+    public CUBES_PER_MARKET_TILE: number;
 
     constructor() {
         super();
@@ -27,7 +28,40 @@ class GameBody extends GameGui {
     public setup(gamedatas: any) {
         console.log( "Starting game setup" );
 
-        document.getElementById('game_play_area').insertAdjacentHTML('beforeend', `<div id="player-tables">
+        this.CUBE_COLORS = gamedatas.CUBE_COLORS;
+        this.BONUS_CARDS_DATA = gamedatas.BONUS_CARDS_DATA;
+        this.MARKET_TILE_COLORS = gamedatas.MARKET_TILE_COLORS;
+        this.PYRAMID_MAX_SIZE = gamedatas.PYRAMID_MAX_SIZE;
+        this.CUBES_PER_MARKET_TILE = gamedatas.CUBES_PER_MARKET_TILE;
+
+        const pyramidCSSRange = [];
+        for (let i = -1 * (this.PYRAMID_MAX_SIZE - 1); i <= this.PYRAMID_MAX_SIZE - 1; i++)
+            pyramidCSSRange.push(i);
+
+        let cubeColorCSS = '';
+        for(let colorIndex in this.CUBE_COLORS){
+            cubeColorCSS += `.a-cube[color="${colorIndex}"] { --cube-color: #${this.CUBE_COLORS[colorIndex].colorCode}; }
+            `;
+        }
+
+        let pyramidCSS = '';
+        pyramidCSSRange.forEach(n => {
+            pyramidCSS += `
+            .pyramids-container .a-pyramid-container .cubes-container *[pos-x="${n}"] {
+            left: calc(min(var(--pyramid-cube-width), var(--max-cube-width)) * ${n});
+            }
+            .pyramids-container .a-pyramid-container .cubes-container *[pos-y="${n}"] {
+            bottom: calc(min(var(--pyramid-cube-width), var(--max-cube-width)) * ${n});
+            }
+            `;
+        }); //ekmek pos-z ekle
+
+        document.getElementById('game_play_area').insertAdjacentHTML('beforeend', `
+            <style>
+                ${cubeColorCSS}
+                ${pyramidCSS}
+            </style>
+            <div id="player-tables">
             <div class="market-container">
                 <div class="market-tiles-container"></div>
                 <div class="waiting-players-container"></div>
@@ -39,14 +73,9 @@ class GameBody extends GameGui {
         this.imageLoader = new ImageLoadHandler(this, ['market-tiles', 'player-order-tiles', 'bonus-cards', 'bonus-card-icons']);
         this.animationHandler = new AnimationHandlerPromiseBased(this);
 
-        this.CUBE_COLORS = gamedatas.CUBE_COLORS;
-        this.BONUS_CARDS_DATA = gamedatas.BONUS_CARDS_DATA;
-        this.MARKET_TILE_COLORS = gamedatas.MARKET_TILE_COLORS;
-        this.PYRAMID_MAX_SIZE = gamedatas.PYRAMID_MAX_SIZE;
-
         for(let player_id in gamedatas.players) {
-            const {name, color, player_no, turn_order} = this.gamedatas.players[player_id];
-            this.players[player_id] = new PlayerHandler(this, parseInt(player_id), name, color, parseInt(player_no), turn_order, gamedatas.pyramidData[player_id]);
+            const {name, color, player_no, turn_order, built_cubes_this_round} = this.gamedatas.players[player_id];
+            this.players[player_id] = new PlayerHandler(this, parseInt(player_id), name, color, parseInt(player_no), turn_order, gamedatas.pyramidData[player_id], built_cubes_this_round == '1');
 
             if(player_id == this.player_id)
                 this.myself = this.players[player_id];
@@ -82,7 +111,7 @@ class GameBody extends GameGui {
 
     public onLeavingState(stateName: string) {
         console.log( 'Leaving state: '+stateName );
-        this.marketHandler.marketTiles.forEach(tile => { tile.classList.remove('selected-market-tile', 'selectable-market-tile'); });
+        this.marketHandler.getMarketTiles().forEach(tile => { tile.classList.remove('selected-market-tile', 'selectable-market-tile'); });
         
         switch( stateName )
         {
@@ -99,23 +128,21 @@ class GameBody extends GameGui {
         switch( stateName )
         {
             case 'allSelectMarketTile':
-                this.marketHandler.updateStatusTextUponCubeSelection();
+                this.marketHandler.updateStatusTextUponMarketTileSelection();
             break;
             case 'individualPlayerSelectMarketTile':
+                this.marketHandler.setCollectedMarketTilesData(args.collectedMarketTilesData);
                 if(this.myself) {
-                    const playerCollectedMarketTile = this.marketHandler.getPlayerCollectedMarketTile(this.myself.playerID);
-
+                    const playerCollectedMarketTile = this.myself.getCollectedMarketTileData();
                     if(this.isCurrentPlayerActive())
                         this.marketHandler.addSelectableClassToMarketTiles(args.possible_market_indexes);
-                    else if(playerCollectedMarketTile.type === 'collecting'){
-                        this.myself.pyramid.enableBuildPyramid(args.possible_moves[this.myself.playerID]);
-                        this.updateStatusText(dojo.string.substitute(_('${you} may build while others are selecting Market Tiles'), {you: this.divYou()}));
-                    }
+                    else if(playerCollectedMarketTile.type === 'collecting')
+                        this.myself.pyramid.enableBuildPyramid(args._private.possible_moves);
                 }
             break;
             case 'buildPyramid':
                 if(this.myself)
-                    this.myself.pyramid.enableBuildPyramid(args.possible_moves);
+                    this.myself.pyramid.enableBuildPyramid(args._private.possible_moves);
             break;
         }
     }
@@ -173,6 +200,12 @@ class GameBody extends GameGui {
         let html = "<span style=\"color:#" + color + ";" + color_bg + "\" " + this.getAttributesHTML(attributes) + ">" + this.gamedatas.players[player_id].name + "</span>";
         return html;
     }
+    public divActivePlayer(attributes = {}, detectYou = true): string {
+        const activePlayerID = this.getActivePlayerId();
+        if(!activePlayerID)
+            return null;
+        return this.divColoredPlayer(activePlayerID, attributes, detectYou);
+    }
     private getAttributesHTML(attributes): string{ return Object.entries(attributes || {}).map(([key, value]) => `${key}="${value}"`).join(' '); }
     public getPos(node: HTMLDivElement): Record<string, number> { let pos = this.getBoundingClientRectIgnoreZoom(node); pos.w = pos.width; pos.h = pos.height; return pos; }
     public isDesktop(): boolean { return document.body.classList.contains('desktop_version'); }
@@ -207,7 +240,6 @@ class GameBody extends GameGui {
             .join(''); // Combine into a single string
     }
     public hexToRgb(hex: string): string { return hex.replace('#', '').match(/.{1,2}/g).map(x => parseInt(x, 16)).join(','); }
-
     public dotTicks(waitingTextContainer: HTMLDivElement){
         let dotInterval: number;
 
@@ -226,7 +258,51 @@ class GameBody extends GameGui {
         dotTick();
         dotInterval = setInterval(dotTick, 500);
     }
+    public getContentsRectangle(node: HTMLDivElement, excludeClass: string | null = null): ContentsRectangle | null {
+        const children = node.children;
+
+        if (children.length === 0)
+            return null; // No children, return coordinates (0,0)
+
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+
+        for (const child of Array.from(children)) {
+            if (excludeClass && child.classList.contains(excludeClass))
+                continue;
+            
+            let rect = child.getBoundingClientRect();
+
+            minX = Math.min(minX, rect.left);
+            minY = Math.min(minY, rect.top);
+            maxX = Math.max(maxX, rect.right);
+            maxY = Math.max(maxY, rect.bottom);
+        }
+
+        return { minX: minX, minY: minY, maxX: maxX, maxY: maxY, width: maxX - minX, height: maxY - minY };
+    }
     public printDebug(...args: any[]): void{ args[0] = typeof args[0] == 'string' ? '*** ' + args[0] : args[0]; console.log(...args); }
+
+    //game specific utility functions
+    public createCubeDiv(cube: BaseCube): HTMLDivElement {
+        const cubeDiv = document.createElement('div');
+        cubeDiv.className = 'a-cube';
+        cubeDiv.innerHTML = '<div class="cube-background"></div><div class="top-side"></div><div class="right-side"></div><div class="bottom-side"></div>';
+        cubeDiv.setAttribute('cube-id', cube.cube_id.toString());
+        cubeDiv.setAttribute('color', cube.color.toString());
+
+        cubeDiv.style.setProperty('--top-bg-x', (Math.random() * 100) + '%');
+        cubeDiv.style.setProperty('--top-bg-y', (Math.random() * 100) + '%');
+        cubeDiv.style.setProperty('--side-bg-x', (Math.random() * 100) + '%');
+        cubeDiv.style.setProperty('--side-bg-y', (Math.random() * 100) + '%');
+        cubeDiv.style.setProperty('--bottom-bg-x', (Math.random() * 100) + '%');
+        cubeDiv.style.setProperty('--bottom-bg-y', (Math.random() * 100) + '%');
+        // cubeDiv.style.setProperty('--cube-color', '#' + this.CUBE_COLORS[Number(cube.color)].colorCode); //ekmek sil
+
+        return cubeDiv;
+    }
 
     //notification functions
 
@@ -256,13 +332,38 @@ class GameBody extends GameGui {
         console.log('notif_individualPlayerCollected');
         await this.marketHandler.animateIndividualPlayerCollected(args.player_id, args.collected_market_index);
     }
+
+    public async notif_cubePlacedInPyramid(args) {
+        console.log('notif_cubePlacedInPyramid');
+        this.myself.pyramid.enableBuildPyramid(args.possible_moves);
+    }
+
+    public async notif_undoneBuildPyramid(args) { //ekmek sil, bu notif gerekmemeli possible_moves client'a tasininca
+        console.log('notif_undoneBuildPyramid');
+        this.myself.pyramid.enableBuildPyramid(args.possible_moves);
+    }
+
+    public async notif_confirmedBuildPyramid(args) {
+        console.log('notif_confirmedBuildPyramid');
+        this.myself.pyramid.confirmedBuildPyramid();
+    }
 }
 
-interface MarketCube {
+interface BaseCube {
     color: string;
     cube_id: string;
-    location: string;
+}
+
+interface MarketCube extends BaseCube {
     market_index: string;
+}
+
+interface PyramidCube extends BaseCube {
+    pos_x: number;
+    pos_y: number;
+    pos_z: number;
+    order_in_construction: number;
+    div: HTMLDivElement;
 }
 
 interface CubeColor {
@@ -280,5 +381,15 @@ interface CollectedMarketTilesData {
     selected_market_index: number;
     collected_market_index: number;
     turn_order: number;
-    type: 'collecting' | 'pending';
+    type: 'collecting' | 'pending' | 'market_inactive';
 }
+
+interface ContentsRectangle {
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+    width: number;
+    height: number;
+}
+
