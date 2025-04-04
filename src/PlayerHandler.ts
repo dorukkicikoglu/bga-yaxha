@@ -1,8 +1,9 @@
 class PlayerHandler{
     public overallPlayerBoard: HTMLDivElement;
     public pyramid: PyramidHandler;
+	// public collectedMarketTileIndex: number; //ekmek sil
 
-	constructor(private gameui: GameBody, public playerID: number, private playerName: string, public playerColor: string, private playerNo: number, private turnOrder: number, private pyramidData: any) { //ekmek change type pyramidData
+	constructor(private gameui: GameBody, public playerID: number, private playerName: string, public playerColor: string, private playerNo: number, private turnOrder: number, pyramidData: PyramidCube[], public built_cubes_this_round: boolean) {
 		this.overallPlayerBoard = $('overall_player_board_' + this.playerID);
 
 		this.pyramid = new PyramidHandler(this.gameui, this, this.gameui.PYRAMID_MAX_SIZE, pyramidData);
@@ -51,4 +52,8 @@ class PlayerHandler{
 			return null;
 		}
     }
+
+	public getCollectedMarketTileData(): CollectedMarketTilesData{
+		return this.gameui.marketHandler.getPlayerCollectedMarketTile(this.playerID);
+	}
 }

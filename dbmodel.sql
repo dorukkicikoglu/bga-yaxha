@@ -36,7 +36,8 @@ ALTER TABLE `player`
 ADD `turn_order` INT NOT NULL,
 ADD `made_market_index_selection_this_round` ENUM('true','false') NOT NULL DEFAULT 'false',
 ADD `selected_market_index` TINYINT UNSIGNED DEFAULT NULL,
-ADD `collected_market_index` TINYINT UNSIGNED DEFAULT NULL;
+ADD `collected_market_index` TINYINT UNSIGNED DEFAULT NULL,
+ADD `built_cubes_this_round` ENUM('true','false') NOT NULL DEFAULT 'false';
 
 CREATE TABLE IF NOT EXISTS `bonus_cards` (
     `bonus_card_position` TINYINT NOT NULL,
@@ -48,11 +49,12 @@ CREATE TABLE IF NOT EXISTS `cubes` (
   `card_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `card_type` varchar(16) NOT NULL,
   `card_type_arg` int(11) NOT NULL,
-  `card_location` ENUM('bag', 'market', 'player') NOT NULL,
+  `card_location` ENUM('bag', 'market', 'in_construction', 'pyramid') NOT NULL,
   `card_location_arg` int(11) NOT NULL,
   `color` TINYINT NOT NULL,
   `pos_x` TINYINT NULL,
   `pos_y` TINYINT NULL,
   `pos_z` TINYINT NULL,
+  `order_in_construction` TINYINT NULL,
   PRIMARY KEY (`card_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;

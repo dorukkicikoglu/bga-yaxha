@@ -726,8 +726,9 @@
   --status-bar-color: #ffe6e6ef;
   --gamearea-avatar-size: 40px;
   --market-tile-glow-color: #2a119ac2;
-  --pyramid-cube-width: 40px;
+  --pyramid-cube-width: var(--cube-size);
   --cubes-container-height: 100px;
+  --max-cube-width: 200px;
   --image-source-market-tiles: url(img/market_tiles_minified.jpg);
   --image-source-player-order-tiles: url(img/player_order_tiles_minified.jpg);
   --image-source-bonus-cards: url(img/bonus_cards_minified.jpg);
@@ -820,7 +821,10 @@
   left: 50%;
   transform: translate(-50%, -50%);
 }
-#player-tables .pyramids-container .a-pyramid-container .cubes-container .a-tile, #player-tables .pyramids-container .a-pyramid-container .cubes-container .pyramid-cube-snap-point, #player-tables .pyramids-container .a-pyramid-container .cubes-container .rotate-button {
+#player-tables .pyramids-container .a-pyramid-container .cubes-container:hover .a-cube {
+  animation: shine-cube 1.6s ease-in-out;
+}
+#player-tables .pyramids-container .a-pyramid-container .cubes-container .a-cube, #player-tables .pyramids-container .a-pyramid-container .cubes-container .pyramid-cube-snap-point, #player-tables .pyramids-container .a-pyramid-container .cubes-container .switch-color-button {
   position: absolute;
   width: var(--pyramid-cube-width, 0px);
   height: var(--pyramid-cube-width, 0px);
@@ -829,29 +833,44 @@
   transform: translate(-50%, -50%);
 }
 #player-tables .pyramids-container .a-pyramid-container .cubes-container .pyramid-cube-snap-point {
+  z-index: 0;
   opacity: 0;
   background-color: rgba(0, 0, 0, 0.24);
   outline: 1px solid;
   outline-color: rgba(var(--player-color-hex), 0.5);
   outline-offset: -1px;
 }
-#player-tables .pyramids-container .a-pyramid-container .cubes-container .rotate-button {
-  opacity: 0;
+#player-tables .pyramids-container .a-pyramid-container .cubes-container .a-cube {
+  z-index: 1;
 }
-#player-tables .pyramids-container .a-pyramid-container .cubes-container .rotate-button .rotate-icon {
+#player-tables .pyramids-container .a-pyramid-container .cubes-container .a-cube .cube-background {
+  top: 18%;
+  left: 14%;
+  width: 92%;
+  height: 92%;
+}
+#player-tables .pyramids-container .a-pyramid-container .cubes-container .a-cube.animating-cube {
+  z-index: 100 !important;
+}
+#player-tables .pyramids-container .a-pyramid-container .cubes-container .switch-color-button {
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+#player-tables .pyramids-container .a-pyramid-container .cubes-container .switch-color-button .switch-color-icon {
   opacity: 0.82;
   position: absolute;
   color: #ffffff;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  text-shadow: 0 0 10px #000;
+  text-shadow: 1px 0 #000000, -1px 0 #000000, 0 1px #000000, 0 -1px #000000, 0.5px 0.5px #000000, -0.5px -0.5px #000000, 0.5px -0.5px #000000, -0.5px 0.5px #000000;
   font-size: calc(var(--cubes-container-height, 40px) * 0.21);
 }
-#player-tables .pyramids-container .a-pyramid-container[build-pyramid-enabled=true] .pyramid-cube-snap-point.clickable {
+#player-tables .pyramids-container .a-pyramid-container[build-pyramid-enabled=true] .pyramid-cube-snap-point {
   cursor: pointer;
 }
-#player-tables .pyramids-container .a-pyramid-container[build-pyramid-enabled=true] .rotate-button {
+#player-tables .pyramids-container .a-pyramid-container[build-pyramid-enabled=true] .switch-color-button {
   cursor: pointer;
 }
 
@@ -860,44 +879,51 @@
   height: var(--cube-size);
   position: absolute;
   transition: transform 0.2s ease;
+}
+.a-cube .top-side, .a-cube .right-side, .a-cube .bottom-side {
+  z-index: 1;
+  background-blend-mode: overlay;
+  background-color: var(--cube-color);
+}
+.a-cube .top-side {
+  z-index: 2;
+  position: absolute;
+  width: 100%;
+  height: 100%;
   background-image: url("img/wood_texture_overlay.png"), linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1)), linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
   background-position: var(--top-bg-x) var(--top-bg-y), 0 0, 150% 150%;
   background-size: auto, 100% 100%, 300% 300%;
   background-repeat: no-repeat, no-repeat, no-repeat;
 }
-.a-cube, .a-cube::before, .a-cube::after {
-  background-blend-mode: overlay;
-  background-color: var(--cube-color);
-}
-.a-cube::after {
-  content: "";
+.a-cube .right-side {
+  z-index: 0;
   position: absolute;
   width: 100%;
   height: 136%;
   filter: brightness(0.85);
-  clip-path: polygon(86% 20%, 60% 0%, 60% 74%, 86% 88.7%);
+  clip-path: polygon(86% 20%, 59.8% -2%, 59% 74%, 86% 93.3%);
   top: 0%;
   left: 39.1%;
   background-position: var(--side-bg-x) var(--side-bg-y);
   background-image: url("img/wood_texture_overlay.png"), linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
 }
-.a-cube:before {
-  content: "";
+.a-cube .bottom-side {
+  z-index: 1;
   position: absolute;
   width: 139%;
   height: 71%;
   filter: brightness(0.9);
-  clip-path: polygon(20% 30%, 90% 30%, 70% 0%, 0% 0%);
+  clip-path: polygon(18.6% 39%, 90% 39%, 71% 0%, -2% 0%);
   top: 98.6%;
   left: 0%;
   background-position: var(--bottom-bg-x) var(--bottom-bg-y);
   background-image: url("img/wood_texture_overlay.png"), linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
 }
 .a-cube .cube-background {
-  z-index: -1;
-  width: 100%;
-  height: 100%;
-  top: 0%;
+  z-index: 0;
+  width: 102%;
+  height: 102%;
+  top: 5%;
   left: 0%;
   transform: scale(1.32);
   transform-origin: 11% 23%;
@@ -905,9 +931,21 @@
   background-size: contain, 300% 100%;
   background-repeat: no-repeat, no-repeat;
   background-image: url(img/cube_background.png), linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
-  opacity: 0.7;
   background-position: center, -100% 0;
   filter: blur(1px);
+}
+.a-cube.selected-for-pyramid {
+  opacity: 0.6;
+}
+.a-cube.selected-for-pyramid .cube-background {
+  display: none;
+}
+.a-cube.built-in-pyramid {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.a-cube.built-in-pyramid .cube-background {
+  display: none;
 }
 
 .market-container {
@@ -916,6 +954,7 @@
   justify-content: center;
   align-items: flex-start;
   width: 100%;
+  margin-top: 10px;
 }
 .market-container .market-tiles-container {
   display: flex;
@@ -960,9 +999,6 @@
 }
 .market-container .market-tiles-container .a-market-tile.selectable-market-tile {
   animation: selectable-market-tile-glow-animation 2.2s ease-out infinite;
-}
-.market-container .market-tiles-container .a-market-tile .cubes-container .a-cube {
-  pointer-events: none;
 }
 .market-container .market-tiles-container .a-market-tile .collecting-player-avatar {
   position: absolute;
@@ -1175,6 +1211,23 @@
   width: 38px;
   height: 38px;
   margin: -5px 0px -5px 3px;
+}
+#page-title .cube-wrapper {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0px 10px;
+}
+#page-title .cube-wrapper .a-cube {
+  position: relative;
+  top: -4px;
+  display: inline-block;
+  margin-right: 12px;
+}
+#page-title .confirm-place-cube-button {
+  margin-left: 5px;
+}
+#page-title .undo-place-cube-button {
+  margin-left: 5px;
 }
 
 .log.a-game-log {
