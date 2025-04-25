@@ -57,6 +57,7 @@ if (!defined('STATE_GAME_SETUP')) { // guard since this included multiple times
     define("STATE_INDIVIDUAL_PLAYER_SELECT_MARKET_TILE", 5);
     define("STATE_BUILD_PYRAMID", 10);
     define("STATE_ALL_PYRAMIDS_BUILT", 11);
+    define("STATE_NEW_CUBES_DRAWN", 12);
     define("STATE_END_GAME_SCORING", 50);
     define("STATE_GAME_END", 99);
 }
@@ -125,9 +126,18 @@ $machinestates = [
 
     STATE_ALL_PYRAMIDS_BUILT => [
         "name" => "allPyramidsBuilt",
-        "description" => clienttranslate('Everyone built pyramids...'),
+        "description" => clienttranslate('Placing cubes in pyramids...'),
         "type" => "game",
         "action" => "stAllPyramidsBuilt",
+        "transitions" => ["newCubesDrawn" => STATE_NEW_CUBES_DRAWN]
+    ],
+
+    STATE_NEW_CUBES_DRAWN => [
+        "name" => "newCubesDrawn",
+        "description" => clienttranslate('Drawing new cubes!'),
+        "type" => "game",
+        "args" => "argNewCubesDrawn",
+        "action" => "stNewCubesDrawn",
         "transitions" => ["allSelectMarketTile" => STATE_ALL_SELECT_MARKET_TILE]
     ],
 

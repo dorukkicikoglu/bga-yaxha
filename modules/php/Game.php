@@ -249,6 +249,10 @@ class Game extends \Table
         ];
     }
 
+    public function argNewCubesDrawn(): array{
+        return ['marketData' => $this->marketManager->getMarketData()];
+    }
+
     /**
      * Compute and return the current game progression.
      *
@@ -369,7 +373,14 @@ class Game extends \Table
 
         if((int)$this->globalsManager->get('rounds_remaining') == 0)
             $this->gamestate->nextState('endGameScoring');
-        else $this->gamestate->nextState('allSelectMarketTile');
+        else { 
+            $this->gamestate->nextState('newCubesDrawn');
+        }
+    }
+
+    public function stNewCubesDrawn(): void {
+        $this->marketManager->drawNewCubes();
+        $this->gamestate->nextState('allSelectMarketTile');
     }
 
     /**
@@ -519,9 +530,7 @@ class Game extends \Table
         $this->DbQuery(sprintf("INSERT INTO cubes (card_id, card_type, card_type_arg, card_location, card_location_arg, color) VALUES %s", implode(',', $values)));
         $this->cubesBag->shuffle('bag');
 
-        // Deal 3 cubes to each Market Tile
-        for ($i = 0; $i < count($players); $i++)
-            $this->DbQuery( "UPDATE cubes SET card_location = 'market', card_location_arg = $i WHERE card_location = 'bag' ORDER BY card_location_arg LIMIT ".CUBES_PER_MARKET_TILE );
+        $this->marketManager->drawNewCubes(false);
 
         // Activate first player once everything has been initialized and ready.
         $this->activeNextPlayer();

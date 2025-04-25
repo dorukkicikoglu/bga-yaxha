@@ -248,7 +248,6 @@ class PyramidHandler {
     }
 
     private animateUnplacedCubeToPyramid(cubeData: PyramidCube, moveType: PyramidCubeMoveType) {
-        console.log('animateUnplacedCubeToPyramid');
         this.centerCubesContainer(false);
 
         this.cubesContainer.querySelectorAll('.switch-color-button').forEach(el => el.remove());
@@ -301,12 +300,23 @@ class PyramidHandler {
         this.cubeAnim.start();
     }
 
-    public animateBuiltCubeToPyramid(cubeMoves: CubeToPyramidMoveData[]): ReturnType<typeof dojo.animateProperty> {
-        console.log('animateBuiltCubeToPyramid');
-
+    public animatePlayerCubesToPyramid(cubeMoves: CubeToPyramidMoveData[]): ReturnType<typeof dojo.animateProperty> {
         const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
         const animSpeed = 600;
         let cubeAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
+
+        const collectingAvatar = marketTile.querySelector('.yaxha-player-avatar.collecting-player-avatar');
+        if (collectingAvatar) {
+            const fadeOutAvatar = this.gameui.animationHandler.animateProperty({
+                node: collectingAvatar,
+                properties: {opacity: 0},
+                duration: 200,
+                onEnd: () => {
+                    collectingAvatar.remove();
+                }
+            });
+            cubeAnimArray.push(fadeOutAvatar);
+        }
 
         // Clone and position market cubes before animation to prevent visual glitches on removal
         marketTile.querySelectorAll('.a-cube').forEach((cube: HTMLElement) => {
@@ -348,8 +358,9 @@ class PyramidHandler {
             const builtCubeAnim = this.gameui.animationHandler.animateOnObject({
                 node: marketCubeDiv,
                 goTo: pyramidCubeDiv,
-                duration: animSpeed,
+                duration: animSpeed + Math.floor(Math.random() * 101) - 50,
                 easing: 'circleOut',
+                delay: Math.floor(Math.random() * 51),
                 onEnd: () => { 
                     marketCubeDiv.remove();
                     pyramidCubeDiv.style.opacity = '1';
@@ -363,6 +374,7 @@ class PyramidHandler {
 
         let cubeAnim: ReturnType<typeof dojo.animateProperty> = this.gameui.animationHandler.combine(cubeAnimArray);
         cubeAnim.onEnd = () => { this.arrangeCubesZIndex(); }
+
         // cubeAnim.delay = delay; //ekmek sil
         // console.log('cubeAnim.delayyyyy', delay);
 
@@ -375,6 +387,7 @@ class PyramidHandler {
 
         this.unplacedCube = null;
         this.cubesInConstruction = {};
+        this.owner.built_cubes_this_round = false;
     }
     
     private confirmPlaceCubeButtonClicked() {
