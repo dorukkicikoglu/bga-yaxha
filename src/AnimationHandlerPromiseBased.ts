@@ -5,7 +5,7 @@ class AnimationHandlerPromiseBased{
         args = this.addEasing(args);
 
         let dojoAnim = dojo.animateProperty(args);
-        dojoAnim = this.bindStartFunction(dojoAnim);
+        dojoAnim = this.bindWrapperFunctions(dojoAnim);
 
         return dojoAnim;
     }
@@ -60,20 +60,39 @@ class AnimationHandlerPromiseBased{
         return dojoAnim;
     }
 
+    public fadeOutAndDestroy(node: HTMLDivElement, duration: number = 200) {
+        this.animateProperty({
+            node: node,
+            properties: {opacity: 0},
+            duration: duration,
+            onEnd: () => {
+                node.remove();
+            }
+        }).start();
+    }
+
     public combine(dojoAnimArray: ReturnType<typeof dojo.animateProperty>[]) {
         let dojoAnim = dojo.fx.combine(dojoAnimArray);
-        dojoAnim = this.bindStartFunction(dojoAnim);
+        dojoAnim = this.bindWrapperFunctions(dojoAnim);
         return dojoAnim;
     }
 
     public chain(dojoAnimArray: ReturnType<typeof dojo.animateProperty>[]) {
         let dojoAnim = dojo.fx.chain(dojoAnimArray);
-        dojoAnim = this.bindStartFunction(dojoAnim);
+        dojoAnim = this.bindWrapperFunctions(dojoAnim);
         return dojoAnim;
     }
 
-    private bindStartFunction(dojoAnim: ReturnType<typeof dojo.animateProperty>) {
+    private bindWrapperFunctions(dojoAnim: ReturnType<typeof dojo.animateProperty>) {
         dojoAnim.start = async () => { return this.gameui.bgaPlayDojoAnimation(dojoAnim); };
+        dojoAnim.addDelay = (delay: number) => { 
+            const delayAnim = this.animateProperty({
+                node: document.createElement('div'),
+                duration: delay,
+            });
+
+            return this.chain([delayAnim, dojoAnim]);
+        }
         return dojoAnim;
     }
 

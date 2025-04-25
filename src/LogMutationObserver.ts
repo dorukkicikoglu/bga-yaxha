@@ -87,7 +87,43 @@ class LogMutationObserver{
 
         cardsData.collectingPlayers.forEach(cardData => { logHTML += createPlayerRow(cardData, true); });
         cardsData.pendingPlayers.forEach(cardData => { logHTML += createPlayerRow(cardData, false); });
-        
+        logHTML = `<div class="market-interaction-rows-wrapper">${logHTML}</div>`;
+
+        return logHTML;
+    }
+
+    public createLogDisplayBuiltCubes(built_cubes: { [key: number]: CubeToPyramidMoveData[] }): string {
+        let logHTML = '';
+
+        for(const playerID in built_cubes){
+            let cubesHTML = '';
+
+            // Sort cubes by counting and ordering colors
+            const colorCounts = built_cubes[playerID].reduce((counts, cube) => {
+                counts[cube.color] = (counts[cube.color] || 0) + 1;
+                return counts;
+            }, {});
+
+            built_cubes[playerID].sort((a, b) => {
+                // First sort by color frequency (descending)
+                const countDiff = colorCounts[b.color] - colorCounts[a.color];
+                if (countDiff !== 0) return countDiff;
+                // If same frequency, sort by color value
+                return Number(b.color) - Number(a.color);
+            });
+
+            for(const cube of built_cubes[playerID])
+                cubesHTML += this.gameui.createCubeDiv(cube).outerHTML;
+            
+            logHTML += `<div class="player-built-cubes-row">
+            ${this.gameui.divColoredPlayer(playerID, {class: 'playername'}, false)}
+            <i class="log-arrow log-place-cube-icon fa6 fa-download"></i>
+            ${cubesHTML}
+            </div>`;
+        }
+
+        logHTML = `<div class="built-cubes-rows-wrapper">${logHTML}</div>`;
+
         return logHTML;
     }
 }

@@ -167,7 +167,7 @@ class Game extends \Table
 
         $this->notify->all('individualPlayerCollected', '${INDIVIDUAL_MARKET_TILES_COLLECTION_STR}', array(
             'LOG_CLASS' => 'individual-collected-tiles-log',
-            'preserve' => ['LOG_CLASS', 'player_id', 'market_index'],
+            'preserve' => ['LOG_CLASS', 'player_id', 'collected_market_index'],
             'player_id' => $activePlayerID,
             'collected_market_index' => $marketIndex,
             'INDIVIDUAL_MARKET_TILES_COLLECTION_STR' => $this->getPlayerNameById($activePlayerID).' ← '.$this->marketManager->getMarketTileSelectionLogHTML($marketIndex)
@@ -213,7 +213,10 @@ class Game extends \Table
         foreach($selectedMarketIndexes as $playerID => $marketIndex)
             $privateData[$playerID]['selected_market_index'] = $marketIndex;
 
-        return ['_private' => $privateData];
+        return [
+            'collectedMarketTilesData' => $this->marketManager->getCollectedMarketTiles(),
+            '_private' => $privateData
+        ];
     }
 
     public function argIndividualPlayerSelectMarketTile(): array{
@@ -301,20 +304,6 @@ class Game extends \Table
         }
     }
 
-    // public function stGetNextPlayerToBuildPyramid(): void { //ekmek sil
-    //     $nextPlayer = self::getObjectFromDB("SELECT p.* FROM player p 
-    //         INNER JOIN cubes c ON p.collected_market_index = c.card_location_arg 
-    //         WHERE p.player_zombie = 0 AND c.card_location = 'market' AND p.collected_market_index IS NOT NULL ORDER BY p.turn_order ASC LIMIT 1");
-
-    //     if ($nextPlayer === null) {
-    //         // No valid players left, go back to Market Tile selection
-    //         $this->gamestate->nextState('allSelectMarketTile');
-    //     } else {
-    //         $this->gamestate->changeActivePlayer($nextPlayer['player_id']);
-    //         $this->gamestate->nextState('buildPyramid');
-    //     }
-    // }
-
     public function stBuildPyramid(): void {
         $players = self::loadPlayersBasicInfos();
         $playersToActivate = self::getCollectionFromDB("SELECT player_id, built_cubes_this_round FROM player WHERE built_cubes_this_round = 'false' AND player_zombie = 0");
@@ -327,9 +316,60 @@ class Game extends \Table
         $playersToActivate = array_keys($playersToActivate);
 
         foreach ($playersToDeactivate as $playerId)
-            $this->gamestate->setPlayerNonMultiactive($playerId, 'pyramidsBuilt');
+            $this->gamestate->setPlayerNonMultiactive($playerId, 'allPyramidsBuilt');
 
-        $this->gamestate->setPlayersMultiactive($playersToActivate, 'pyramidsBuilt', true);
+        $this->gamestate->setPlayersMultiactive($playersToActivate, 'allPyramidsBuilt', true);
+    }
+
+    public function stAllPyramidsBuilt(): void{
+        //ekmek lahmacun devam et, yeni kupleri dagit
+
+        $builtCubes = self::getObjectListFromDB("SELECT card_location_arg as owner_id, card_id as cube_id, color, pos_x, pos_y, pos_z FROM cubes WHERE order_in_construction IS NOT NULL ORDER BY order_in_construction ASC");
+        
+        $builtCubesByPlayer = array();
+        foreach($builtCubes as $cube) {
+            $ownerID = (int) $cube['owner_id'];
+            if(!isset($builtCubesByPlayer[$ownerID]))
+                $builtCubesByPlayer[$ownerID] = [];
+
+            $builtCubesByPlayer[$ownerID][] = $cube;
+        }
+
+        self::DbQuery("UPDATE cubes SET order_in_construction = NULL");
+        self::DbQuery("UPDATE player SET 
+            built_cubes_this_round = 'false',
+            made_market_index_selection_this_round = 'false', 
+            selected_market_index = NULL,
+            collected_market_index = NULL");
+
+        $this->globalsManager->set('rounds_remaining', (int) $this->globalsManager->get('rounds_remaining') - 1);
+
+        $builtCubesDataStr = '';
+        foreach($builtCubesByPlayer as $playerID => $cubes){
+            $builtCubesDataStr .= $this->getPlayerNameById($playerID).' ↓ '.implode('', array_map(fn($cube) => 
+                '<div style="display: inline-block; border: 1px solid #000; margin: 0 2px; background-color: #'.CUBE_COLORS[$cube['color']]['colorCode'].'; width: 18px; height: 18px;"></div>'
+            , $cubes)).'<br>';
+        }
+
+        $this->notify->all('displayBuiltCubes', '${DISPLAY_BUILT_CUBES_STR}', [
+            'LOG_CLASS' => 'display-built-cubes-log',
+            'preserve' => ['LOG_CLASS', 'built_cubes'],
+            'built_cubes' => $builtCubesByPlayer,
+            'DISPLAY_BUILT_CUBES_STR' => $builtCubesDataStr
+        ]);
+
+
+        // $this->parent->notify->all('animateAllMarketTileSelections', '${REVEALED_MARKET_TILES_DATA_STR}', array( //ekmek sil lahmacun
+        //     'LOG_CLASS' => 'all-selected-tiles-log',
+        //     'preserve' => ['LOG_CLASS', 'collectedMarketTilesData'],
+        //     'collectedMarketTilesData' => ['collectingPlayers' => $collectingPlayers, 'pendingPlayers' => $pendingPlayers],
+        //     'REVEALED_MARKET_TILES_DATA_STR' => $marketTilesDataStr
+        // ));
+
+
+        if((int)$this->globalsManager->get('rounds_remaining') == 0)
+            $this->gamestate->nextState('endGameScoring');
+        else $this->gamestate->nextState('allSelectMarketTile');
     }
 
     /**
@@ -392,7 +432,6 @@ class Game extends \Table
         $current_player_id = (int) $this->getCurrentPlayerId();
         $result['pyramidData'][$current_player_id] = $this->pyramidManager->getPlayerPyramidData($current_player_id, true);
 
-        $result['playerSelectedMarketIndex'] = $this->getUniqueValueFromDB("SELECT selected_market_index FROM player WHERE player_id = $current_player_id");
         $result['collectedMarketTilesData'] = $this->marketManager->getCollectedMarketTiles();
 
         return $result;

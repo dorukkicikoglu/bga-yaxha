@@ -16,9 +16,9 @@ class YXHPyramidManager extends APP_DbObject{
         foreach ($players as $player_id)
             $pyramidsData[$player_id] = [];
 
-        $sql = "SELECT card_id as cube_id, card_location = 'pyramid' as is_cube_built, card_location_arg as owner_id, color, pos_x, pos_y, pos_z, order_in_construction FROM cubes WHERE card_location IN ('pyramid', 'in_construction') AND card_location_arg IN (" . implode(',', $players) . ")";
+        $sql = "SELECT card_id as cube_id, card_location_arg as owner_id, color, pos_x, pos_y, pos_z, order_in_construction FROM cubes WHERE card_location = 'pyramid' AND card_location_arg IN (" . implode(',', $players) . ")";
         if(!$includeInConstruction)
-            $sql .= " AND card_location != 'in_construction'";
+            $sql .= " AND order_in_construction IS NULL";
 
         $cubes = self::getObjectListFromDB($sql);
 
@@ -112,27 +112,27 @@ class YXHPyramidManager extends APP_DbObject{
     public function addCubeToPyramid($player_id, $cube_id, $pos_x, $pos_y, $pos_z) {
         $this->checkBuildableState();
         $this->doesPlayerOwnCubeOnMarketTile($player_id, $cube_id);
-        
+
         // Get highest order_in_construction value for this player's cubes, defaulting to 0 if none exist
-        $newOrderInConstruction = 1 + $this->getUniqueValueFromDB("SELECT COALESCE(MAX(order_in_construction), 0) FROM cubes WHERE card_location = 'in_construction' AND card_location_arg = $player_id");
+        $newOrderInConstruction = 1 + $this->getUniqueValueFromDB("SELECT COALESCE(MAX(order_in_construction), 0) FROM cubes WHERE order_in_construction IS NOT NULL AND card_location_arg = $player_id");
 
         $possibleMoves = $this->getPossibleMoves($player_id);
         $moveIsValid = in_array([$pos_x, $pos_y, $pos_z], $possibleMoves);
         if (!$moveIsValid)
             throw new \BgaUserException(clienttranslate("Invalid cube position"));
 
-        $this->DbQuery("UPDATE cubes SET pos_x = $pos_x, pos_y = $pos_y, pos_z = $pos_z, card_location = 'in_construction', card_location_arg = $player_id, order_in_construction = $newOrderInConstruction WHERE card_id = $cube_id");
+        $this->DbQuery("UPDATE cubes SET pos_x = $pos_x, pos_y = $pos_y, pos_z = $pos_z, card_location = 'pyramid', card_location_arg = $player_id, order_in_construction = $newOrderInConstruction WHERE card_id = $cube_id");
         $this->parent->notify->player($player_id, 'cubePlacedInPyramid', '', ['possible_moves' => $this->getPossibleMoves($player_id)]);
     }
 
     public function moveCubeInPyramid($player_id, $cube_id, $pos_x, $pos_y, $pos_z) {
         $this->checkBuildableState();
         $cube = $this->getObjectFromDB("SELECT card_location, card_location_arg, order_in_construction FROM cubes WHERE card_id = $cube_id");
-        
-        if ($cube['card_location'] != 'in_construction' || $cube['card_location_arg'] != $player_id)
+
+        if ($cube['order_in_construction'] == null || $cube['card_location_arg'] != $player_id)
             throw new \BgaUserException(clienttranslate("You can only move cubes that you have placed in your pyramid"));
 
-        if ($cube['order_in_construction'] != CUBES_PER_MARKET_TILE) 
+        if ($cube['order_in_construction'] != CUBES_PER_MARKET_TILE)
             throw new \BgaUserException(clienttranslate("You can only move the last cube placed"));
 
         $possibleMoves = $this->getPossibleMoves($player_id);
@@ -148,8 +148,8 @@ class YXHPyramidManager extends APP_DbObject{
         $this->doesPlayerOwnCubeOnMarketTile($player_id, $cube_id);
 
         $playerMarketIndex = $this->getUniqueValueFromDB("SELECT collected_market_index FROM player WHERE player_id = $player_id");
-        
-        $lastAddedCube = $this->getObjectFromDB("SELECT * FROM cubes WHERE card_location = 'in_construction' AND card_location_arg = $player_id ORDER BY order_in_construction DESC LIMIT 1");
+
+        $lastAddedCube = $this->getObjectFromDB("SELECT * FROM cubes WHERE order_in_construction IS NOT NULL AND card_location_arg = $player_id ORDER BY order_in_construction DESC LIMIT 1");
         if (!$lastAddedCube)
             throw new \BgaUserException(clienttranslate("No cube found in construction"));
 
@@ -162,7 +162,7 @@ class YXHPyramidManager extends APP_DbObject{
             order_in_construction = NUll
             WHERE card_id = ".$lastAddedCube['card_id']);
 
-        $this->DbQuery("UPDATE cubes SET pos_x = ".$lastAddedCube['pos_x'].", pos_y = ".$lastAddedCube['pos_y'].", pos_z = ".$lastAddedCube['pos_z'].", card_location = 'in_construction', card_location_arg = $player_id, order_in_construction = ".$lastAddedCube['order_in_construction']." WHERE card_id = $cube_id");
+        $this->DbQuery("UPDATE cubes SET card_location = 'pyramid', pos_x = ".$lastAddedCube['pos_x'].", pos_y = ".$lastAddedCube['pos_y'].", pos_z = ".$lastAddedCube['pos_z'].", card_location_arg = $player_id, order_in_construction = ".$lastAddedCube['order_in_construction']." WHERE card_id = $cube_id");
     }
 
     public function undoBuildPyramid($player_id): void {
@@ -175,6 +175,9 @@ class YXHPyramidManager extends APP_DbObject{
         $this->DbQuery("UPDATE cubes SET card_location = 'market', card_location_arg = $playerMarketIndex, pos_x = NULL, pos_y = NULL, pos_z = NULL, order_in_construction = NULL WHERE order_in_construction IS NOT NULL AND card_location_arg = $player_id");
         $this->DbQuery("UPDATE player SET built_cubes_this_round = 'false' WHERE player_id = $player_id");
         $this->parent->notify->player($player_id, 'undoneBuildPyramid', '', ['possible_moves' => $this->getPossibleMoves($player_id)]);
+
+        if ($this->parent->gamestate->state()['name'] === 'buildPyramid')
+            $this->parent->gamestate->setPlayersMultiactive([$player_id], 'buildPyramid');
     }
 
     private function doesPlayerOwnCubeOnMarketTile($player_id, $cube_id): void{
@@ -190,14 +193,17 @@ class YXHPyramidManager extends APP_DbObject{
     }
 
     public function confirmBuildPyramid($player_id): void {
-        $cubesInConstruction = $this->getUniqueValueFromDB("SELECT COUNT(*) FROM cubes WHERE card_location = 'in_construction' AND card_location_arg = $player_id");
+        $cubesInConstruction = $this->getUniqueValueFromDB("SELECT COUNT(*) FROM cubes WHERE order_in_construction IS NOT NULL AND card_location_arg = $player_id");
         
         if ($cubesInConstruction != CUBES_PER_MARKET_TILE)
-            throw new \BgaUserException(clienttranslate("You must place exactly 3 cubes before confirming"));
+            throw new \BgaUserException(clienttranslate("You must place exactly " . CUBES_PER_MARKET_TILE . " cubes before confirming"));
 
-        $this->DbQuery("UPDATE cubes SET card_location = 'pyramid' WHERE card_location = 'in_construction' AND card_location_arg = $player_id");
+        // $this->DbQuery("UPDATE cubes SET card_location = 'pyramid' WHERE card_location = 'in_construction' AND card_location_arg = $player_id"); //ekmek sil
         $this->DbQuery("UPDATE player SET built_cubes_this_round = 'true' WHERE player_id = $player_id");
         $this->parent->notify->player($player_id, 'confirmedBuildPyramid', '');
+
+        if ($this->parent->gamestate->state()['name'] === 'buildPyramid')
+            $this->parent->gamestate->setPlayerNonMultiactive($player_id, 'allPyramidsBuilt');
     }
 
     public function checkBuildableState() {

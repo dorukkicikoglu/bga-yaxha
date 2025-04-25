@@ -85,7 +85,7 @@ class GameBody extends GameGui {
             document.documentElement.style.setProperty(`--market-tile-color-${index}`, `#${color}`);
         });
         
-        this.marketHandler = new MarketHandler(this, gamedatas.marketData, gamedatas.bonusCardIDs, gamedatas.playerSelectedMarketIndex, gamedatas.collectedMarketTilesData);
+        this.marketHandler = new MarketHandler(this, gamedatas.marketData, gamedatas.bonusCardIDs, gamedatas.collectedMarketTilesData);
 
         this.tooltipHandler = new TooltipHandler(this);
         this.logMutationObserver = new LogMutationObserver(this);
@@ -129,6 +129,7 @@ class GameBody extends GameGui {
         {
             case 'allSelectMarketTile':
                 this.marketHandler.updateStatusTextUponMarketTileSelection();
+                this.marketHandler.setCollectedMarketTilesData(args.collectedMarketTilesData);
             break;
             case 'individualPlayerSelectMarketTile':
                 this.marketHandler.setCollectedMarketTilesData(args.collectedMarketTilesData);
@@ -156,7 +157,7 @@ class GameBody extends GameGui {
                 args.processed = true;
 
                 // list of special keys we want to replace with images
-                let keys = ['textPlayerID', 'REVEALED_MARKET_TILES_DATA_STR', 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR', 'LOG_CLASS'];
+                let keys = ['textPlayerID', 'REVEALED_MARKET_TILES_DATA_STR', 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR', 'DISPLAY_BUILT_CUBES_STR', 'LOG_CLASS'];
                 for(let key of keys) {
                     if(key in args) {
                         if(key == 'textPlayerID')
@@ -164,7 +165,9 @@ class GameBody extends GameGui {
                         else if(key == 'REVEALED_MARKET_TILES_DATA_STR')
                             args['REVEALED_MARKET_TILES_DATA_STR'] = this.logMutationObserver.createLogSelectedMarketTiles(args['collectedMarketTilesData']);
                         else if(key == 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR')
-                            args['INDIVIDUAL_MARKET_TILES_COLLECTION_STR'] = `<div class="player-collected-market-tile-row 'collecting'">${this.divColoredPlayer(args.player_id, {class: 'playername'}, false)}<i class="log-arrow log-arrow-left fa6 fa-arrow-left"></i><div class="a-market-tile-icon" market-index="${args.collected_market_index}"></div></div>`;
+                            args['INDIVIDUAL_MARKET_TILES_COLLECTION_STR'] = `<div class="player-collected-market-tile-row collecting">${this.divColoredPlayer(args.player_id, {class: 'playername'}, false)}<i class="log-arrow log-arrow-left fa6 fa-arrow-left"></i><div class="a-market-tile-icon" market-index="${args.collected_market_index}"></div></div>`;
+                        else if(key == 'DISPLAY_BUILT_CUBES_STR')
+                            args['DISPLAY_BUILT_CUBES_STR'] = this.logMutationObserver.createLogDisplayBuiltCubes(args['built_cubes']);
                         else if(key == 'LOG_CLASS')
                             log = log + '<div log-class-tag="' + args['LOG_CLASS'] + '"></div>';
                     }
@@ -347,6 +350,11 @@ class GameBody extends GameGui {
         console.log('notif_confirmedBuildPyramid');
         this.myself.pyramid.confirmedBuildPyramid();
     }
+
+    public async notif_displayBuiltCubes(args) {
+        console.log('notif_displayBuiltCubes');
+        await this.marketHandler.animateBuiltCubes(args.built_cubes);
+    }
 }
 
 interface BaseCube {
@@ -369,6 +377,13 @@ interface PyramidCube extends BaseCube {
 interface CubeColor {
     name: string;
     colorCode: string;
+}
+
+interface CubeToPyramidMoveData extends BaseCube {
+    owner_id: number;
+    pos_x: number;
+    pos_y: number;
+    pos_z: number;
 }
 
 interface BonusCardData {

@@ -152,7 +152,7 @@ class PyramidHandler {
 
         this.cubesInConstruction[cubeData.cube_id] = cubeData; //ekmek buildleme bitince resetle
 
-        this.animateCubeToPyramid(cubeData, moveType); 
+        this.animateUnplacedCubeToPyramid(cubeData, moveType); 
 
         if(doNotify) //ekmek gerekli mi?
             this.notifyCubeMovedOnGrid();
@@ -201,7 +201,14 @@ class PyramidHandler {
         if (this.gameui.gamedatas.gamestate.name === 'individualPlayerSelectMarketTile'){
             if(this.owner.built_cubes_this_round)
                 statusText = dojo.string.substitute(_('${actplayer} must select an available Market Tile'), {actplayer: this.gameui.divActivePlayer()});
-            else statusText = dojo.string.substitute(_('${you} may build while others are selecting Market Tiles'), {you: this.gameui.divYou()});
+            else {
+                statusText = dojo.string.substitute(_('${you} may build while others are selecting Market Tiles'), {you: this.gameui.divYou()});
+                
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = statusText;
+
+                document.title = '◣' + tempDiv.innerText;
+            }
         } else if (this.gameui.gamedatas.gamestate.name === 'buildPyramid'){
             if(this.owner.built_cubes_this_round)
                 statusText = dojo.string.substitute(_('Waiting for other players to build Pyramids'), {you: this.gameui.divYou()});
@@ -240,20 +247,19 @@ class PyramidHandler {
         document.querySelector('#page-title .undo-place-cube-button')?.addEventListener('click', () => this.undoPlaceCubeButtonClicked());
     }
 
-    private animateCubeToPyramid(cubeData: PyramidCube, moveType: PyramidCubeMoveType) {
-        console.log('animateCubeToPyramid');
+    private animateUnplacedCubeToPyramid(cubeData: PyramidCube, moveType: PyramidCubeMoveType) {
+        console.log('animateUnplacedCubeToPyramid');
         this.centerCubesContainer(false);
 
         this.cubesContainer.querySelectorAll('.switch-color-button').forEach(el => el.remove());
 
         this.unplacedCube = cubeData;
 
-        let slideMarketAnim = false;
         let animSpeed = 400;
 
         if(!this.unplacedCube.div){ //search Market Tiles
             const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
-            let marketCubeDiv = marketTile.querySelector(`.a-cube[cube-id="${cubeData.cube_id}"]`);
+            let marketCubeDiv: HTMLDivElement = marketTile.querySelector(`.a-cube[cube-id="${cubeData.cube_id}"]`);
 
             let cubeClone = marketCubeDiv.cloneNode(true);
             marketCubeDiv.parentNode.insertBefore(cubeClone, marketCubeDiv.nextSibling);
@@ -292,12 +298,85 @@ class PyramidHandler {
             }
         });
 
-        if(slideMarketAnim)
-            this.cubeAnim = dojo.fx.combine([this.cubeAnim, slideMarketAnim]);
-
         this.cubeAnim.start();
     }
 
+    public animateBuiltCubeToPyramid(cubeMoves: CubeToPyramidMoveData[]): ReturnType<typeof dojo.animateProperty> {
+        console.log('animateBuiltCubeToPyramid');
+
+        const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
+        const animSpeed = 600;
+        let cubeAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
+
+        // Clone and position market cubes before animation to prevent visual glitches on removal
+        marketTile.querySelectorAll('.a-cube').forEach((cube: HTMLElement) => {
+            const cubeStyle = window.getComputedStyle(cube);
+            cube.style.top = cubeStyle.top;
+            cube.style.left = cubeStyle.left;
+        });
+
+        for(const move of cubeMoves){
+            let marketCubeDiv: HTMLDivElement = marketTile.querySelector(`.a-cube[cube-id="${move.cube_id}"]`);
+
+            if(!marketCubeDiv)
+                continue;
+
+            marketCubeDiv.setAttribute('pos-x', move.pos_x.toString());
+            marketCubeDiv.setAttribute('pos-y', move.pos_y.toString());
+            marketCubeDiv.setAttribute('pos-z', move.pos_z.toString());
+
+            let pyramidCubeDiv: HTMLDivElement = marketCubeDiv.cloneNode(true) as HTMLDivElement;
+            pyramidCubeDiv.style.opacity = '0';
+            pyramidCubeDiv.style.top = null;
+            pyramidCubeDiv.style.left = null;
+            this.cubesContainer.appendChild(pyramidCubeDiv);
+
+            marketCubeDiv = this.gameui.attachToNewParent(marketCubeDiv, this.cubesContainer);
+
+            let cubeData: PyramidCube = {
+                cube_id: move.cube_id,
+                pos_x: move.pos_x,
+                pos_y: move.pos_y,
+                pos_z: move.pos_z,
+                color: move.color,
+                order_in_construction: null,
+                div: pyramidCubeDiv
+            };
+
+            this.pyramidData.push(cubeData);
+
+            const builtCubeAnim = this.gameui.animationHandler.animateOnObject({
+                node: marketCubeDiv,
+                goTo: pyramidCubeDiv,
+                duration: animSpeed,
+                easing: 'circleOut',
+                onEnd: () => { 
+                    marketCubeDiv.remove();
+                    pyramidCubeDiv.style.opacity = '1';
+                }
+            });
+    
+            cubeAnimArray.push(builtCubeAnim);
+        }
+
+        this.arrangeCubesZIndex();
+
+        let cubeAnim: ReturnType<typeof dojo.animateProperty> = this.gameui.animationHandler.combine(cubeAnimArray);
+        cubeAnim.onEnd = () => { this.arrangeCubesZIndex(); }
+        // cubeAnim.delay = delay; //ekmek sil
+        // console.log('cubeAnim.delayyyyy', delay);
+
+        return cubeAnim;
+    }
+
+    public saveAllCubesInPyramid() {
+        for (let i = 0; i < this.pyramidData.length; i++)
+            this.pyramidData[i].order_in_construction = null;
+
+        this.unplacedCube = null;
+        this.cubesInConstruction = {};
+    }
+    
     private confirmPlaceCubeButtonClicked() {
         console.log('confirmPlaceCubeButtonClicked');
         this.gameui.ajaxAction('actConfirmBuildPyramid', {}, true, false);
@@ -394,14 +473,10 @@ class PyramidHandler {
         }
     }
 
-    private arrangeCubesZIndex() { //ekmek devam
+    private arrangeCubesZIndex() {
         console.log('arrangeCubesZIndex');
-        let cubes = Array.from(this.cubesContainer.querySelectorAll('.a-cube'));
+        let cubes: HTMLDivElement[] = Array.from(this.cubesContainer.querySelectorAll('.a-cube'));
         
-        //ekmek sil
-        // const cubePositions = {}; // Create a dictionary mapping cube coordinates to cubes
-        // cubes.forEach(cube => { cubePositions[cube.getAttribute('pos-x') + '_' + cube.getAttribute('pos-y') + '_' + cube.getAttribute('pos-z')] = 1; });
-
         cubes.sort(function(a, b) {
             const posXA = parseInt(a.getAttribute("pos-x"));
             const posYA = parseInt(a.getAttribute("pos-y"));
@@ -417,23 +492,7 @@ class PyramidHandler {
             return posYB - posYA;
         });
 
-        cubes.forEach((cube, index) => { 
-            dojo.style(cube, "z-index", index + 1);
-
-            //ekmek sil
-            // // Check if there is a cube to the right
-            // const posX = parseInt(cube.getAttribute("pos-x"));
-            // const posY = parseInt(cube.getAttribute("pos-y")); 
-            // const posZ = parseInt(cube.getAttribute("pos-z"));
-            // const rightCubeKey = `${posX + 1}_${posY}_${posZ}`;
-            // const bottomCubeKey = `${posX}_${posY}_${posZ + 1}`;
-            
-            // if (cubePositions[rightCubeKey])
-            //     cube.classList.add('hide-right-side');
-
-            // if (cubePositions[bottomCubeKey])
-            //     cube.classList.add('hide-bottom-side');
-        });
+        cubes.forEach((cube, index) => { cube.style.zIndex = (index + 1).toString(); });
     }
 
     private displaySwitchColorButton() { //ekmek isim degistir

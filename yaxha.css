@@ -1253,23 +1253,49 @@
   clip-path: inset(32% 32% 7% 7%);
   left: -4%;
 }
-.log.all-selected-tiles-log .player-selected-market-tile-row, .log.individual-collected-tiles-log .player-selected-market-tile-row {
+.log.all-selected-tiles-log .player-selected-market-tile-row {
   position: relative;
 }
-.log.all-selected-tiles-log .player-selected-market-tile-row.pending .log-arrow-left, .log.individual-collected-tiles-log .player-selected-market-tile-row.pending .log-arrow-left {
+.log.all-selected-tiles-log .player-selected-market-tile-row.pending .log-arrow-left {
   opacity: 0.6;
 }
-.log.all-selected-tiles-log .player-selected-market-tile-row.collecting + .pending, .log.individual-collected-tiles-log .player-selected-market-tile-row.collecting + .pending {
+.log.all-selected-tiles-log .player-selected-market-tile-row.collecting + .pending {
   margin-top: 10px;
 }
-.log.all-selected-tiles-log .player-selected-market-tile-row.collecting + .pending::before, .log.individual-collected-tiles-log .player-selected-market-tile-row.collecting + .pending::before {
+.log.all-selected-tiles-log .player-selected-market-tile-row.collecting + .pending::before {
   content: "";
   position: absolute;
   top: -6px;
-  left: 8%;
-  width: 85%;
+  left: 1%;
+  width: 97%;
   height: 1px;
   background-color: rgba(0, 0, 0, 0.4392156863);
+}
+.log.all-selected-tiles-log .market-interaction-rows-wrapper {
+  display: inline-block;
+  width: 100%;
+}
+.log.individual-collected-tiles-log .player-collected-market-tile-row {
+  display: inline-block;
+}
+.log.display-built-cubes-log {
+  margin-left: 30px;
+}
+.log.display-built-cubes-log .built-cubes-rows-wrapper {
+  display: inline-block;
+}
+.log.display-built-cubes-log .built-cubes-rows-wrapper .player-built-cubes-row .a-cube {
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  position: relative;
+  vertical-align: middle;
+  margin-right: 8px;
+  margin-bottom: 13px;
+  margin-top: 2px;
+}
+.log.display-built-cubes-log .built-cubes-rows-wrapper .player-built-cubes-row:last-child .a-cube {
+  margin-bottom: 8px;
 }
 .log .log-arrow {
   color: #000 !important;
@@ -1277,6 +1303,17 @@
 .log .log-arrow.log-arrow-left {
   margin-left: 5px;
   margin-right: 5px;
+}
+.log .log-arrow.log-place-cube-icon {
+  margin-left: 2px;
+  margin-right: 5px;
+}
+
+.mobile_version .log.all-selected-tiles-log .market-interaction-rows-wrapper {
+  width: 92%;
+}
+.mobile_version .log.all-selected-tiles-log .player-selected-market-tile-row.collecting + .pending::before {
+  width: 105%;
 }
 
 .dijitTooltipContainer:has(.tooltip-wrapper) {
