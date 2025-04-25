@@ -19,10 +19,6 @@ class MarketHandler{
 	}
 
     private initMarketContainer(){
-        // Create and shuffle array of numbers 1-60
-        const shuffledIndices = Array.from({length: 60}, (_, i) => i + 1)
-            .sort(() => Math.random() - 0.5);
-
         const playerSelectedMarketIndex = this.getMySelectedMarketIndex();
         
         Object.keys(this.gameui.players).forEach((_, i) => {
@@ -31,18 +27,34 @@ class MarketHandler{
             this.marketTiles[i].innerHTML = '<div class="cubes-container"></div>';
             this.marketTiles[i].className = 'a-market-tile market-tile-' + i + ' ' + (this.gameui.gamedatas.gamestate.name === 'allSelectMarketTile' && playerSelectedMarketIndex !== null && Number(playerSelectedMarketIndex) === i ? 'selected-market-tile' : '');
             this.marketTiles[i].setAttribute('market-index', i.toString());
-            this.marketTiles[i].setAttribute('random-placement-index', shuffledIndices[i].toString());
 
             this.marketTiles[i].addEventListener('click', (event: Event) => this.marketTileClicked(event));
 
             this.marketTilesContainer.appendChild(this.marketTiles[i]);
         });
 
-        const playerCollectedMarketIndex = this.getMyCollectedMarketIndex();
-        if(playerCollectedMarketIndex === null)
-            return;
+        this.fillMarketTilesWithCubes();
 
-        // Second loop: Create and position cubes
+        // Add player avatars to Market Tiles and show waiting players container if any players are pending
+        if (this.collectedMarketTilesData.length > 0) {
+            this.collectedMarketTilesData.sort((a, b) => a.turn_order - b.turn_order);
+            this.collectedMarketTilesData.forEach(playerCollects => {
+                const playerAvatar = this.addPlayerAvatar(playerCollects, true);
+                if(playerAvatar && playerCollects.type == 'pending')
+                    this.waitingPlayersContainer.style.opacity = '1';
+            });
+        }
+    }
+
+    private fillMarketTilesWithCubes(){
+        const shuffledIndices = Array.from({length: 60}, (_, i) => i + 1)
+            .sort(() => Math.random() - 0.5);
+
+        this.marketTiles.forEach((tile, index) => {
+            tile.setAttribute('random-placement-index', shuffledIndices[index].toString());
+        });
+
+        const playerCollectedMarketIndex = this.getMyCollectedMarketIndex();
         Object.keys(this.marketData).forEach((_, marketIndex) => {
             const tilesData = this.marketData[marketIndex] || [];
             const cubesContainer = this.marketTiles[marketIndex].querySelector('.cubes-container');
@@ -63,16 +75,6 @@ class MarketHandler{
                 cubesContainer.appendChild(cubeDiv);
             }
         });
-
-        // Add player avatars to Market Tiles and show waiting players container if any players are pending
-        if (this.collectedMarketTilesData.length > 0) {
-            this.collectedMarketTilesData.sort((a, b) => a.turn_order - b.turn_order);
-            this.collectedMarketTilesData.forEach(playerCollects => {
-                const playerAvatar = this.addPlayerAvatar(playerCollects, true);
-                if(playerAvatar && playerCollects.type == 'pending')
-                    this.waitingPlayersContainer.style.opacity = '1';
-            });
-        }
     }
 
     public addSelectableClassToMarketTiles(possibleMarketIndexes: number[] | 'all' | 'none') {
@@ -256,7 +258,7 @@ class MarketHandler{
     }
 
     public async animateBuiltCubes(built_cubes: { [key: number]: CubeToPyramidMoveData[] }) {
-        this.removePlayerAvatarsFromMarketTiles();
+        // this.removePlayerAvatarsFromMarketTiles(); //ekmek sil
 
         const cubeAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
         let delay = 0;
@@ -268,8 +270,8 @@ class MarketHandler{
                 continue;
 
             const player = this.gameui.players[playerID];
-            let playerCubesAnimation = player.pyramid.animateBuiltCubeToPyramid(built_cubes[playerID]);
-            playerCubesAnimation = playerCubesAnimation.addDelay(delay + Math.floor(Math.random() * 101) - 50);
+            let playerCubesAnimation = player.pyramid.animatePlayerCubesToPyramid(built_cubes[playerID]);
+            playerCubesAnimation = playerCubesAnimation.addDelay(delay);
             delay += 400;
 
             cubeAnimArray.push(playerCubesAnimation);
@@ -280,6 +282,44 @@ class MarketHandler{
 
         for (const playerID in this.gameui.players)
             this.gameui.players[playerID].pyramid.saveAllCubesInPyramid();
+    }
+
+    public async animateNewCubesDrawn(marketData: { [key: number]: MarketCube[] }) {
+        this.removePlayerAvatarsFromMarketTiles();
+        this.marketTiles.forEach(marketTile => { marketTile.querySelector('.cubes-container').innerHTML = ''; });
+
+        this.marketData = marketData;
+        this.fillMarketTilesWithCubes();
+
+        const cubeAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
+        let delay = 0;
+
+        this.marketTiles.forEach(marketTile => {
+            marketTile.querySelectorAll('.a-cube').forEach((cube: HTMLElement) => {
+                cube.style.marginLeft = '-800px';
+                cube.style.marginTop = '-400px';
+    
+                const cubeAnim = this.gameui.animationHandler.animateProperty({
+                    node: cube,
+                    properties: {marginLeft: 0, marginTop: 0},
+                    duration: 450 + Math.floor(Math.random() * 101),
+                    easing: 'sineOut',
+                    delay: delay + Math.floor(Math.random() * 51),
+                    onEnd: () => {
+                        cube.style.marginLeft = null;
+                        cube.style.marginTop = null;
+                    }
+                });
+    
+                cubeAnimArray.push(cubeAnim);
+                delay += 40;
+            });
+
+            delay += 100;
+        });
+
+        let cubeAnim: ReturnType<typeof dojo.animateProperty> = this.gameui.animationHandler.combine(cubeAnimArray);
+        await cubeAnim.start();
     }
 
     private addPlayerAvatar(playerCollects: CollectedMarketTilesData, isVisible: boolean): HTMLDivElement {
@@ -319,7 +359,7 @@ class MarketHandler{
         return this.marketTiles[this.getPlayerCollectedMarketTile(player_id).collected_market_index];
     }
 
-    private getMarketIndex(type: 'collected' | 'selected'): number {
+    private getMyMarketIndex(type: 'collected' | 'selected'): number {
         if(!this.gameui.myself)
             return null;
 
@@ -327,8 +367,8 @@ class MarketHandler{
         return marketTile ? (type == 'collected' ? marketTile.collected_market_index : marketTile.selected_market_index) : null;
     }
 
-    private getMyCollectedMarketIndex(): number { return this.getMarketIndex('collected'); }
-    private getMySelectedMarketIndex(): number { return this.getMarketIndex('selected'); }
+    private getMyCollectedMarketIndex(): number { return this.getMyMarketIndex('collected'); }
+    private getMySelectedMarketIndex(): number { return this.getMyMarketIndex('selected'); }
 
     private setPlayerSelectedMarketIndex(marketIndex: number){
         if(!this.gameui.myself)

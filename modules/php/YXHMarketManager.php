@@ -9,6 +9,18 @@ class YXHMarketManager extends APP_DbObject
         $this->parent = $parent;
     }
 
+    public function drawNewCubes($notify = true)
+    {
+        $playerCount = $this->parent->getPlayersNumber();
+        for ($i = 0; $i < $playerCount; $i++)
+            $this->DbQuery( "UPDATE cubes SET card_location = 'market', card_location_arg = $i WHERE card_location = 'bag' ORDER BY card_location_arg LIMIT ".CUBES_PER_MARKET_TILE );
+
+        if(!$notify)
+            return;
+
+        $this->parent->notify->all('newCubesDrawn', '', ['marketData' => $this->getMarketData()]);
+    }
+
     public function getMarketData(): array
     {
         $marketCubes = [];

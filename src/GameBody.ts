@@ -106,6 +106,10 @@ class GameBody extends GameGui {
                     this.marketHandler.addSelectableClassToMarketTiles('all');
                 else this.marketHandler.addSelectableClassToMarketTiles('none');
             break;
+            // case 'newCubesDrawn': //ekmek sil
+            //     debugger;
+            //     this.marketHandler.animateNewCubesDrawn(args.args.marketData);
+            // break;
         }
     }
 
@@ -354,6 +358,11 @@ class GameBody extends GameGui {
     public async notif_displayBuiltCubes(args) {
         console.log('notif_displayBuiltCubes');
         await this.marketHandler.animateBuiltCubes(args.built_cubes);
+    }
+
+    public async notif_newCubesDrawn(args) {
+        console.log('notif_newCubesDrawn');
+        await this.marketHandler.animateNewCubesDrawn(args.marketData);
     }
 }
 

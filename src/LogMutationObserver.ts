@@ -95,7 +95,7 @@ class LogMutationObserver{
     public createLogDisplayBuiltCubes(built_cubes: { [key: number]: CubeToPyramidMoveData[] }): string {
         let logHTML = '';
 
-        for(const playerID in built_cubes){
+        for(const playerID in this.gameui.players){
             let cubesHTML = '';
 
             // Sort cubes by counting and ordering colors
