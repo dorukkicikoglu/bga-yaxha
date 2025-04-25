@@ -49,12 +49,23 @@
 
 //    !! It is not a good idea to modify this file when a game is running !!
 
+if (!defined('STATE_GAME_SETUP')) { // guard since this included multiple times
+    define("STATE_GAME_SETUP", 1);
+    define("STATE_ALL_SELECT_MARKET_TILE", 2);
+    define("STATE_ALL_MARKET_TILE_SELECTIONS_MADE", 3);
+    define("STATE_GET_NEXT_PENDING_PLAYER_TO_SELECT_MARKET_TILE", 4);
+    define("STATE_INDIVIDUAL_PLAYER_SELECT_MARKET_TILE", 5);
+    define("STATE_BUILD_PYRAMID", 10);
+    define("STATE_ALL_PYRAMIDS_BUILT", 11);
+    define("STATE_END_GAME_SCORING", 50);
+    define("STATE_GAME_END", 99);
+}
 
 $machinestates = [
 
     // The initial state. Please do not modify.
 
-    1 => array(
+    STATE_GAME_SETUP => array(
         "name" => "gameSetup",
         "description" => "",
         "type" => "manager",
@@ -63,66 +74,75 @@ $machinestates = [
     ),
 
     // Note: ID=2 => your first state
-    2 => [
+    STATE_ALL_SELECT_MARKET_TILE => [
         "name" => "allSelectMarketTile",
-        "description" => clienttranslate('Waiting for players to select a Market Tile'),
+        "description" => clienttranslate('Waiting for other players to select a Market Tile'),
         "descriptionmyturn" => clienttranslate('${you} must select a Market Tile'),
         "type" => "multipleactiveplayer",
         "args" => "argAllSelectMarketTile",
         "action" => "stAllSelectMarketTile",
         "possibleactions" => array("actAllSelectMarketTile", "actRevertAllSelectMarketTile"),
         "updateGameProgression" => true,
-        "transitions" => ["allMarketTileSelectionsMade" => 3, "zombiePass" => 3]
+        "transitions" => ["allMarketTileSelectionsMade" => STATE_ALL_MARKET_TILE_SELECTIONS_MADE, "zombiePass" => STATE_ALL_MARKET_TILE_SELECTIONS_MADE]
     ],
 
-    3 => [
+    STATE_ALL_MARKET_TILE_SELECTIONS_MADE => [
         "name" => "allMarketTileSelectionsMade",
         "description" => clienttranslate('Revealing selections'),
         "type" => "game",
         "action" => "stAllMarketTileSelectionsMade",
-        "transitions" => ["getNextPendingPlayerToSelectMarketTile" => 4]
+        "transitions" => ["getNextPendingPlayerToSelectMarketTile" => STATE_GET_NEXT_PENDING_PLAYER_TO_SELECT_MARKET_TILE]
     ],
 
-    4 => [
+    STATE_GET_NEXT_PENDING_PLAYER_TO_SELECT_MARKET_TILE => [
         "name" => "getNextPendingPlayerToSelectMarketTile",
         "description" => clienttranslate('Selections revealed'),
         "type" => "game",
         "action" => "stGetNextPendingPlayerToSelectMarketTile",
-        "transitions" => ["individualPlayerSelectMarketTile" => 5, "buildPyramid" => 10]
+        "transitions" => ["individualPlayerSelectMarketTile" => STATE_INDIVIDUAL_PLAYER_SELECT_MARKET_TILE, "buildPyramid" => STATE_BUILD_PYRAMID]
     ],
 
-    5 => [
+    STATE_INDIVIDUAL_PLAYER_SELECT_MARKET_TILE => [
         "name" => "individualPlayerSelectMarketTile",
         "description" => clienttranslate('${actplayer} must select an available Market Tile'),
         "descriptionmyturn" => clienttranslate('${you} must select an available Market Tile'),
         "type" => "activeplayer",
         "args" => "argIndividualPlayerSelectMarketTile",
         "possibleactions" => ["actIndividualPlayerSelectMarketTile"],
-        "transitions" => array( "getNextPendingPlayerToSelectMarketTile" => 4, "zombiePass" => 5 )
+        "transitions" => array( "getNextPendingPlayerToSelectMarketTile" => STATE_GET_NEXT_PENDING_PLAYER_TO_SELECT_MARKET_TILE, "zombiePass" => STATE_INDIVIDUAL_PLAYER_SELECT_MARKET_TILE )
     ],
-     
-    // 6 => [
-    //     "name" => "getNextPlayerToBuildPyramid",
-    //     "description" => clienttranslate('Time to build!'),
-    //     "type" => "game",
-    //     "action" => "stGetNextPlayerToBuildPyramid",
-    //     "transitions" => ["allSelectMarketTile" => 2, "buildPyramid" => 11]
-    // ],
-
-    10 => [
+    
+    STATE_BUILD_PYRAMID => [
         "name" => "buildPyramid",
-        "description" => clienttranslate('Waiting for players to build their Pyramids'),
+        "description" => clienttranslate('Waiting for other players to build their Pyramids'),
         "descriptionmyturn" => clienttranslate('${you} must place your cubes in your Pyramid'),
         "type" => "multipleactiveplayer",
         "args" => "argBuildPyramid",
         "action" => "stBuildPyramid",
         "possibleactions" => ["actBuildPyramid"],
-        "transitions" => array( "pyramidsBuilt" => 11)
+        "transitions" => array( "allPyramidsBuilt" => STATE_ALL_PYRAMIDS_BUILT)
     ],
+
+    STATE_ALL_PYRAMIDS_BUILT => [
+        "name" => "allPyramidsBuilt",
+        "description" => clienttranslate('Everyone built pyramids...'),
+        "type" => "game",
+        "action" => "stAllPyramidsBuilt",
+        "transitions" => ["allSelectMarketTile" => STATE_ALL_SELECT_MARKET_TILE]
+    ],
+
+    STATE_END_GAME_SCORING => array(
+        "name" => "endGameScoring",
+        "description" => clienttranslate('Scores coming up!'),
+        "type" => "game",
+        "action" => "stEndGameScoring",
+        "updateGameProgression" => true,
+        "transitions" => array("gameEnd" => STATE_GAME_END)
+    ),
 
     // Final state.
     // Please do not modify (and do not overload action/args methods).
-    99 => [
+    STATE_GAME_END => [
         "name" => "gameEnd",
         "description" => clienttranslate("End of game"),
         "type" => "manager",

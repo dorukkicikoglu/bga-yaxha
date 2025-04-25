@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS `cubes` (
   `card_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `card_type` varchar(16) NOT NULL,
   `card_type_arg` int(11) NOT NULL,
-  `card_location` ENUM('bag', 'market', 'in_construction', 'pyramid') NOT NULL,
+  `card_location` ENUM('bag', 'market', 'pyramid') NOT NULL,
   `card_location_arg` int(11) NOT NULL,
   `color` TINYINT NOT NULL,
   `pos_x` TINYINT NULL,

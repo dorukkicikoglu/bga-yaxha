@@ -5,7 +5,7 @@ class MarketHandler{
     private marketTilesContainer: HTMLDivElement;
     private bonusCardIconsContainer: HTMLDivElement;
 
-	constructor(private gameui: GameBody, private marketData: { [key: number]: MarketCube[] }, private bonusCardIDs: number[], private playerSelectedMarketIndex: number, private collectedMarketTilesData: CollectedMarketTilesData[]) {
+	constructor(private gameui: GameBody, private marketData: { [key: number]: MarketCube[] }, private bonusCardIDs: number[], private collectedMarketTilesData: CollectedMarketTilesData[]) {
 		this.marketContainer = document.querySelector('#player-tables .market-container') as HTMLDivElement;
         this.marketTilesContainer = this.marketContainer.querySelector('.market-tiles-container') as HTMLDivElement;
         this.waitingPlayersContainer = this.marketContainer.querySelector('.waiting-players-container') as HTMLDivElement;
@@ -23,11 +23,13 @@ class MarketHandler{
         const shuffledIndices = Array.from({length: 60}, (_, i) => i + 1)
             .sort(() => Math.random() - 0.5);
 
+        const playerSelectedMarketIndex = this.getMySelectedMarketIndex();
+        
         Object.keys(this.gameui.players).forEach((_, i) => {
             // First loop: Create Market Tiles
             this.marketTiles[i] = document.createElement('div');
             this.marketTiles[i].innerHTML = '<div class="cubes-container"></div>';
-            this.marketTiles[i].className = 'a-market-tile market-tile-' + i + ' ' + (this.gameui.gamedatas.gamestate.name === 'allSelectMarketTile' && this.playerSelectedMarketIndex !== null && Number(this.playerSelectedMarketIndex) === i ? 'selected-market-tile' : '');
+            this.marketTiles[i].className = 'a-market-tile market-tile-' + i + ' ' + (this.gameui.gamedatas.gamestate.name === 'allSelectMarketTile' && playerSelectedMarketIndex !== null && Number(playerSelectedMarketIndex) === i ? 'selected-market-tile' : '');
             this.marketTiles[i].setAttribute('market-index', i.toString());
             this.marketTiles[i].setAttribute('random-placement-index', shuffledIndices[i].toString());
 
@@ -35,6 +37,10 @@ class MarketHandler{
 
             this.marketTilesContainer.appendChild(this.marketTiles[i]);
         });
+
+        const playerCollectedMarketIndex = this.getMyCollectedMarketIndex();
+        if(playerCollectedMarketIndex === null)
+            return;
 
         // Second loop: Create and position cubes
         Object.keys(this.marketData).forEach((_, marketIndex) => {
@@ -44,10 +50,13 @@ class MarketHandler{
             for(const cube of tilesData){
                 const cubeDiv = this.gameui.createCubeDiv(cube);
 
-                if(this.gameui.myself && marketIndex == this.playerSelectedMarketIndex){
-                    if (cube.cube_id === this.gameui.myself.pyramid.getUnplacedCube()?.cube_id)
+                if(playerCollectedMarketIndex !== null && this.gameui.myself && marketIndex == playerCollectedMarketIndex){
+                    const unplacedCube = this.gameui.myself.pyramid.getUnplacedCube();
+                    const cubesInConstruction = this.gameui.myself.pyramid.getCubesInConstruction();
+
+                    if (cube.cube_id === unplacedCube?.cube_id)
                         cubeDiv.classList.add('selected-for-pyramid');
-                    else if (cube.cube_id in this.gameui.myself.pyramid.getCubesInConstruction())
+                    else if (parseInt(cube.cube_id) in cubesInConstruction)
                         cubeDiv.classList.add('built-in-pyramid');
                 }
 
@@ -111,14 +120,13 @@ class MarketHandler{
         this.marketContainer.querySelectorAll('.a-market-tile').forEach(tile => tile.classList.remove('selected-market-tile'));
 
         if (selectedTile) {
-            this.playerSelectedMarketIndex = marketIndex;
+            this.setPlayerSelectedMarketIndex(marketIndex);
             selectedTile.classList.add('selected-market-tile');
             this.addSelectableClassToMarketTiles('none');
         } else {
-            this.playerSelectedMarketIndex = null;
+            this.setPlayerSelectedMarketIndex(null);
             this.addSelectableClassToMarketTiles('all');
         }
-        
         this.updateStatusTextUponMarketTileSelection();
     }
 
@@ -130,8 +138,9 @@ class MarketHandler{
             return;
 
         let statusText = '';
-        if(this.playerSelectedMarketIndex !== null){
-            let marketTileIcon = '<div class="a-market-tile-icon" market-index="' + this.playerSelectedMarketIndex + '"></div>';
+        const playerSelectedMarketIndex = this.getMySelectedMarketIndex();
+        if(playerSelectedMarketIndex !== null){
+            let marketTileIcon = '<div class="a-market-tile-icon" market-index="' + playerSelectedMarketIndex + '"></div>';
             statusText = dojo.string.substitute(_('${you} selected ${marketTileIcon} Waiting for others'), {you: this.gameui.divYou(), marketTileIcon: marketTileIcon});
             statusText = '<span class="waiting-text">' + statusText + '</span>';
         } else {
@@ -140,7 +149,7 @@ class MarketHandler{
 
         this.gameui.updateStatusText(statusText);
 
-        if(this.playerSelectedMarketIndex)
+        if(playerSelectedMarketIndex)
             this.gameui.dotTicks(dojo.query('#page-title .waiting-text')[0]);
     }
 
@@ -246,6 +255,33 @@ class MarketHandler{
             this.waitingPlayersContainer.style.opacity = null;
     }
 
+    public async animateBuiltCubes(built_cubes: { [key: number]: CubeToPyramidMoveData[] }) {
+        this.removePlayerAvatarsFromMarketTiles();
+
+        const cubeAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
+        let delay = 0;
+        for(const marketIndex in this.marketTiles) {
+            const playerID = this.collectedMarketTilesData.find((data) => Number(data.collected_market_index) === Number(marketIndex))?.player_id;
+
+            if(!playerID || !built_cubes[playerID]) continue;
+            if(this.gameui.myself && this.gameui.myself.playerID == Number(playerID))
+                continue;
+
+            const player = this.gameui.players[playerID];
+            let playerCubesAnimation = player.pyramid.animateBuiltCubeToPyramid(built_cubes[playerID]);
+            playerCubesAnimation = playerCubesAnimation.addDelay(delay + Math.floor(Math.random() * 101) - 50);
+            delay += 400;
+
+            cubeAnimArray.push(playerCubesAnimation);
+        }
+
+        let cubeAnim: ReturnType<typeof dojo.animateProperty> = this.gameui.animationHandler.combine(cubeAnimArray);
+        await cubeAnim.start();
+
+        for (const playerID in this.gameui.players)
+            this.gameui.players[playerID].pyramid.saveAllCubesInPyramid();
+    }
+
     private addPlayerAvatar(playerCollects: CollectedMarketTilesData, isVisible: boolean): HTMLDivElement {
         if(!['pending', 'collecting'].includes(playerCollects.type))
             return null;
@@ -267,12 +303,39 @@ class MarketHandler{
         return avatarClone;
     }
 
+    private removePlayerAvatarsFromMarketTiles(){
+        this.marketTiles.forEach(tile => {
+            tile.querySelectorAll('.yaxha-player-avatar.collecting-player-avatar').forEach((avatar: HTMLDivElement) => {
+                this.gameui.animationHandler.fadeOutAndDestroy(avatar);
+            });
+        });
+    }
+
     public getPlayerCollectedMarketTile(player_id: number): CollectedMarketTilesData{
         return this.collectedMarketTilesData.find(player => Number(player.player_id) === Number(player_id));
     }
 
     public getPlayerCollectedMarketTileDiv(player_id: number): HTMLDivElement{
         return this.marketTiles[this.getPlayerCollectedMarketTile(player_id).collected_market_index];
+    }
+
+    private getMarketIndex(type: 'collected' | 'selected'): number {
+        if(!this.gameui.myself)
+            return null;
+
+        const marketTile: CollectedMarketTilesData = this.getPlayerCollectedMarketTile(this.gameui.myself.playerID);
+        return marketTile ? (type == 'collected' ? marketTile.collected_market_index : marketTile.selected_market_index) : null;
+    }
+
+    private getMyCollectedMarketIndex(): number { return this.getMarketIndex('collected'); }
+    private getMySelectedMarketIndex(): number { return this.getMarketIndex('selected'); }
+
+    private setPlayerSelectedMarketIndex(marketIndex: number){
+        if(!this.gameui.myself)
+            return null;
+
+        const playerIndex = this.collectedMarketTilesData.findIndex(player => Number(player.player_id) === Number(this.gameui.myself.playerID));
+        this.collectedMarketTilesData[playerIndex].selected_market_index = marketIndex;
     }
 
     // public getCubesOfMarketTile(market_index: number): MarketCube[] { return this.marketData[market_index]; } //ekmek sil

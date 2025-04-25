@@ -98,7 +98,7 @@ class YXHMarketManager extends APP_DbObject
         foreach($collectingPlayers as $playerData)
             $collectedTilesData[] = $this->parent->getPlayerNameById($playerData['player_id']).' ← '.$this->getMarketTileSelectionLogHTML($playerData['selected_market_index']);
         foreach($pendingPlayers as $playerData)
-            $pendingTilesData[] = $this->parent->getPlayerNameById($playerData['player_id']).' ← - - '.$this->getMarketTileSelectionLogHTML($playerData['selected_market_index']);
+            $pendingTilesData[] = $this->parent->getPlayerNameById($playerData['player_id']).' ⏹ '.$this->getMarketTileSelectionLogHTML($playerData['selected_market_index']);
         $marketTilesDataStr = implode(', ', $collectedTilesData).'<br>'.implode(', ', $pendingTilesData);
 
         $this->parent->notify->all('animateAllMarketTileSelections', '${REVEALED_MARKET_TILES_DATA_STR}', array(
