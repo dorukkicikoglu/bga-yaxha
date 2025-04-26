@@ -126,4 +126,14 @@ class LogMutationObserver{
 
         return logHTML;
     }
+
+    public createLogSwapTurnOrders(swapData: SwapTurnOrdersData[]): string {
+        const logHTML = `${this.gameui.divColoredPlayer(swapData[0].player_id, {class: 'playername swapper-name'}, false)} 
+        <div class="turn-order-container-wrapper"><div class="turn-order-container" turn-order="${swapData[0].turn_order}"></div></div>
+        <i class="log-arrow log-arrow-exchange fa6 fa-exchange"></i> 
+        <div class="turn-order-container-wrapper"><div class="turn-order-container" turn-order="${swapData[1].turn_order}"></div></div>
+        ${this.gameui.divColoredPlayer(swapData[1].player_id, {class: 'playername swapper-name'}, false)}`;
+
+        return logHTML;
+    }
 }

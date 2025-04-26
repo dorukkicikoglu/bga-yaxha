@@ -106,10 +106,6 @@ class GameBody extends GameGui {
                     this.marketHandler.addSelectableClassToMarketTiles('all');
                 else this.marketHandler.addSelectableClassToMarketTiles('none');
             break;
-            // case 'newCubesDrawn': //ekmek sil
-            //     debugger;
-            //     this.marketHandler.animateNewCubesDrawn(args.args.marketData);
-            // break;
         }
     }
 
@@ -161,7 +157,7 @@ class GameBody extends GameGui {
                 args.processed = true;
 
                 // list of special keys we want to replace with images
-                let keys = ['textPlayerID', 'REVEALED_MARKET_TILES_DATA_STR', 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR', 'DISPLAY_BUILT_CUBES_STR', 'LOG_CLASS'];
+                let keys = ['textPlayerID', 'REVEALED_MARKET_TILES_DATA_STR', 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR', 'SWAP_TURN_ORDERS_DATA_STR', 'DISPLAY_BUILT_CUBES_STR', 'LOG_CLASS'];
                 for(let key of keys) {
                     if(key in args) {
                         if(key == 'textPlayerID')
@@ -172,6 +168,8 @@ class GameBody extends GameGui {
                             args['INDIVIDUAL_MARKET_TILES_COLLECTION_STR'] = `<div class="player-collected-market-tile-row collecting">${this.divColoredPlayer(args.player_id, {class: 'playername'}, false)}<i class="log-arrow log-arrow-left fa6 fa-arrow-left"></i><div class="a-market-tile-icon" market-index="${args.collected_market_index}"></div></div>`;
                         else if(key == 'DISPLAY_BUILT_CUBES_STR')
                             args['DISPLAY_BUILT_CUBES_STR'] = this.logMutationObserver.createLogDisplayBuiltCubes(args['built_cubes']);
+                        else if(key == 'SWAP_TURN_ORDERS_DATA_STR')
+                            args['SWAP_TURN_ORDERS_DATA_STR'] = this.logMutationObserver.createLogSwapTurnOrders(args['swapData']);
                         else if(key == 'LOG_CLASS')
                             log = log + '<div log-class-tag="' + args['LOG_CLASS'] + '"></div>';
                     }
@@ -214,7 +212,7 @@ class GameBody extends GameGui {
         return this.divColoredPlayer(activePlayerID, attributes, detectYou);
     }
     private getAttributesHTML(attributes): string{ return Object.entries(attributes || {}).map(([key, value]) => `${key}="${value}"`).join(' '); }
-    public getPos(node: HTMLDivElement): Record<string, number> { let pos = this.getBoundingClientRectIgnoreZoom(node); pos.w = pos.width; pos.h = pos.height; return pos; }
+    public getPos(node: HTMLDivElement): DOMRect { let pos = this.getBoundingClientRectIgnoreZoom(node); pos.w = pos.width; pos.h = pos.height; return pos; }
     public isDesktop(): boolean { return document.body.classList.contains('desktop_version'); }
     public isMobile(): boolean { return document.body.classList.contains('mobile_version'); }
     public updateStatusText(statusText): void{ $('gameaction_status').innerHTML = statusText; $('pagemaintitletext').innerHTML = statusText; }
@@ -280,7 +278,8 @@ class GameBody extends GameGui {
             if (excludeClass && child.classList.contains(excludeClass))
                 continue;
             
-            let rect = child.getBoundingClientRect();
+            // let rect = child.getBoundingClientRect(); //ekmek sil
+            let rect = this.getPos(child as HTMLDivElement); //ekmek uncomment
 
             minX = Math.min(minX, rect.left);
             minY = Math.min(minY, rect.top);
@@ -364,6 +363,12 @@ class GameBody extends GameGui {
         console.log('notif_newCubesDrawn');
         await this.marketHandler.animateNewCubesDrawn(args.marketData);
     }
+
+    public async notif_swapTurnOrders(args) {
+        console.log('notif_swapTurnOrders');
+
+        await this.marketHandler.animateSwapTurnOrders(args.swapData);
+    }
 }
 
 interface BaseCube {
@@ -406,6 +411,11 @@ interface CollectedMarketTilesData {
     collected_market_index: number;
     turn_order: number;
     type: 'collecting' | 'pending' | 'market_inactive';
+}
+
+interface SwapTurnOrdersData {
+    player_id: number;
+    turn_order: number;
 }
 
 interface ContentsRectangle {

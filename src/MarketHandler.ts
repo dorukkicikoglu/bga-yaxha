@@ -176,7 +176,7 @@ class MarketHandler{
             const currentLeft = parseInt(window.getComputedStyle(avatarClone).left);
 
             let destAvatar = this.addPlayerAvatar(playerCollects, false);
-            const destAvatarRect = destAvatar ? destAvatar.getBoundingClientRect() : {width: 0, height: 0};
+            const destAvatarRect = destAvatar ? this.gameui.getPos(destAvatar) : {width: 0, height: 0};
 
             const raiseAvatarClone: Promise<void> = this.gameui.animationHandler.animateProperty({
                 node: avatarClone,
@@ -322,6 +322,85 @@ class MarketHandler{
         await cubeAnim.start();
     }
 
+    public async animateSwapTurnOrders(swapData: SwapTurnOrdersData[]) {
+        let [swapperLeft, swapperRight] = swapData;
+
+        const rect1: DOMRect = this.gameui.players[swapperLeft.player_id].pyramid.getPyramidContainerRect();
+        const rect2: DOMRect = this.gameui.players[swapperRight.player_id].pyramid.getPyramidContainerRect();
+
+        if (rect2.left < rect1.left || (rect2.left === rect1.left && rect2.top < rect1.top)) {
+            [swapperLeft, swapperRight] = [swapperRight, swapperLeft];
+        }
+
+        this.gameui.players[swapperLeft.player_id].setTurnOrder(swapperRight.turn_order);
+        this.gameui.players[swapperRight.player_id].setTurnOrder(swapperLeft.turn_order);
+        
+        let raiseAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
+        let lowerAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
+        [swapperLeft, swapperRight].forEach(swapper => {
+            const isLeft = swapper.player_id == swapperLeft.player_id;
+
+            const turnOrderContainer = this.gameui.players[swapper.player_id].pyramid.getTurnOrderContainer();
+            const turnOrderClone = turnOrderContainer.cloneNode(true) as HTMLDivElement;
+            turnOrderClone.classList.add('animating-turn-order-container');
+            turnOrderContainer.style.opacity = '0';
+            turnOrderClone.style.position = 'fixed';
+            
+            const cardStyle = window.getComputedStyle(turnOrderContainer);
+            const cardWidth = this.gameui.remove_px(cardStyle.width);
+            const expandedCardWidth = cardWidth * 2;
+            turnOrderClone.style.width = cardWidth + 'px';
+
+            const otherPyramid = this.gameui.players[isLeft ? swapperRight.player_id : swapperLeft.player_id].pyramid;
+            document.body.appendChild(turnOrderClone);
+            this.gameui.placeOnObject(turnOrderClone, turnOrderContainer);
+
+            const targetRaised = document.createElement('div');
+            targetRaised.classList.add(isLeft ? 'left-turn-order-animation-target' : 'right-turn-order-animation-target');
+            document.body.appendChild(targetRaised);
+
+            raiseAnimArray.push(this.gameui.animationHandler.animateOnObject({
+                node: turnOrderClone,
+                goTo: targetRaised,
+                properties: { width: expandedCardWidth },
+                duration: 400,
+                delay: isLeft ? 0 : 600,
+                easing: 'easeInOut',
+                onEnd: () => { targetRaised.remove(); }
+            }));
+
+            const otherTurnOrderContainer = otherPyramid.getTurnOrderContainer();
+            const otherTurnOrderRect = this.gameui.getPos(otherTurnOrderContainer);
+            const targetLowered = otherTurnOrderContainer.cloneNode(true) as HTMLDivElement;
+            targetLowered.classList.add('target-turn-order-container');
+            targetLowered.style.position = 'fixed';
+            targetLowered.style.width = cardWidth + 'px';
+            targetLowered.style.opacity = '0';            
+            document.body.appendChild(targetLowered);
+            this.gameui.placeOnObject(targetLowered, otherTurnOrderContainer);
+
+            lowerAnimArray.push(this.gameui.animationHandler.animateProperty({
+                node: turnOrderClone,
+                properties: { width: cardWidth, top: targetLowered.offsetTop, left: targetLowered.offsetLeft },
+                duration: 350,
+                delay: isLeft ? 200 : 550,
+                easing: 'easeIn',
+                onEnd: () => { otherTurnOrderContainer.style.opacity = null; turnOrderClone.remove(); targetLowered.remove(); }
+            }));
+            
+            turnOrderContainer.setAttribute('turn-order', isLeft ? swapperRight.turn_order.toString() : swapperLeft.turn_order.toString());
+        });
+        
+        // Combine and start raise animations
+        const swapAnimation = this.gameui.animationHandler.chain([
+            this.gameui.animationHandler.combine(raiseAnimArray), 
+            this.gameui.animationHandler.combine(lowerAnimArray)
+        ]);
+
+
+        await swapAnimation.start();
+    }
+
     private addPlayerAvatar(playerCollects: CollectedMarketTilesData, isVisible: boolean): HTMLDivElement {
         if(!['pending', 'collecting'].includes(playerCollects.type))
             return null;
@@ -378,7 +457,7 @@ class MarketHandler{
         this.collectedMarketTilesData[playerIndex].selected_market_index = marketIndex;
     }
 
-    // public getCubesOfMarketTile(market_index: number): MarketCube[] { return this.marketData[market_index]; } //ekmek sil
+    public getCubesOfMarketTile(market_index: number): MarketCube[] { return this.marketData[market_index]; }
 
     public getMarketTiles(): HTMLDivElement[]{ return this.marketTiles; }
     public setCollectedMarketTilesData(collectedMarketTilesData: CollectedMarketTilesData[]){ this.collectedMarketTilesData = collectedMarketTilesData; }

@@ -5,7 +5,6 @@ class PlayerHandler{
 
 	constructor(private gameui: GameBody, public playerID: number, private playerName: string, public playerColor: string, private playerNo: number, private turnOrder: number, pyramidData: PyramidCube[], public built_cubes_this_round: boolean) {
 		this.overallPlayerBoard = $('overall_player_board_' + this.playerID);
-
 		this.pyramid = new PyramidHandler(this.gameui, this, this.gameui.PYRAMID_MAX_SIZE, pyramidData);
 	}
 
@@ -15,7 +14,7 @@ class PlayerHandler{
 
 		if (srcAvatar) {
 			// Get dimensions and source from original avatar
-			const avatarRect = srcAvatar.getBoundingClientRect();
+			const avatarRect = this.gameui.getPos(srcAvatar);
 			let avatarSrc = srcAvatar.getAttribute('src');
 			const avatarSrc32 = avatarSrc;
 			avatarSrc = get184by184 ? avatarSrc.replace('32.jpg', '184.jpg') : avatarSrc;
@@ -48,12 +47,17 @@ class PlayerHandler{
 
 			return avatarClone;
 		} else {
-			console.log('avatar not found, playerID:', this.playerID);
+			console.error('avatar not found, playerID:', this.playerID);
 			return null;
 		}
     }
 
+	public getPlayerName(): string{ return this.playerName; }
+	public getTurnOrder(): number{ return this.turnOrder; }
+
 	public getCollectedMarketTileData(): CollectedMarketTilesData{
 		return this.gameui.marketHandler.getPlayerCollectedMarketTile(this.playerID);
 	}
+
+	public setTurnOrder(turnOrder: number){ this.turnOrder = turnOrder; }
 }
