@@ -113,13 +113,68 @@ class YXHMarketManager extends APP_DbObject
             $pendingTilesData[] = $this->parent->getPlayerNameById($playerData['player_id']).' ⏹ '.$this->getMarketTileSelectionLogHTML($playerData['selected_market_index']);
         $marketTilesDataStr = implode(', ', $collectedTilesData).'<br>'.implode(', ', $pendingTilesData);
 
-        $this->parent->notify->all('animateAllMarketTileSelections', '${REVEALED_MARKET_TILES_DATA_STR}', array(
+        $this->parent->notify->all('animateAllMarketTileSelections', '${REVEALED_MARKET_TILES_DATA_STR}', [
             'LOG_CLASS' => 'all-selected-tiles-log',
             'preserve' => ['LOG_CLASS', 'collectedMarketTilesData'],
             'collectedMarketTilesData' => ['collectingPlayers' => $collectingPlayers, 'pendingPlayers' => $pendingPlayers],
             'REVEALED_MARKET_TILES_DATA_STR' => $marketTilesDataStr
-        ));
+        ]);
 
         $this->parent->gamestate->nextState('getNextPendingPlayerToSelectMarketTile');
+    }
+
+    public function swapTurnOrders(){
+        // Get all players who played the same card
+        $players = self::getCollectionFromDb("SELECT player_id, selected_market_index, turn_order FROM player");
+        
+        // Group players by their selected market index
+        $playersBySelectedMarketIndex = array();
+        foreach ($players as $player) {
+            $marketIndex = $player['selected_market_index'];
+            if (!isset($playersBySelectedMarketIndex[$marketIndex])) {
+                $playersBySelectedMarketIndex[$marketIndex] = array();
+            }
+            unset($player['selected_market_index']);
+            $playersBySelectedMarketIndex[$marketIndex][] = $player;
+        }
+        
+        $swaps = [];
+        // Process each group of players who selected the same market tile
+        foreach($playersBySelectedMarketIndex as $marketIndex => $playersGroup) {
+            $count = count($playersGroup);
+
+            if($count <= 1)
+                continue;
+
+            // Sort players by turn order
+            usort($playersGroup, function($a, $b) {
+                return $a['turn_order'] - $b['turn_order'];
+            });
+
+            if($count === 2) {
+                $swaps[] = [$playersGroup[0], $playersGroup[1]];
+            } else if ($count === 3) {
+                $swaps[] = [$playersGroup[0], $playersGroup[2]];
+            } else if ($count === 4) {
+                $swaps[] = [$playersGroup[0], $playersGroup[3]];
+                $swaps[] = [$playersGroup[1], $playersGroup[2]];
+            }
+        }
+
+        function makeInlineTurnOrderCardHTML($turnOrderIn){ return '<span style="background-color:#222838; color:#EE894A; display: inline-block; width: 18px; height: 18px; text-align: center; line-height: 18px;">'.$turnOrderIn.'</span>'; }
+
+        foreach($swaps as $swap){
+            self::DbQuery("UPDATE player SET turn_order = {$swap[1]['turn_order']} WHERE player_id = {$swap[0]['player_id']}");
+            self::DbQuery("UPDATE player SET turn_order = {$swap[0]['turn_order']} WHERE player_id = {$swap[1]['player_id']}");
+
+            $swapTurnOrdersDataStr = $this->parent->getPlayerNameById($swap[0]['player_id']).'&nbsp;'.makeInlineTurnOrderCardHTML($swap[0]['turn_order']).' ↔ '.makeInlineTurnOrderCardHTML($swap[1]['turn_order']).'&nbsp;'.$this->parent->getPlayerNameById($swap[1]['player_id']);
+
+            $this->parent->notify->all('swapTurnOrders', '${SWAP_TURN_ORDERS_DATA_STR}', [
+                'LOG_CLASS' => 'swap-turn-orders-log',
+                'preserve' => ['LOG_CLASS', 'swapData'],
+                'swapData' => $swap,
+                'SWAP_TURN_ORDERS_DATA_STR' => $swapTurnOrdersDataStr
+            ]);
+        }
     }
 }

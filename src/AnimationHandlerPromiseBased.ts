@@ -20,8 +20,8 @@ class AnimationHandlerPromiseBased{
 
         let arg_beforeBegin = args.hasOwnProperty('beforeBegin') ? args.beforeBegin : function(obj){ return obj; };
         let arg_onBegin = args.hasOwnProperty('onBegin') ? args.onBegin : function(obj){ return obj; };
-        args.beforeBegin = (properties) => {
-            args = arg_beforeBegin(args);
+        args.beforeBegin = () => {
+            args.beforeBegin = arg_beforeBegin(args);
 
             let nodePos = this.gameui.getPos(args.node);
             let goToPos = (!ignoreGoToPositionChange && document.contains(args.goTo)) ? this.gameui.getPos(args.goTo) : initialGoToPos; // animate to initial position if goTo is not contained in DOM anymore
@@ -33,7 +33,7 @@ class AnimationHandlerPromiseBased{
                 const values = match[1].split(',').map(parseFloat);
                 startScaleValues = {x: values[0], y: values[3]};
             }
-            let endScaleValues = {x: startScaleValues.x * goToPos.w / nodePos.w, y: startScaleValues.y * goToPos.h / nodePos.h}
+            let endScaleValues = {x: startScaleValues.x * goToPos.width / nodePos.width, y: startScaleValues.y * goToPos.height / nodePos.height}
 
             let startW = dojo.style(args.node, 'width');
             let startH = dojo.style(args.node, 'height');
@@ -51,8 +51,8 @@ class AnimationHandlerPromiseBased{
                 dojoAnim.properties.scale = endScaleValues.x + ' ' + endScaleValues.y;
         }
 
-        args.onBegin = function(properties){
-            args = arg_onBegin(args);
+        args.onBegin = function(){
+            args.onBegin = arg_onBegin(args);
         }
 
         dojoAnim = this.animateProperty(args);

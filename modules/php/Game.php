@@ -283,7 +283,7 @@ class Game extends \Table
         $waitingPlayers = self::getObjectListFromDB("SELECT * FROM player WHERE player_zombie = 0 AND collected_market_index IS NULL ORDER BY turn_order ASC");
 
         if (!$waitingPlayers) { // No more pending players to select Market Tiles
-            $this->gamestate->nextState('buildPyramid'); //ekmek devam, bunun multipleactiveplayer olmasi lazim
+            $this->gamestate->nextState('buildPyramid');
         } else { // Activate next player to make their selection
             $nextPlayer = array_shift($waitingPlayers);
             $this->gamestate->changeActivePlayer($nextPlayer['player_id']);
@@ -309,6 +309,8 @@ class Game extends \Table
     }
 
     public function stBuildPyramid(): void {
+        $this->marketManager->swapTurnOrders();
+        
         $players = self::loadPlayersBasicInfos();
         $playersToActivate = self::getCollectionFromDB("SELECT player_id, built_cubes_this_round FROM player WHERE built_cubes_this_round = 'false' AND player_zombie = 0");
         $playersToDeactivate = [];
