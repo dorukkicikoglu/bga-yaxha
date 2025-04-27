@@ -186,9 +186,9 @@ class MarketHandler{
             const destAvatarRect = destAvatar ? destAvatar.getBoundingClientRect() : {width: 0, height: 0};
 
             const destAvatarClone = avatarClone.cloneNode(true) as HTMLDivElement;
-            destAvatarClone.style.opacity = '0'; //ekmek uncomment
+            destAvatarClone.style.opacity = '0';
             avatarClone.after(destAvatarClone);
-            this.gameui.placeOnObject(destAvatarClone, destAvatar);
+            this.gameui.placeOnObject(destAvatarClone, destAvatar, true);
 
             const raiseAvatarClone: Promise<void> = this.gameui.animationHandler.animateProperty({
                 node: avatarClone,

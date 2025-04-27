@@ -43,70 +43,100 @@ class YXHPyramidManager extends APP_DbObject{
         $allPossibleMoves = [];
         foreach ($players as $player_id) {
             $pyramidData = $this->getPlayerPyramidData($player_id, true);
-
-            if(!$pyramidData){
-                $allPossibleMoves[$player_id] = [[0, 0, 0]];
-                continue;
-            }
-
-            $possibleMovesDict = [];
-            $cubeCoordsDict = [];
-
-            $minX = INF; $minY = INF;
-            $maxX = -INF; $maxY = -INF;
-
-            foreach($pyramidData as $cubeID => $cube){
-                if($cube['order_in_construction'] == CUBES_PER_MARKET_TILE) //the final cube does not add to the possible moves
-                    continue;
-
-                $posX = (int) $cube['pos_x'];
-                $posY = (int) $cube['pos_y'];
-                
-                $cubeCoordsDict[$posX] = $cubeCoordsDict[$posX] ?? [];
-                $cubeCoordsDict[$posX][$posY] = 1;
-
-                $possibleMovesDict[$posX][$posY + 1] = 1;
-                $possibleMovesDict[$posX][$posY - 1] = 1;
-                $possibleMovesDict[$posX + 1][$posY] = 1;
-                $possibleMovesDict[$posX - 1][$posY] = 1;
-
-                $minX = min($minX, $posX); $minY = min($minY, $posY);
-                $maxX = max($maxX, $posX); $maxY = max($maxY, $posY);
-            }
-
-            $xFilled = ($maxX - $minX) >= PYRAMID_MAX_SIZE - 1;
-            $yFilled = ($maxY - $minY) >= PYRAMID_MAX_SIZE - 1;
-
-            if($xFilled){
-                unset($possibleMovesDict[$minX - 1]);
-                unset($possibleMovesDict[$maxX + 1]);
-            }
-            
-            if($yFilled){
-                foreach($possibleMovesDict as $x => $row){
-                    unset($possibleMovesDict[$x][$minY - 1]);
-                    unset($possibleMovesDict[$x][$maxY + 1]);
-                }
-            }
-
-            $posZ = 0; //ekmek pos_z durumlarina da bak
-
-            //remove occupied cells
-            foreach($cubeCoordsDict as $posX => $row)
-                foreach($row as $posY => $val)
-                    unset($possibleMovesDict[$posX][$posY]);
-
-            $playerPossibleMoves = [];
-            foreach($possibleMovesDict as $posX => $row)
-                foreach($row as $posY => $val)
-                    $playerPossibleMoves[] = [$posX, $posY, $posZ];
-            
-            $allPossibleMoves[$player_id] = $playerPossibleMoves;
+            $allPossibleMoves[$player_id] = $this->getPossibleMovesFromPyramidData($pyramidData);
         }
 
         if($player_id_arg)
             return $allPossibleMoves[$player_id_arg];
         return $allPossibleMoves;
+    }
+
+    private function getPossibleMovesFromPyramidData(array $pyramidData): array {
+        if(empty($pyramidData))
+            return [[0, 0, 0]];
+
+        $possibleMovesDict = [];
+        $cubeCoordsDictByLayer = [];
+        $cubeCountByLayer = [];
+
+        $minX = INF; $minY = INF;
+        $maxX = -INF; $maxY = -INF;
+
+        //calculate possible moves for the bottom layer
+        foreach($pyramidData as $cubeID => $cube){
+            if($cube['order_in_construction'] == CUBES_PER_MARKET_TILE) //the final cube does not add to the possible moves
+                continue;
+
+            $posX = (int) $cube['pos_x'];
+            $posY = (int) $cube['pos_y'];
+            $posZ = (int) $cube['pos_z'];
+            
+            $cubeCoordsDictByLayer[$posZ][$posX] = $cubeCoordsDictByLayer[$posZ][$posX] ?? [];
+            $cubeCoordsDictByLayer[$posZ][$posX][$posY] = 1;
+            
+            $cubeCountByLayer[$posZ] = $cubeCountByLayer[$posZ] ?? 0;
+            $cubeCountByLayer[$posZ]++;
+
+            $possibleMovesDict[$posX][$posY + 1] = 1;
+            $possibleMovesDict[$posX][$posY - 1] = 1;
+            $possibleMovesDict[$posX + 1][$posY] = 1;
+            $possibleMovesDict[$posX - 1][$posY] = 1;
+
+            $minX = min($minX, $posX); $minY = min($minY, $posY);
+            $maxX = max($maxX, $posX); $maxY = max($maxY, $posY);
+        }
+
+        $xFilled = ($maxX - $minX) >= PYRAMID_MAX_SIZE - 1;
+        $yFilled = ($maxY - $minY) >= PYRAMID_MAX_SIZE - 1;
+
+        if($xFilled){
+            unset($possibleMovesDict[$minX - 1]);
+            unset($possibleMovesDict[$maxX + 1]);
+        }
+        
+        if($yFilled){
+            foreach($possibleMovesDict as $x => $row){
+                unset($possibleMovesDict[$x][$minY - 1]);
+                unset($possibleMovesDict[$x][$maxY + 1]);
+            }
+        }
+
+        //remove occupied cells
+        if(isset($cubeCoordsDictByLayer[0])){
+            foreach($cubeCoordsDictByLayer[0] as $posX => $row)
+                foreach($row as $posY => $val)
+                    unset($possibleMovesDict[$posX][$posY]);
+        }
+
+        $playerPossibleMoves = [];
+        foreach($possibleMovesDict as $posX => $row)
+            foreach($row as $posY => $val)
+                $playerPossibleMoves[] = [$posX, $posY, 0];
+        
+        //first layer finished, check upper layers
+        $posZ = 1;
+        while($posZ < PYRAMID_MAX_SIZE){
+            if(!isset($cubeCountByLayer[$posZ - 1]) || $cubeCountByLayer[$posZ - 1] < 4)
+                break;
+            
+            foreach($cubeCoordsDictByLayer[$posZ - 1] as $posX => $row){
+                foreach($row as $posY => $val){
+                    if(isset($cubeCoordsDictByLayer[$posZ][$posX][$posY]))
+                        continue;
+                    if(!isset($cubeCoordsDictByLayer[$posZ - 1][$posX + 1][$posY]))
+                        continue;
+                    if(!isset($cubeCoordsDictByLayer[$posZ - 1][$posX][$posY + 1]))
+                        continue;
+                    if(!isset($cubeCoordsDictByLayer[$posZ - 1][$posX + 1][$posY + 1]))
+                        continue;
+                    $playerPossibleMoves[] = [$posX, $posY, $posZ];
+                }
+            }
+            
+            $posZ++;
+        }
+
+        return $playerPossibleMoves ? $playerPossibleMoves : [[0, 0, 0]];
     }
 
     public function addCubeToPyramid($player_id, $cube_id, $pos_x, $pos_y, $pos_z) {
@@ -122,7 +152,7 @@ class YXHPyramidManager extends APP_DbObject{
             throw new \BgaUserException(clienttranslate("Invalid cube position"));
 
         $this->DbQuery("UPDATE cubes SET pos_x = $pos_x, pos_y = $pos_y, pos_z = $pos_z, card_location = 'pyramid', card_location_arg = $player_id, order_in_construction = $newOrderInConstruction WHERE card_id = $cube_id");
-        $this->parent->notify->player($player_id, 'cubePlacedInPyramid', '', ['possible_moves' => $this->getPossibleMoves($player_id)]);
+        $this->parent->notify->player($player_id, 'cubePlacedInPyramid', '', []);
     }
 
     public function moveCubeInPyramid($player_id, $cube_id, $pos_x, $pos_y, $pos_z) {
@@ -174,7 +204,7 @@ class YXHPyramidManager extends APP_DbObject{
 
         $this->DbQuery("UPDATE cubes SET card_location = 'market', card_location_arg = $playerMarketIndex, pos_x = NULL, pos_y = NULL, pos_z = NULL, order_in_construction = NULL WHERE order_in_construction IS NOT NULL AND card_location_arg = $player_id");
         $this->DbQuery("UPDATE player SET built_cubes_this_round = 'false' WHERE player_id = $player_id");
-        $this->parent->notify->player($player_id, 'undoneBuildPyramid', '', ['possible_moves' => $this->getPossibleMoves($player_id)]);
+        $this->parent->notify->player($player_id, 'undoneBuildPyramid', '', []);
 
         if ($this->parent->gamestate->state()['name'] === 'buildPyramid')
             $this->parent->gamestate->setPlayersMultiactive([$player_id], 'buildPyramid');

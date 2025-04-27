@@ -40,7 +40,7 @@ declare class GameGui {
     onUpdateActionButtons(stateName: string, args: any): void;
     setupNotifications(): void;
     addTooltipHtml( nodeID: string, html: string, delay: number ):void;
-
+    
     attachToNewParent(node: HTMLDivElement, newParent: HTMLDivElement): HTMLDivElement;
     isInterfaceLocked(): boolean;
     confirmationDialog(message: string, yesHandler: (param: any) => void, noHandler?: (param: any) => void, param?: any): void;

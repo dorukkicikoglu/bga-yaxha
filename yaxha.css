@@ -729,9 +729,9 @@
   --pyramid-cube-width: var(--cube-size);
   --cubes-container-height: 100px;
   --max-cube-width: 200px;
-  --image-source-market-tiles: url(img/market_tiles_minified.jpg);
+  --image-source-market-tiles: url(img/market_tiles_minified.webp);
   --image-source-player-order-tiles: url(img/player_order_tiles_minified.jpg);
-  --image-source-bonus-cards: url(img/bonus_cards_minified.jpg);
+  --image-source-bonus-cards: url(img/bonus_cards_minified.webp);
   --image-source-bonus-card-icons: url(img/bonus_card_icons_minified.jpg);
 }
 
@@ -860,6 +860,9 @@
 }
 .market-container .market-tiles-container .a-market-tile.selectable-market-tile {
   animation: selectable-market-tile-glow-animation 2.2s ease-out infinite;
+}
+.market-container .market-tiles-container .a-market-tile .cubes-container .a-cube {
+  pointer-events: none;
 }
 .market-container .market-tiles-container .a-market-tile .collecting-player-avatar {
   position: absolute;
@@ -1152,6 +1155,9 @@
 #player-tables .pyramids-container .a-pyramid-container .cubes-container .a-cube.animating-cube {
   z-index: 100 !important;
 }
+#player-tables .pyramids-container .a-pyramid-container .cubes-container .a-cube .top-side {
+  box-shadow: 0px 0px 3px #000000;
+}
 #player-tables .pyramids-container .a-pyramid-container .cubes-container .switch-color-button {
   z-index: 100;
   opacity: 0;
@@ -1349,6 +1355,7 @@
 
 .animating-turn-order-container, .target-turn-order-container {
   transform: rotate(8deg);
+  pointer-events: none;
 }
 
 .left-turn-order-animation-target {

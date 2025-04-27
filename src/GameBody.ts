@@ -34,27 +34,29 @@ class GameBody extends GameGui {
         this.PYRAMID_MAX_SIZE = gamedatas.PYRAMID_MAX_SIZE;
         this.CUBES_PER_MARKET_TILE = gamedatas.CUBES_PER_MARKET_TILE;
 
-        const pyramidCSSRange = [];
-        for (let i = -1 * (this.PYRAMID_MAX_SIZE - 1); i <= this.PYRAMID_MAX_SIZE - 1; i++)
-            pyramidCSSRange.push(i);
-
         let cubeColorCSS = '';
         for(let colorIndex in this.CUBE_COLORS){
             cubeColorCSS += `.a-cube[color="${colorIndex}"] { --cube-color: #${this.CUBE_COLORS[colorIndex].colorCode}; }
             `;
         }
 
+        const pyramidCSSRange = [];
+        for (let i = -1 * (this.PYRAMID_MAX_SIZE - 1); i <= this.PYRAMID_MAX_SIZE - 1; i++)
+            pyramidCSSRange.push(i);
+
         let pyramidCSS = '';
-        pyramidCSSRange.forEach(n => {
-            pyramidCSS += `
-            .pyramids-container .a-pyramid-container .cubes-container *[pos-x="${n}"] {
-            left: calc(min(var(--pyramid-cube-width), var(--max-cube-width)) * ${n});
-            }
-            .pyramids-container .a-pyramid-container .cubes-container *[pos-y="${n}"] {
-            bottom: calc(min(var(--pyramid-cube-width), var(--max-cube-width)) * ${n});
-            }
-            `;
-        }); //ekmek pos-z ekle
+            pyramidCSSRange.forEach(posXY => {
+                pyramidCSSRange.forEach(posZ => {
+                    pyramidCSS += `
+                    .pyramids-container .a-pyramid-container .cubes-container *[pos-z="${posZ}"][pos-x="${posXY}"] {
+                    left: calc(min(var(--pyramid-cube-width), var(--max-cube-width)) * ${posXY + 0.42 * posZ});
+                    }
+                    .pyramids-container .a-pyramid-container .cubes-container *[pos-z="${posZ}"][pos-y="${posXY}"] {
+                    bottom: calc(min(var(--pyramid-cube-width), var(--max-cube-width)) * ${posXY + 0.7 * posZ});
+                    }
+                    `;
+                });
+            });
 
         document.getElementById('game_play_area').insertAdjacentHTML('beforeend', `
             <style>
@@ -138,12 +140,12 @@ class GameBody extends GameGui {
                     if(this.isCurrentPlayerActive())
                         this.marketHandler.addSelectableClassToMarketTiles(args.possible_market_indexes);
                     else if(playerCollectedMarketTile.type === 'collecting')
-                        this.myself.pyramid.enableBuildPyramid(args._private.possible_moves);
+                        this.myself.pyramid.enableBuildPyramid();
                 }
             break;
             case 'buildPyramid':
                 if(this.myself)
-                    this.myself.pyramid.enableBuildPyramid(args._private.possible_moves);
+                    this.myself.pyramid.enableBuildPyramid();
             break;
         }
     }
@@ -236,16 +238,22 @@ class GameBody extends GameGui {
         const result = parseInt(str.toLowerCase().replace(/px/g, ''));
         return isNaN(result) ? 0 : result;
     }
-    public placeOnObject(mobileObj: HTMLDivElement, targetObj: HTMLDivElement): void {
+    public placeOnObject(mobileObj: HTMLDivElement, targetObj: HTMLDivElement, forceBoundingClientRect: boolean = false): void {
         mobileObj.style.left = '0px';
         mobileObj.style.top = '0px';
 
         // Get current positions
-        const withinPageContent = document.getElementById('page-content').contains(mobileObj);
+        const mobileWithinPageContent = document.getElementById('page-content').contains(mobileObj);
+        const targetWithinPageContent = document.getElementById('page-content').contains(targetObj);
         
-        const targetRect = withinPageContent ? this.getPos(targetObj) : targetObj.getBoundingClientRect();
-        const mobileRect = this.getPos(mobileObj);
+        let targetRect = mobileWithinPageContent ? this.getPos(targetObj) : targetObj.getBoundingClientRect();
+        let mobileRect = targetWithinPageContent ? this.getPos(mobileObj) : mobileObj.getBoundingClientRect();
         
+        if(forceBoundingClientRect){
+            targetRect = targetObj.getBoundingClientRect();
+            mobileRect = mobileObj.getBoundingClientRect();
+        }
+
         // Calculate the difference in position
         const deltaX = targetRect.left - mobileRect.left;
         const deltaY = targetRect.top - mobileRect.top;
@@ -369,15 +377,15 @@ class GameBody extends GameGui {
         await this.marketHandler.animateIndividualPlayerCollected(args.player_id, args.collected_market_index);
     }
 
-    public async notif_cubePlacedInPyramid(args) {
-        console.log('notif_cubePlacedInPyramid');
-        this.myself.pyramid.enableBuildPyramid(args.possible_moves);
-    }
+    // public async notif_cubePlacedInPyramid(args) { //ekmek gerekli mi
+    //     console.log('notif_cubePlacedInPyramid');
+    //     this.myself.pyramid.enableBuildPyramid();
+    // }
 
-    public async notif_undoneBuildPyramid(args) { //ekmek sil, bu notif gerekmemeli possible_moves client'a tasininca
-        console.log('notif_undoneBuildPyramid');
-        this.myself.pyramid.enableBuildPyramid(args.possible_moves);
-    }
+    // public async notif_undoneBuildPyramid(args) { //ekmek sil, bu notif gerekmemeli possible_moves client'a tasininca
+    //     console.log('notif_undoneBuildPyramid');
+    //     this.myself.pyramid.enableBuildPyramid(args.possible_moves);
+    // }
 
     public async notif_confirmedBuildPyramid(args) {
         console.log('notif_confirmedBuildPyramid');

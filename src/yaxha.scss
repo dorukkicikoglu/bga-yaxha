@@ -48,8 +48,8 @@
             &.selected-market-tile { outline: none; box-shadow: 2px 2px 4px #000000, 0 0 0 3px rgba(255, 230, 11, 0.3764705882), 0 0 12px 5px rgba(255, 230, 11, 0.1882352941), 0 0 20px 8px rgba(255, 230, 11, 0.1254901961); animation: pulse 0.5s ease-in-out; }
             &.selectable-market-tile{ animation: selectable-market-tile-glow-animation 2.2s ease-out infinite; }
             
-            // .cubes-container .a-cube { pointer-events: none; } //ekmek uncomment
-
+            .cubes-container .a-cube { pointer-events: none; }
+            
             .collecting-player-avatar{ position: absolute; top: -10px; left: 50%; width: var(--gamearea-avatar-size); height: var(--gamearea-avatar-size); }
             &.selectable-market-tile{ cursor: pointer; }
         }
@@ -107,8 +107,10 @@
                 .a-cube, .pyramid-cube-snap-point, .switch-color-button{ position: absolute; width: var(--pyramid-cube-width, 0px); height: var(--pyramid-cube-width, 0px); max-width: var(--pyramid-cube-width, 0px); max-height: var(--pyramid-cube-width, 0px); transform: translate(-50%, -50%);}
                 .pyramid-cube-snap-point{ z-index: 0; opacity: 0; background-color: rgba(0, 0, 0, 0.24); outline: 1px solid; outline-color: rgba(var(--player-color-hex), 0.5); outline-offset: -1px; }
                 .a-cube{ z-index: 1; 
+                    // pointer-events: none; //ekmek uncomment
                     .cube-background{ top: 18%; left: 14%; width: 92%; height: 92%; }
                     &.animating-cube{ z-index: 100 !important; }
+                    .top-side{ box-shadow: 0px 0px 3px #000000; }
                 }
                 .switch-color-button{ z-index: 100; opacity: 0; transition: opacity 0.2s ease;
                     .switch-color-icon{ opacity: 0.82; position: absolute; color: #ffffff; top: 50%; left: 50%; transform: translate(-50%, -50%); @include text-shade(#000000, 1px); font-size: calc(var(--cubes-container-height, 40px) * 0.21); }
@@ -191,7 +193,7 @@
     .playername.swapper-name{ font-size: 12px; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }
 }
 
-.animating-turn-order-container, .target-turn-order-container{ transform: rotate(8deg); }
+.animating-turn-order-container, .target-turn-order-container{ transform: rotate(8deg); pointer-events: none; }
 .left-turn-order-animation-target{ position: fixed; left: 20%; top: 40%; width: 1px; height: 1px; }
 .right-turn-order-animation-target{ position: fixed; left: 60%; top: 40%; width: 1px; height: 1px; }
 
