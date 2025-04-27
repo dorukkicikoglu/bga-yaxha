@@ -41,7 +41,6 @@ declare class GameGui {
     setupNotifications(): void;
     addTooltipHtml( nodeID: string, html: string, delay: number ):void;
 
-    placeOnObject(mobileObj: HTMLDivElement, targetObj: HTMLDivElement): void;
     attachToNewParent(node: HTMLDivElement, newParent: HTMLDivElement): HTMLDivElement;
     isInterfaceLocked(): boolean;
     confirmationDialog(message: string, yesHandler: (param: any) => void, noHandler?: (param: any) => void, param?: any): void;

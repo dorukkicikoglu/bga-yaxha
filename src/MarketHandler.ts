@@ -170,13 +170,25 @@ class MarketHandler{
         const moveCollectingAvatarAnimations: ReturnType<typeof dojo.animateProperty>[] = [];
         const movePendingAvatarAnimations: ReturnType<typeof dojo.animateProperty>[] = [];
 
-        this.collectedMarketTilesData.forEach((playerCollects, animationOrder) => {
-            const avatarClone: HTMLDivElement = this.gameui.players[playerCollects.player_id].getAvatarClone(true);
-            const currentTop = parseInt(window.getComputedStyle(avatarClone).top);
-            const currentLeft = parseInt(window.getComputedStyle(avatarClone).left);
+        //add player avatars first for correct positioning in animation
+        this.collectedMarketTilesData.forEach((playerCollects, animationOrder) => { this.addPlayerAvatar(playerCollects, false); });
 
-            let destAvatar = this.addPlayerAvatar(playerCollects, false);
-            const destAvatarRect = destAvatar ? this.gameui.getPos(destAvatar) : {width: 0, height: 0};
+        this.collectedMarketTilesData.forEach((playerCollects, animationOrder) => {
+            const avatarClone: HTMLDivElement = this.gameui.players[playerCollects.player_id].createAvatarClone();
+            avatarClone.style.transform = 'none';
+            const srcAvatar: HTMLImageElement = this.gameui.players[playerCollects.player_id].overallPlayerBoard.querySelector('img.avatar');
+
+            document.body.appendChild(avatarClone);
+			this.gameui.placeOnObject(avatarClone, srcAvatar);
+            const currentTop = parseInt(window.getComputedStyle(avatarClone).top);
+
+            const destAvatar = this.marketContainer.querySelector(`.yaxha-player-avatar[player-id="${playerCollects.player_id}"]`) as HTMLDivElement;
+            const destAvatarRect = destAvatar ? destAvatar.getBoundingClientRect() : {width: 0, height: 0};
+
+            const destAvatarClone = avatarClone.cloneNode(true) as HTMLDivElement;
+            destAvatarClone.style.opacity = '0'; //ekmek uncomment
+            avatarClone.after(destAvatarClone);
+            this.gameui.placeOnObject(destAvatarClone, destAvatar);
 
             const raiseAvatarClone: Promise<void> = this.gameui.animationHandler.animateProperty({
                 node: avatarClone,
@@ -188,13 +200,13 @@ class MarketHandler{
 
             raiseAvatarAnimations.push(raiseAvatarClone);
 
-            const moveAvatarClone: Promise<void> = this.gameui.animationHandler.animateOnObject({
+            const moveAvatarClone: Promise<void> = this.gameui.animationHandler.animateProperty({
                 node: avatarClone,
-                goTo: destAvatar,
+                properties: {top: this.gameui.remove_px(destAvatarClone.style.top), left: this.gameui.remove_px(destAvatarClone.style.left)},
                 delay: (playerCollects.type == 'collecting') ? moveCollectingAvatarAnimations.length * 200 : movePendingAvatarAnimations.length * 200,
                 duration: 500,
                 easing: `cubic-bezier(${0.1 + Math.random() * 0.2}, ${0.3 + Math.random() * 0.3}, ${0.5 + Math.random() * 0.3}, ${0.7 + Math.random() * 0.2})`,
-                onEnd: () => { destAvatar.style.opacity = null; dojo.destroy(avatarClone); }
+                onEnd: () => { destAvatar.style.opacity = null; avatarClone.remove(); destAvatarClone.remove(); }
             })
 
             if(playerCollects.type == 'collecting')
@@ -207,6 +219,7 @@ class MarketHandler{
         let movePendingAvatarsCombinedAnimation: ReturnType<typeof dojo.animateProperty> = this.gameui.animationHandler.combine(movePendingAvatarAnimations);
 
         await raiseAvatarsCombinedAnimation.start();
+
         await moveCollectingAvatarsCombinedAnimation.start();
         if(movePendingAvatarAnimations.length > 0){
             this.waitingPlayersContainer.style.opacity = '1';
@@ -214,7 +227,6 @@ class MarketHandler{
         }
     }
 
-    // public async animateIndividualPlayerCollected(playerID: number, collectedMarketIndex: number) { //ekmek sil
     public async animateIndividualPlayerCollected(playerID: number, collectedMarketIndex: number) {
         const playerIndex = this.collectedMarketTilesData.findIndex(data => Number(data.player_id) === Number(playerID));
         if(playerIndex === -1){
@@ -228,8 +240,9 @@ class MarketHandler{
         let destAvatar = this.addPlayerAvatar({player_id: playerID, collected_market_index: collectedMarketIndex, type: 'collecting'} as CollectedMarketTilesData, false);
         const pendingAvatar: HTMLDivElement = this.waitingPlayersContainer.querySelector(`.yaxha-player-avatar.pending-player-avatar[player-id="${playerID}"]`) as HTMLDivElement;
        
-        const pendingAvatarClone = this.gameui.players[playerID].getAvatarClone(false, true, pendingAvatar.querySelector('img'));
-        document.getElementById('overall-content').appendChild(pendingAvatarClone);
+        const pendingAvatarClone = this.gameui.players[playerID].createAvatarClone(pendingAvatar.querySelector('img'));
+
+        this.marketContainer.appendChild(pendingAvatarClone);
         this.gameui.placeOnObject(pendingAvatarClone, pendingAvatar);
 
         pendingAvatar.style.opacity = '0';
@@ -248,7 +261,7 @@ class MarketHandler{
             goTo: destAvatar,
             duration: 500,
             easing: `cubic-bezier(${0.1 + Math.random() * 0.2}, ${0.3 + Math.random() * 0.3}, ${0.5 + Math.random() * 0.3}, ${0.7 + Math.random() * 0.2})`,
-            onEnd: () => { destAvatar.style.opacity = null; dojo.destroy(pendingAvatarClone); }
+            onEnd: () => { destAvatar.style.opacity = null; pendingAvatarClone.remove(); }
         });
 
         await this.gameui.animationHandler.combine([shrinkPendingAvatar, movePendingAvatarClone]).start();
@@ -258,8 +271,6 @@ class MarketHandler{
     }
 
     public async animateBuiltCubes(built_cubes: { [key: number]: CubeToPyramidMoveData[] }) {
-        // this.removePlayerAvatarsFromMarketTiles(); //ekmek sil
-
         const cubeAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
         let delay = 0;
         for(const marketIndex in this.marketTiles) {
@@ -279,6 +290,7 @@ class MarketHandler{
 
         let cubeAnim: ReturnType<typeof dojo.animateProperty> = this.gameui.animationHandler.combine(cubeAnimArray);
         await cubeAnim.start();
+        await this.gameui.wait(300);
 
         for (const playerID in this.gameui.players)
             this.gameui.players[playerID].pyramid.saveAllCubesInPyramid();
@@ -346,8 +358,13 @@ class MarketHandler{
             turnOrderContainer.style.opacity = '0';
             turnOrderClone.style.position = 'fixed';
             
-            const cardStyle = window.getComputedStyle(turnOrderContainer);
-            const cardWidth = this.gameui.remove_px(cardStyle.width);
+            turnOrderContainer.style.transform = 'none'; //temporarily remove transform to get correct bounding client rect without rotation
+            const cardRect = turnOrderContainer.getBoundingClientRect();
+            turnOrderContainer.style.transform = null;
+            // const cardRect = this.gameui.getPos(turnOrderContainer);
+            // const cardStyle = window.getComputedStyle(turnOrderContainer); //ekmek sil
+            const cardWidth = cardRect.width;
+
             const expandedCardWidth = cardWidth * 2;
             turnOrderClone.style.width = cardWidth + 'px';
 
@@ -359,10 +376,9 @@ class MarketHandler{
             targetRaised.classList.add(isLeft ? 'left-turn-order-animation-target' : 'right-turn-order-animation-target');
             document.body.appendChild(targetRaised);
 
-            raiseAnimArray.push(this.gameui.animationHandler.animateOnObject({
+            raiseAnimArray.push(this.gameui.animationHandler.animateProperty({
                 node: turnOrderClone,
-                goTo: targetRaised,
-                properties: { width: expandedCardWidth },
+                properties: { width: expandedCardWidth, left: targetRaised.offsetLeft, top: targetRaised.offsetTop },
                 duration: 400,
                 delay: isLeft ? 0 : 600,
                 easing: 'easeInOut',
@@ -370,7 +386,6 @@ class MarketHandler{
             }));
 
             const otherTurnOrderContainer = otherPyramid.getTurnOrderContainer();
-            const otherTurnOrderRect = this.gameui.getPos(otherTurnOrderContainer);
             const targetLowered = otherTurnOrderContainer.cloneNode(true) as HTMLDivElement;
             targetLowered.classList.add('target-turn-order-container');
             targetLowered.style.position = 'fixed';
@@ -405,7 +420,7 @@ class MarketHandler{
         if(!['pending', 'collecting'].includes(playerCollects.type))
             return null;
 
-        const avatarClone: HTMLDivElement = this.gameui.players[playerCollects.player_id].getAvatarClone();
+        const avatarClone: HTMLDivElement = this.gameui.players[playerCollects.player_id].createAvatarClone();
         const newAvatarContainer: HTMLDivElement = playerCollects.type === 'collecting' 
             ? this.marketTiles[playerCollects.collected_market_index] 
             : this.marketContainer.querySelector('.waiting-players-container');

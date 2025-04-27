@@ -212,7 +212,15 @@ class GameBody extends GameGui {
         return this.divColoredPlayer(activePlayerID, attributes, detectYou);
     }
     private getAttributesHTML(attributes): string{ return Object.entries(attributes || {}).map(([key, value]) => `${key}="${value}"`).join(' '); }
-    public getPos(node: HTMLDivElement): DOMRect { let pos = this.getBoundingClientRectIgnoreZoom(node); pos.w = pos.width; pos.h = pos.height; return pos; }
+    public getPos(node: HTMLDivElement): DOMRect { 
+        // let withinPageContent = document.getElementById('page-content').contains(node); //ekmek sil
+        // withinPageContent = true; //ekmek sil
+        // let pos = withinPageContent ? this.getBoundingClientRectIgnoreZoom(node) : node.getBoundingClientRect(); 
+
+        let pos = this.getBoundingClientRectIgnoreZoom(node); 
+        pos.w = pos.width; pos.h = pos.height; 
+        return pos;
+     }
     public isDesktop(): boolean { return document.body.classList.contains('desktop_version'); }
     public isMobile(): boolean { return document.body.classList.contains('mobile_version'); }
     public updateStatusText(statusText): void{ $('gameaction_status').innerHTML = statusText; $('pagemaintitletext').innerHTML = statusText; }
@@ -227,6 +235,28 @@ class GameBody extends GameGui {
             return parseInt(str);
         const result = parseInt(str.toLowerCase().replace(/px/g, ''));
         return isNaN(result) ? 0 : result;
+    }
+    public placeOnObject(mobileObj: HTMLDivElement, targetObj: HTMLDivElement): void {
+        mobileObj.style.left = '0px';
+        mobileObj.style.top = '0px';
+
+        // Get current positions
+        const withinPageContent = document.getElementById('page-content').contains(mobileObj);
+        
+        const targetRect = withinPageContent ? this.getPos(targetObj) : targetObj.getBoundingClientRect();
+        const mobileRect = this.getPos(mobileObj);
+        
+        // Calculate the difference in position
+        const deltaX = targetRect.left - mobileRect.left;
+        const deltaY = targetRect.top - mobileRect.top;
+
+        // Get current position values
+        const currentLeft = parseFloat(mobileObj.style.left || '0');
+        const currentTop = parseFloat(mobileObj.style.top || '0');
+
+        // Apply the position difference to current position
+        mobileObj.style.left = (currentLeft + deltaX) + 'px';
+        mobileObj.style.top = (currentTop + deltaY) + 'px';
     }
     public rgbToHex(rgb: string): string { // Extract the numeric values using a regex
         const match = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
