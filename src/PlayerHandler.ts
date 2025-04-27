@@ -8,13 +8,18 @@ class PlayerHandler{
 		this.pyramid = new PyramidHandler(this.gameui, this, this.gameui.PYRAMID_MAX_SIZE, pyramidData);
 	}
 
-    public getAvatarClone(placeOnPlayerBoard: boolean = false, get184by184: boolean = true, srcAvatar: HTMLImageElement = null): HTMLDivElement{
+    public createAvatarClone(srcAvatar: HTMLImageElement = null): HTMLDivElement{
 		if(!srcAvatar)
-			srcAvatar = dojo.query('img.avatar', this.overallPlayerBoard)[0];
+			srcAvatar = this.overallPlayerBoard.querySelector('img.avatar');
+
+		const get184by184 = true;
 
 		if (srcAvatar) {
 			// Get dimensions and source from original avatar
-			const avatarRect = this.gameui.getPos(srcAvatar);
+			let withinPageContent = document.getElementById('page-content').contains(srcAvatar);
+			// withinPageContent = true; //ekmek sil
+			const avatarRect = withinPageContent ? this.gameui.getPos(srcAvatar) : srcAvatar.getBoundingClientRect();
+
 			let avatarSrc = srcAvatar.getAttribute('src');
 			const avatarSrc32 = avatarSrc;
 			avatarSrc = get184by184 ? avatarSrc.replace('32.jpg', '184.jpg') : avatarSrc;
@@ -38,11 +43,6 @@ class PlayerHandler{
 					});
 					addedImg.src = avatarSrc32; 
 				};
-			}
-
-			if(placeOnPlayerBoard){ // If requested, place the cloned avatar on the original avatar's position
-				document.getElementById('overall-content').appendChild(avatarClone);
-				this.gameui.placeOnObject(avatarClone, srcAvatar);
 			}
 
 			return avatarClone;

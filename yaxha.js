@@ -308,7 +308,15 @@ var GameBody = /** @class */ (function (_super) {
         var key = _a[0], value = _a[1];
         return "".concat(key, "=\"").concat(value, "\"");
     }).join(' '); };
-    GameBody.prototype.getPos = function (node) { var pos = this.getBoundingClientRectIgnoreZoom(node); pos.w = pos.width; pos.h = pos.height; return pos; };
+    GameBody.prototype.getPos = function (node) {
+        // let withinPageContent = document.getElementById('page-content').contains(node); //ekmek sil
+        // withinPageContent = true; //ekmek sil
+        // let pos = withinPageContent ? this.getBoundingClientRectIgnoreZoom(node) : node.getBoundingClientRect(); 
+        var pos = this.getBoundingClientRectIgnoreZoom(node);
+        pos.w = pos.width;
+        pos.h = pos.height;
+        return pos;
+    };
     GameBody.prototype.isDesktop = function () { return document.body.classList.contains('desktop_version'); };
     GameBody.prototype.isMobile = function () { return document.body.classList.contains('mobile_version'); };
     GameBody.prototype.updateStatusText = function (statusText) { $('gameaction_status').innerHTML = statusText; $('pagemaintitletext').innerHTML = statusText; };
@@ -326,6 +334,23 @@ var GameBody = /** @class */ (function (_super) {
             return parseInt(str);
         var result = parseInt(str.toLowerCase().replace(/px/g, ''));
         return isNaN(result) ? 0 : result;
+    };
+    GameBody.prototype.placeOnObject = function (mobileObj, targetObj) {
+        mobileObj.style.left = '0px';
+        mobileObj.style.top = '0px';
+        // Get current positions
+        var withinPageContent = document.getElementById('page-content').contains(mobileObj);
+        var targetRect = withinPageContent ? this.getPos(targetObj) : targetObj.getBoundingClientRect();
+        var mobileRect = this.getPos(mobileObj);
+        // Calculate the difference in position
+        var deltaX = targetRect.left - mobileRect.left;
+        var deltaY = targetRect.top - mobileRect.top;
+        // Get current position values
+        var currentLeft = parseFloat(mobileObj.style.left || '0');
+        var currentTop = parseFloat(mobileObj.style.top || '0');
+        // Apply the position difference to current position
+        mobileObj.style.left = (currentLeft + deltaX) + 'px';
+        mobileObj.style.top = (currentTop + deltaY) + 'px';
     };
     GameBody.prototype.rgbToHex = function (rgb) {
         var match = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
@@ -856,12 +881,21 @@ var MarketHandler = /** @class */ (function () {
                         raiseAvatarAnimations = [];
                         moveCollectingAvatarAnimations = [];
                         movePendingAvatarAnimations = [];
+                        //add player avatars first for correct positioning in animation
+                        this.collectedMarketTilesData.forEach(function (playerCollects, animationOrder) { _this.addPlayerAvatar(playerCollects, false); });
                         this.collectedMarketTilesData.forEach(function (playerCollects, animationOrder) {
-                            var avatarClone = _this.gameui.players[playerCollects.player_id].getAvatarClone(true);
+                            var avatarClone = _this.gameui.players[playerCollects.player_id].createAvatarClone();
+                            avatarClone.style.transform = 'none';
+                            var srcAvatar = _this.gameui.players[playerCollects.player_id].overallPlayerBoard.querySelector('img.avatar');
+                            document.body.appendChild(avatarClone);
+                            _this.gameui.placeOnObject(avatarClone, srcAvatar);
                             var currentTop = parseInt(window.getComputedStyle(avatarClone).top);
-                            var currentLeft = parseInt(window.getComputedStyle(avatarClone).left);
-                            var destAvatar = _this.addPlayerAvatar(playerCollects, false);
-                            var destAvatarRect = destAvatar ? _this.gameui.getPos(destAvatar) : { width: 0, height: 0 };
+                            var destAvatar = _this.marketContainer.querySelector(".yaxha-player-avatar[player-id=\"".concat(playerCollects.player_id, "\"]"));
+                            var destAvatarRect = destAvatar ? destAvatar.getBoundingClientRect() : { width: 0, height: 0 };
+                            var destAvatarClone = avatarClone.cloneNode(true);
+                            destAvatarClone.style.opacity = '0'; //ekmek uncomment
+                            avatarClone.after(destAvatarClone);
+                            _this.gameui.placeOnObject(destAvatarClone, destAvatar);
                             var raiseAvatarClone = _this.gameui.animationHandler.animateProperty({
                                 node: avatarClone,
                                 duration: 200,
@@ -870,13 +904,13 @@ var MarketHandler = /** @class */ (function () {
                                 easing: 'sineIn',
                             });
                             raiseAvatarAnimations.push(raiseAvatarClone);
-                            var moveAvatarClone = _this.gameui.animationHandler.animateOnObject({
+                            var moveAvatarClone = _this.gameui.animationHandler.animateProperty({
                                 node: avatarClone,
-                                goTo: destAvatar,
+                                properties: { top: _this.gameui.remove_px(destAvatarClone.style.top), left: _this.gameui.remove_px(destAvatarClone.style.left) },
                                 delay: (playerCollects.type == 'collecting') ? moveCollectingAvatarAnimations.length * 200 : movePendingAvatarAnimations.length * 200,
                                 duration: 500,
                                 easing: "cubic-bezier(".concat(0.1 + Math.random() * 0.2, ", ").concat(0.3 + Math.random() * 0.3, ", ").concat(0.5 + Math.random() * 0.3, ", ").concat(0.7 + Math.random() * 0.2, ")"),
-                                onEnd: function () { destAvatar.style.opacity = null; dojo.destroy(avatarClone); }
+                                onEnd: function () { destAvatar.style.opacity = null; avatarClone.remove(); destAvatarClone.remove(); }
                             });
                             if (playerCollects.type == 'collecting')
                                 moveCollectingAvatarAnimations.push(moveAvatarClone);
@@ -903,7 +937,6 @@ var MarketHandler = /** @class */ (function () {
             });
         });
     };
-    // public async animateIndividualPlayerCollected(playerID: number, collectedMarketIndex: number) { //ekmek sil
     MarketHandler.prototype.animateIndividualPlayerCollected = function (playerID, collectedMarketIndex) {
         return __awaiter(this, void 0, void 0, function () {
             var playerIndex, destAvatar, pendingAvatar, pendingAvatarClone, shrinkPendingAvatar, movePendingAvatarClone;
@@ -919,8 +952,8 @@ var MarketHandler = /** @class */ (function () {
                         this.collectedMarketTilesData[playerIndex].collected_market_index = collectedMarketIndex;
                         destAvatar = this.addPlayerAvatar({ player_id: playerID, collected_market_index: collectedMarketIndex, type: 'collecting' }, false);
                         pendingAvatar = this.waitingPlayersContainer.querySelector(".yaxha-player-avatar.pending-player-avatar[player-id=\"".concat(playerID, "\"]"));
-                        pendingAvatarClone = this.gameui.players[playerID].getAvatarClone(false, true, pendingAvatar.querySelector('img'));
-                        document.getElementById('overall-content').appendChild(pendingAvatarClone);
+                        pendingAvatarClone = this.gameui.players[playerID].createAvatarClone(pendingAvatar.querySelector('img'));
+                        this.marketContainer.appendChild(pendingAvatarClone);
                         this.gameui.placeOnObject(pendingAvatarClone, pendingAvatar);
                         pendingAvatar.style.opacity = '0';
                         destAvatar.style.opacity = '0';
@@ -936,7 +969,7 @@ var MarketHandler = /** @class */ (function () {
                             goTo: destAvatar,
                             duration: 500,
                             easing: "cubic-bezier(".concat(0.1 + Math.random() * 0.2, ", ").concat(0.3 + Math.random() * 0.3, ", ").concat(0.5 + Math.random() * 0.3, ", ").concat(0.7 + Math.random() * 0.2, ")"),
-                            onEnd: function () { destAvatar.style.opacity = null; dojo.destroy(pendingAvatarClone); }
+                            onEnd: function () { destAvatar.style.opacity = null; pendingAvatarClone.remove(); }
                         });
                         return [4 /*yield*/, this.gameui.animationHandler.combine([shrinkPendingAvatar, movePendingAvatarClone]).start()];
                     case 1:
@@ -976,6 +1009,9 @@ var MarketHandler = /** @class */ (function () {
                         cubeAnim = this.gameui.animationHandler.combine(cubeAnimArray);
                         return [4 /*yield*/, cubeAnim.start()];
                     case 1:
+                        _b.sent();
+                        return [4 /*yield*/, this.gameui.wait(300)];
+                    case 2:
                         _b.sent();
                         for (playerID in this.gameui.players)
                             this.gameui.players[playerID].pyramid.saveAllCubesInPyramid();
@@ -1051,8 +1087,12 @@ var MarketHandler = /** @class */ (function () {
                             turnOrderClone.classList.add('animating-turn-order-container');
                             turnOrderContainer.style.opacity = '0';
                             turnOrderClone.style.position = 'fixed';
-                            var cardStyle = window.getComputedStyle(turnOrderContainer);
-                            var cardWidth = _this.gameui.remove_px(cardStyle.width);
+                            turnOrderContainer.style.transform = 'none'; //temporarily remove transform to get correct bounding client rect without rotation
+                            var cardRect = turnOrderContainer.getBoundingClientRect();
+                            turnOrderContainer.style.transform = null;
+                            // const cardRect = this.gameui.getPos(turnOrderContainer);
+                            // const cardStyle = window.getComputedStyle(turnOrderContainer); //ekmek sil
+                            var cardWidth = cardRect.width;
                             var expandedCardWidth = cardWidth * 2;
                             turnOrderClone.style.width = cardWidth + 'px';
                             var otherPyramid = _this.gameui.players[isLeft ? swapperRight.player_id : swapperLeft.player_id].pyramid;
@@ -1061,17 +1101,15 @@ var MarketHandler = /** @class */ (function () {
                             var targetRaised = document.createElement('div');
                             targetRaised.classList.add(isLeft ? 'left-turn-order-animation-target' : 'right-turn-order-animation-target');
                             document.body.appendChild(targetRaised);
-                            raiseAnimArray.push(_this.gameui.animationHandler.animateOnObject({
+                            raiseAnimArray.push(_this.gameui.animationHandler.animateProperty({
                                 node: turnOrderClone,
-                                goTo: targetRaised,
-                                properties: { width: expandedCardWidth },
+                                properties: { width: expandedCardWidth, left: targetRaised.offsetLeft, top: targetRaised.offsetTop },
                                 duration: 400,
                                 delay: isLeft ? 0 : 600,
                                 easing: 'easeInOut',
                                 onEnd: function () { targetRaised.remove(); }
                             }));
                             var otherTurnOrderContainer = otherPyramid.getTurnOrderContainer();
-                            var otherTurnOrderRect = _this.gameui.getPos(otherTurnOrderContainer);
                             var targetLowered = otherTurnOrderContainer.cloneNode(true);
                             targetLowered.classList.add('target-turn-order-container');
                             targetLowered.style.position = 'fixed';
@@ -1104,7 +1142,7 @@ var MarketHandler = /** @class */ (function () {
     MarketHandler.prototype.addPlayerAvatar = function (playerCollects, isVisible) {
         if (!['pending', 'collecting'].includes(playerCollects.type))
             return null;
-        var avatarClone = this.gameui.players[playerCollects.player_id].getAvatarClone();
+        var avatarClone = this.gameui.players[playerCollects.player_id].createAvatarClone();
         var newAvatarContainer = playerCollects.type === 'collecting'
             ? this.marketTiles[playerCollects.collected_market_index]
             : this.marketContainer.querySelector('.waiting-players-container');
@@ -1165,15 +1203,16 @@ var PlayerHandler = /** @class */ (function () {
         this.overallPlayerBoard = $('overall_player_board_' + this.playerID);
         this.pyramid = new PyramidHandler(this.gameui, this, this.gameui.PYRAMID_MAX_SIZE, pyramidData);
     }
-    PlayerHandler.prototype.getAvatarClone = function (placeOnPlayerBoard, get184by184, srcAvatar) {
-        if (placeOnPlayerBoard === void 0) { placeOnPlayerBoard = false; }
-        if (get184by184 === void 0) { get184by184 = true; }
+    PlayerHandler.prototype.createAvatarClone = function (srcAvatar) {
         if (srcAvatar === void 0) { srcAvatar = null; }
         if (!srcAvatar)
-            srcAvatar = dojo.query('img.avatar', this.overallPlayerBoard)[0];
+            srcAvatar = this.overallPlayerBoard.querySelector('img.avatar');
+        var get184by184 = true;
         if (srcAvatar) {
             // Get dimensions and source from original avatar
-            var avatarRect = this.gameui.getPos(srcAvatar);
+            var withinPageContent = document.getElementById('page-content').contains(srcAvatar);
+            // withinPageContent = true; //ekmek sil
+            var avatarRect = withinPageContent ? this.gameui.getPos(srcAvatar) : srcAvatar.getBoundingClientRect();
             var avatarSrc_1 = srcAvatar.getAttribute('src');
             var avatarSrc32_1 = avatarSrc_1;
             avatarSrc_1 = get184by184 ? avatarSrc_1.replace('32.jpg', '184.jpg') : avatarSrc_1;
@@ -1194,10 +1233,6 @@ var PlayerHandler = /** @class */ (function () {
                     });
                     addedImg_1.src = avatarSrc32_1;
                 };
-            }
-            if (placeOnPlayerBoard) { // If requested, place the cloned avatar on the original avatar's position
-                document.getElementById('overall-content').appendChild(avatarClone);
-                this.gameui.placeOnObject(avatarClone, srcAvatar);
             }
             return avatarClone;
         }
@@ -1258,20 +1293,18 @@ var PyramidHandler = /** @class */ (function () {
         if (!this.owner.built_cubes_this_round && maxOrderCubeInConstruction)
             this.unplacedCube = maxOrderCubeInConstruction;
         this.arrangeCubesZIndex();
-        setTimeout(function () { _this.centerCubesContainer(false); }, 100);
+        // setTimeout(() => { this.centerCubesContainer(false); }, 100);
+        this.centerCubesContainer(false); //ekmek dene
     };
     PyramidHandler.prototype.enableBuildPyramid = function (possibleMoves) {
         this.updatePyramidStatusText();
-        // this.owner.collectedMarketTileIndex = this.gameui.marketHandler.getPlayerCollectedMarketTile(this.owner.playerID).collected_market_index; //ekmek sil
         if (this.owner.built_cubes_this_round)
             return;
         this.possibleMoves = possibleMoves;
         this.pyramidContainer.setAttribute('build-pyramid-enabled', 'true');
-        // this.collectedCubes = this.gameui.marketHandler.getCubesOfMarketTile(this.collectedMarketTileIndex); //ekmek sil
-        // this.rollingCubeColorIndex = 0; //ekmek sil
         this.calcAvailableColors();
-        // dojo.query('.pyramid-cube-snap-point', this.pyramidContainer).forEach( dojo.destroy ); //ekmek sil
         this.drawSnapPoints();
+        this.centerCubesContainer(false);
         this.displaySwitchColorButton();
     };
     PyramidHandler.prototype.disableBuildPyramid = function () {
@@ -1361,7 +1394,6 @@ var PyramidHandler = /** @class */ (function () {
             _this.gameui.animationHandler.animateProperty({ node: snapPoint, properties: { opacity: 1 }, duration: 300 }).play();
         });
         this.cubesContainer.querySelectorAll('.pyramid-cube-snap-point.to-remove').forEach(function (el) { return el.remove(); });
-        this.centerCubesContainer();
     };
     PyramidHandler.prototype.updatePyramidStatusText = function () {
         var _this = this;
@@ -1417,11 +1449,10 @@ var PyramidHandler = /** @class */ (function () {
         if (!this.unplacedCube.div) { //search Market Tiles
             var marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
             var marketCubeDiv = marketTile.querySelector(".a-cube[cube-id=\"".concat(cubeData.cube_id, "\"]"));
-            var cubeClone = marketCubeDiv.cloneNode(true);
-            marketCubeDiv.parentNode.insertBefore(cubeClone, marketCubeDiv.nextSibling);
+            this.unplacedCube.div = marketCubeDiv.cloneNode(true);
+            this.cubesContainer.appendChild(this.unplacedCube.div);
             marketCubeDiv.classList.add('selected-for-pyramid');
-            this.gameui.placeOnObject(cubeClone, marketCubeDiv);
-            this.unplacedCube.div = this.gameui.attachToNewParent(cubeClone, this.cubesContainer);
+            this.gameui.placeOnObject(this.unplacedCube.div, marketCubeDiv);
             animSpeed = 600;
         }
         if (this.cubeAnim)

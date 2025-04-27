@@ -67,27 +67,23 @@ class PyramidHandler {
         
         this.arrangeCubesZIndex();
 
-        setTimeout(() => { this.centerCubesContainer(false); }, 100);
+        // setTimeout(() => { this.centerCubesContainer(false); }, 100);
+        this.centerCubesContainer(false); //ekmek dene
     }
 
 	public enableBuildPyramid(possibleMoves: [number, number, number][]) {
         this.updatePyramidStatusText(); 
 
-        // this.owner.collectedMarketTileIndex = this.gameui.marketHandler.getPlayerCollectedMarketTile(this.owner.playerID).collected_market_index; //ekmek sil
         if(this.owner.built_cubes_this_round)
             return;
 
         this.possibleMoves = possibleMoves;        
         this.pyramidContainer.setAttribute('build-pyramid-enabled', 'true'); 
 
-        // this.collectedCubes = this.gameui.marketHandler.getCubesOfMarketTile(this.collectedMarketTileIndex); //ekmek sil
-        // this.rollingCubeColorIndex = 0; //ekmek sil
-
         this.calcAvailableColors();
-
-        // dojo.query('.pyramid-cube-snap-point', this.pyramidContainer).forEach( dojo.destroy ); //ekmek sil
         
         this.drawSnapPoints();
+        this.centerCubesContainer(false);
         this.displaySwitchColorButton();       
     }
 	public disableBuildPyramid() { 
@@ -192,8 +188,6 @@ class PyramidHandler {
         });
 
         this.cubesContainer.querySelectorAll('.pyramid-cube-snap-point.to-remove').forEach((el) => el.remove());
-        
-        this.centerCubesContainer();
     }
 
     private updatePyramidStatusText(){ //ekmek bu build sirasinda 2 defa cagiriliyor, possible_moves client'a tasininca duzelmeli
@@ -261,12 +255,10 @@ class PyramidHandler {
             const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
             let marketCubeDiv: HTMLDivElement = marketTile.querySelector(`.a-cube[cube-id="${cubeData.cube_id}"]`);
 
-            let cubeClone: HTMLDivElement = marketCubeDiv.cloneNode(true) as HTMLDivElement;
-            marketCubeDiv.parentNode.insertBefore(cubeClone, marketCubeDiv.nextSibling);
+            this.unplacedCube.div = marketCubeDiv.cloneNode(true) as HTMLDivElement;
+            this.cubesContainer.appendChild(this.unplacedCube.div);
             marketCubeDiv.classList.add('selected-for-pyramid');
-
-            this.gameui.placeOnObject(cubeClone, marketCubeDiv);
-            this.unplacedCube.div = this.gameui.attachToNewParent(cubeClone, this.cubesContainer);
+            this.gameui.placeOnObject(this.unplacedCube.div, marketCubeDiv);
 
             animSpeed = 600;
         }
