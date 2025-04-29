@@ -9,13 +9,16 @@ class TooltipHandler{
         bonusCardIcons.forEach(cardIcon => {
             const cardIconID = cardIcon.getAttribute('id');
             const cardID = cardIcon.getAttribute('bonus-card-id');
-            const tooltipHTML = this.gameui.BONUS_CARDS_DATA[cardID].tooltip_text;
+
+            let tooltipHTML = bga_format(this.gameui.BONUS_CARDS_DATA[cardID].tooltip_text, { '*': (t) => '<b>' + t + '</b>'});
+            const rightPlayerDiv = this.gameui.divColoredPlayer(this.gameui.rightPlayerID, {'class': 'tooltip-bold'}, false);
+            tooltipHTML = tooltipHTML.replace('${rightPlayer}', rightPlayerDiv);
 
             //ekmek tooltip background guzellestir
             this.gameui.addTooltipHtml(
                 cardIconID,
                 `<div class="bonus-card-tooltip tooltip-wrapper" bonus-card-id="${cardID}">
-                    <div class="tooltip-text">${_(this.gameui.BONUS_CARDS_DATA[cardID].tooltip_text)}</div>
+                    <div class="tooltip-text">${tooltipHTML}</div>
                     <div class="tooltip-image"></div>
                 </div>`,
                 400

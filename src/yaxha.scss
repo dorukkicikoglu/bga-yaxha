@@ -216,6 +216,7 @@
             &.bonus-card-tooltip[bonus-card-id="#{$i}"] .tooltip-image { @include bonus-card-position($i); }
         }
     }
+    .tooltip-bold{ font-weight: bold; }
 }
 .tundra:has(.tooltip-wrapper){ /* to change the color of the little tooltip arrow */
     .dijitTooltip {

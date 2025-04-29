@@ -19,6 +19,10 @@ class GameBody extends GameGui {
     public PYRAMID_MAX_SIZE: number;
     public CUBES_PER_MARKET_TILE: number;
 
+    public playerSeatOrder: number[];
+    public nextPlayerTable: Record<number, number>;
+    public rightPlayerID: number;
+
     constructor() {
         super();
 
@@ -33,6 +37,16 @@ class GameBody extends GameGui {
         this.MARKET_TILE_COLORS = gamedatas.MARKET_TILE_COLORS;
         this.PYRAMID_MAX_SIZE = gamedatas.PYRAMID_MAX_SIZE;
         this.CUBES_PER_MARKET_TILE = gamedatas.CUBES_PER_MARKET_TILE;
+        
+        this.nextPlayerTable = gamedatas.nextPlayerTable;
+        this.rightPlayerID = gamedatas.nextPlayerTable[this.player_id];
+
+        this.playerSeatOrder = [parseInt(this.player_id)];
+        let nextPlayerID = this.rightPlayerID;
+        while(nextPlayerID != parseInt(this.player_id)) {
+            this.playerSeatOrder.push(nextPlayerID);
+            nextPlayerID = this.nextPlayerTable[nextPlayerID];
+        }
 
         let cubeColorCSS = '';
         for(let colorIndex in this.CUBE_COLORS){
@@ -75,11 +89,11 @@ class GameBody extends GameGui {
         this.imageLoader = new ImageLoadHandler(this, ['market-tiles', 'player-order-tiles', 'bonus-cards', 'bonus-card-icons']);
         this.animationHandler = new AnimationHandlerPromiseBased(this);
 
-        for(let player_id in gamedatas.players) {
+        for(let player_id of this.playerSeatOrder) {
             const {name, color, player_no, turn_order, built_cubes_this_round} = this.gamedatas.players[player_id];
-            this.players[player_id] = new PlayerHandler(this, parseInt(player_id), name, color, parseInt(player_no), turn_order, gamedatas.pyramidData[player_id], built_cubes_this_round == '1');
+            this.players[player_id] = new PlayerHandler(this, player_id, name, color, parseInt(player_no), turn_order, gamedatas.pyramidData[player_id], built_cubes_this_round == '1');
 
-            if(player_id == this.player_id)
+            if(player_id == parseInt(this.player_id))
                 this.myself = this.players[player_id];
         }
 
@@ -376,17 +390,7 @@ class GameBody extends GameGui {
         console.log('notif_individualPlayerCollected');
         await this.marketHandler.animateIndividualPlayerCollected(args.player_id, args.collected_market_index);
     }
-
-    // public async notif_cubePlacedInPyramid(args) { //ekmek gerekli mi
-    //     console.log('notif_cubePlacedInPyramid');
-    //     this.myself.pyramid.enableBuildPyramid();
-    // }
-
-    // public async notif_undoneBuildPyramid(args) { //ekmek sil, bu notif gerekmemeli possible_moves client'a tasininca
-    //     console.log('notif_undoneBuildPyramid');
-    //     this.myself.pyramid.enableBuildPyramid(args.possible_moves);
-    // }
-
+    
     public async notif_confirmedBuildPyramid(args) {
         console.log('notif_confirmedBuildPyramid');
         this.myself.pyramid.confirmedBuildPyramid();
@@ -406,6 +410,14 @@ class GameBody extends GameGui {
         console.log('notif_swapTurnOrders');
 
         await this.marketHandler.animateSwapTurnOrders(args.swapData);
+    }
+
+    public async notif_displayEndGameScore(args) {
+        console.log('notif_displayEndGameScore');
+console.log('PUANLAR', args.endGameScoring);
+        // this.endGameScoringHandler = new bgagame.EndGameScoringHandler(this, notif.args.endGameScoring.player_scores, notif.args.endGameScoring.winner_ids);
+
+        // await this.marketHandler.animateEndGameScore(args.endGameScoring);
     }
 }
 

@@ -129,7 +129,7 @@ $machinestates = [
         "description" => clienttranslate('Placing cubes in pyramids...'),
         "type" => "game",
         "action" => "stAllPyramidsBuilt",
-        "transitions" => ["newCubesDrawn" => STATE_NEW_CUBES_DRAWN]
+        "transitions" => ["newCubesDrawn" => STATE_NEW_CUBES_DRAWN, "endGameScoring" => STATE_END_GAME_SCORING]
     ],
 
     STATE_NEW_CUBES_DRAWN => [
@@ -147,7 +147,7 @@ $machinestates = [
         "type" => "game",
         "action" => "stEndGameScoring",
         "updateGameProgression" => true,
-        "transitions" => array("gameEnd" => STATE_GAME_END)
+        "transitions" => array("gameEnd" => STATE_GAME_END, "allSelectMarketTile" => STATE_ALL_SELECT_MARKET_TILE) //ekmek allSelectMarketTile sil
     ),
 
     // Final state.

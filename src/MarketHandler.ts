@@ -273,6 +273,10 @@ class MarketHandler{
     public async animateBuiltCubes(built_cubes: { [key: number]: CubeToPyramidMoveData[] }) {
         const cubeAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
         let delay = 0;
+
+        const myAvatar: HTMLDivElement = this.marketContainer.querySelector(`.yaxha-player-avatar.collecting-player-avatar[player-id="${this.gameui.myself.playerID}"]`) as HTMLDivElement;
+        this.gameui.animationHandler.fadeOutAndDestroy(myAvatar, 100);
+
         for(const marketIndex in this.marketTiles) {
             const playerID = this.collectedMarketTilesData.find((data) => Number(data.collected_market_index) === Number(marketIndex))?.player_id;
 

@@ -5,6 +5,7 @@ declare var g_themeurl: string;
 declare var g_archive_mode: boolean;
 declare function _(str: string): string;
 declare function __(lang: string, str: string): string;
+declare function bga_format(text: string, replacements: {[key: string]: string | ((text: string) => string)}): string;
 
 declare const define;
 declare const ebg;
