@@ -164,6 +164,14 @@ var GameBody = /** @class */ (function (_super) {
         this.MARKET_TILE_COLORS = gamedatas.MARKET_TILE_COLORS;
         this.PYRAMID_MAX_SIZE = gamedatas.PYRAMID_MAX_SIZE;
         this.CUBES_PER_MARKET_TILE = gamedatas.CUBES_PER_MARKET_TILE;
+        this.nextPlayerTable = gamedatas.nextPlayerTable;
+        this.rightPlayerID = gamedatas.nextPlayerTable[this.player_id];
+        this.playerSeatOrder = [parseInt(this.player_id)];
+        var nextPlayerID = this.rightPlayerID;
+        while (nextPlayerID != parseInt(this.player_id)) {
+            this.playerSeatOrder.push(nextPlayerID);
+            nextPlayerID = this.nextPlayerTable[nextPlayerID];
+        }
         var cubeColorCSS = '';
         for (var colorIndex in this.CUBE_COLORS) {
             cubeColorCSS += ".a-cube[color=\"".concat(colorIndex, "\"] { --cube-color: #").concat(this.CUBE_COLORS[colorIndex].colorCode, "; }\n            ");
@@ -180,10 +188,11 @@ var GameBody = /** @class */ (function (_super) {
         document.getElementById('game_play_area').insertAdjacentHTML('beforeend', "\n            <style>\n                ".concat(cubeColorCSS, "\n                ").concat(pyramidCSS, "\n            </style>\n            <div id=\"player-tables\">\n            <div class=\"market-container\">\n                <div class=\"market-tiles-container\"></div>\n                <div class=\"waiting-players-container\"></div>\n                <div class=\"bonus-cards-container\"></div>\n            </div>\n            <div class=\"pyramids-container\"></div>\n        </div>"));
         this.imageLoader = new ImageLoadHandler(this, ['market-tiles', 'player-order-tiles', 'bonus-cards', 'bonus-card-icons']);
         this.animationHandler = new AnimationHandlerPromiseBased(this);
-        for (var player_id in gamedatas.players) {
-            var _a = this.gamedatas.players[player_id], name_1 = _a.name, color = _a.color, player_no = _a.player_no, turn_order = _a.turn_order, built_cubes_this_round = _a.built_cubes_this_round;
-            this.players[player_id] = new PlayerHandler(this, parseInt(player_id), name_1, color, parseInt(player_no), turn_order, gamedatas.pyramidData[player_id], built_cubes_this_round == '1');
-            if (player_id == this.player_id)
+        for (var _i = 0, _a = this.playerSeatOrder; _i < _a.length; _i++) {
+            var player_id = _a[_i];
+            var _b = this.gamedatas.players[player_id], name_1 = _b.name, color = _b.color, player_no = _b.player_no, turn_order = _b.turn_order, built_cubes_this_round = _b.built_cubes_this_round;
+            this.players[player_id] = new PlayerHandler(this, player_id, name_1, color, parseInt(player_no), turn_order, gamedatas.pyramidData[player_id], built_cubes_this_round == '1');
+            if (player_id == parseInt(this.player_id))
                 this.myself = this.players[player_id];
         }
         this.MARKET_TILE_COLORS.forEach(function (color, index) {
@@ -498,14 +507,6 @@ var GameBody = /** @class */ (function (_super) {
             });
         });
     };
-    // public async notif_cubePlacedInPyramid(args) { //ekmek gerekli mi
-    //     console.log('notif_cubePlacedInPyramid');
-    //     this.myself.pyramid.enableBuildPyramid();
-    // }
-    // public async notif_undoneBuildPyramid(args) { //ekmek sil, bu notif gerekmemeli possible_moves client'a tasininca
-    //     console.log('notif_undoneBuildPyramid');
-    //     this.myself.pyramid.enableBuildPyramid(args.possible_moves);
-    // }
     GameBody.prototype.notif_confirmedBuildPyramid = function (args) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
@@ -554,6 +555,15 @@ var GameBody = /** @class */ (function (_super) {
                         _a.sent();
                         return [2 /*return*/];
                 }
+            });
+        });
+    };
+    GameBody.prototype.notif_displayEndGameScore = function (args) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                console.log('notif_displayEndGameScore');
+                console.log('PUANLAR', args.endGameScoring);
+                return [2 /*return*/];
             });
         });
     };
@@ -981,13 +991,15 @@ var MarketHandler = /** @class */ (function () {
     };
     MarketHandler.prototype.animateBuiltCubes = function (built_cubes) {
         return __awaiter(this, void 0, void 0, function () {
-            var cubeAnimArray, delay, _loop_2, this_2, marketIndex, cubeAnim, playerID;
+            var cubeAnimArray, delay, myAvatar, _loop_2, this_2, marketIndex, cubeAnim, playerID;
             var _a;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
                         cubeAnimArray = [];
                         delay = 0;
+                        myAvatar = this.marketContainer.querySelector(".yaxha-player-avatar.collecting-player-avatar[player-id=\"".concat(this.gameui.myself.playerID, "\"]"));
+                        this.gameui.animationHandler.fadeOutAndDestroy(myAvatar, 100);
                         _loop_2 = function (marketIndex) {
                             var playerID = (_a = this_2.collectedMarketTilesData.find(function (data) { return Number(data.collected_market_index) === Number(marketIndex); })) === null || _a === void 0 ? void 0 : _a.player_id;
                             if (!playerID || !built_cubes[playerID])
@@ -1546,9 +1558,10 @@ var PyramidHandler = /** @class */ (function () {
                 _this.unplacedCube.div.setAttribute('pos-z', _this.unplacedCube.pos_z.toString());
                 _this.unplacedCube.div.style.top = null;
                 _this.unplacedCube.div.style.left = null;
-                _this.arrangeCubesZIndex();
-                _this.updatePyramidStatusText();
+                // this.arrangeCubesZIndex(); //ekmek sil
+                // this.updatePyramidStatusText();
                 _this.gameui.ajaxAction(moveType == 'from_market' ? 'actAddCubeToPyramid' : 'actMoveCubeInPyramid', { cube_id: _this.unplacedCube.cube_id, pos_x: _this.unplacedCube.pos_x, pos_y: _this.unplacedCube.pos_y, pos_z: _this.unplacedCube.pos_z }, false, false);
+                _this.enableBuildPyramid();
             }
         });
         cubeAnim.start();
@@ -1748,8 +1761,7 @@ var PyramidHandler = /** @class */ (function () {
         var zIndex = 1;
         cubes.forEach(function (cube) {
             cube.style.zIndex = zIndex.toString();
-            if (cube.classList.contains('a-cube'))
-                zIndex++;
+            zIndex++;
         });
     };
     PyramidHandler.prototype.displaySwitchColorButton = function () {
@@ -1842,9 +1854,11 @@ var TooltipHandler = /** @class */ (function () {
         bonusCardIcons.forEach(function (cardIcon) {
             var cardIconID = cardIcon.getAttribute('id');
             var cardID = cardIcon.getAttribute('bonus-card-id');
-            var tooltipHTML = _this.gameui.BONUS_CARDS_DATA[cardID].tooltip_text;
+            var tooltipHTML = bga_format(_this.gameui.BONUS_CARDS_DATA[cardID].tooltip_text, { '*': function (t) { return '<b>' + t + '</b>'; } });
+            var rightPlayerDiv = _this.gameui.divColoredPlayer(_this.gameui.rightPlayerID, { 'class': 'tooltip-bold' }, false);
+            tooltipHTML = tooltipHTML.replace('${rightPlayer}', rightPlayerDiv);
             //ekmek tooltip background guzellestir
-            _this.gameui.addTooltipHtml(cardIconID, "<div class=\"bonus-card-tooltip tooltip-wrapper\" bonus-card-id=\"".concat(cardID, "\">\n                    <div class=\"tooltip-text\">").concat(_(_this.gameui.BONUS_CARDS_DATA[cardID].tooltip_text), "</div>\n                    <div class=\"tooltip-image\"></div>\n                </div>"), 400);
+            _this.gameui.addTooltipHtml(cardIconID, "<div class=\"bonus-card-tooltip tooltip-wrapper\" bonus-card-id=\"".concat(cardID, "\">\n                    <div class=\"tooltip-text\">").concat(tooltipHTML, "</div>\n                    <div class=\"tooltip-image\"></div>\n                </div>"), 400);
         });
     };
     TooltipHandler.prototype.addTooltipToTurnOrder = function () {

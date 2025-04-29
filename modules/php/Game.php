@@ -23,6 +23,7 @@ use \Bga\GameFramework\Actions\CheckAction;
 use YXHGlobalsManager;
 use YXHMarketManager;
 use YXHPyramidManager;
+use YXHScoringManager;
 
 require_once(APP_GAMEMODULE_PATH . "module/table/table.game.php");
 
@@ -32,6 +33,7 @@ class Game extends \Table
     public YXHGlobalsManager $globalsManager;
     public YXHMarketManager $marketManager;
     public YXHPyramidManager $pyramidManager;
+    public YXHScoringManager $scoringManager;
     private $cubesBag;
 
     /**
@@ -52,6 +54,8 @@ class Game extends \Table
         require_once 'YXHGlobalsManager.php'; 
         require_once 'YXHMarketManager.php';
         require_once 'YXHPyramidManager.php'; 
+        require_once 'YXHScoringManager.php';
+        require_once 'YXHBonusCardsManager.php';
 
         $this->globalsManager = new YXHGlobalsManager($this, 
             $globalKeys = array(
@@ -62,6 +66,7 @@ class Game extends \Table
 
         $this->marketManager = new YXHMarketManager($this);
         $this->pyramidManager = new YXHPyramidManager($this);
+        $this->scoringManager = new YXHScoringManager($this);
 
         $this->cubesBag = self::getNew("module.common.deck");
         $this->cubesBag->init("cubes");
@@ -328,8 +333,6 @@ class Game extends \Table
     }
 
     public function stAllPyramidsBuilt(): void{
-        //ekmek lahmacun devam et, yeni kupleri dagit
-
         $builtCubes = self::getObjectListFromDB("SELECT card_location_arg as owner_id, card_id as cube_id, color, pos_x, pos_y, pos_z FROM cubes WHERE order_in_construction IS NOT NULL ORDER BY order_in_construction ASC");
         
         $builtCubesByPlayer = array();
@@ -372,7 +375,7 @@ class Game extends \Table
         //     'REVEALED_MARKET_TILES_DATA_STR' => $marketTilesDataStr
         // ));
 
-
+$this->globalsManager->set('rounds_remaining', 0); //ekmek sil
         if((int)$this->globalsManager->get('rounds_remaining') == 0)
             $this->gamestate->nextState('endGameScoring');
         else { 
@@ -383,6 +386,33 @@ class Game extends \Table
     public function stNewCubesDrawn(): void {
         $this->marketManager->drawNewCubes();
         $this->gamestate->nextState('allSelectMarketTile');
+    }
+
+    public function stEndGameScoring(): void {
+        $endGameScoring = $this->scoringManager->getEndGameScoring(); 
+        
+        // self::setStat($this->getWinningBidsStandardDeviation(), "winning_bids_std_dev");
+
+        // foreach($endGameScoring['player_scores'] as $player_id => $playerScoreData){
+        //     $playerTotal = $playerScoreData['total'];
+        //     $playerMoney = $playerScoreData['money'];
+
+        //     self::DbQuery("UPDATE player SET player_score = $playerTotal, player_score_aux = $playerMoney WHERE player_id = $player_id");
+
+        //     self::setStat($playerScoreData['score_beach'], "score_beach", $player_id);
+        //     self::setStat($playerScoreData['score_themepark'], "score_themepark", $player_id);
+        //     self::setStat($playerScoreData['score_house_garden'], "score_house_garden", $player_id);
+        //     self::setStat($playerScoreData['statue_scores']['r'], "score_statue_r", $player_id);
+        //     self::setStat($playerScoreData['statue_scores']['g'], "score_statue_g", $player_id);
+        //     self::setStat($playerScoreData['statue_scores']['b'], "score_statue_b", $player_id);
+        // }
+
+        self::notifyAllPlayers('displayEndGameScore', '', array(
+            'endGameScoring' => $endGameScoring
+        ));
+
+        $this->gamestate->nextState('allSelectMarketTile'); //ekmek sil
+        // $this->gamestate->nextState('gameEnd'); //ekmek uncomment
     }
 
     /**
@@ -446,6 +476,8 @@ class Game extends \Table
         $result['pyramidData'][$current_player_id] = $this->pyramidManager->getPlayerPyramidData($current_player_id, true);
 
         $result['collectedMarketTilesData'] = $this->marketManager->getCollectedMarketTiles();
+
+        $result['nextPlayerTable'] = $this->getNextPlayerTable();
 
         return $result;
     }

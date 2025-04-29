@@ -374,10 +374,10 @@ class PyramidHandler {
                 this.unplacedCube.div.style.top = null;
                 this.unplacedCube.div.style.left = null;
 
-                this.arrangeCubesZIndex();
-                this.updatePyramidStatusText();
-
+                // this.arrangeCubesZIndex(); //ekmek sil
+                // this.updatePyramidStatusText();
                 this.gameui.ajaxAction(moveType == 'from_market' ? 'actAddCubeToPyramid' : 'actMoveCubeInPyramid', { cube_id: this.unplacedCube.cube_id, pos_x: this.unplacedCube.pos_x, pos_y: this.unplacedCube.pos_y, pos_z: this.unplacedCube.pos_z }, false, false);
+                this.enableBuildPyramid();
             }
         });
 
@@ -611,8 +611,7 @@ class PyramidHandler {
         let zIndex = 1;
         cubes.forEach((cube) => { 
             cube.style.zIndex = zIndex.toString();
-            if(cube.classList.contains('a-cube'))
-                zIndex++;
+            zIndex++;
         });
     }
 
