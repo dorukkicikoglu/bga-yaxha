@@ -10,6 +10,9 @@ class YXHBonusCardsManager extends APP_DbObject
     }
 
     public function addBonusCardScores(array $scores, array $pyramidDataByPlayerId): array {
+        foreach($scores as $player_id => $playerScore)
+            $scores[$player_id]['bonus_card_points'] = [];
+
         $bonusCardIDs = $this->getObjectListFromDB("SELECT bonus_card_id FROM bonus_cards", true);
         
         foreach($bonusCardIDs as $bonusCardIDStr){
@@ -55,12 +58,8 @@ class YXHBonusCardsManager extends APP_DbObject
 
         }
 
-        foreach($scores as $player_id => $playerScore) {
-            $scores[$player_id]['bonus_card_total'] = 0;
-
-            foreach($bonusCardIDs as $bonusCardIDStr)
-                $scores[$player_id]['bonus_card_total'] += $scores[$player_id]['bonus_card_'.$bonusCardIDStr];
-        }
+        foreach($scores as $player_id => $playerScore)
+            $scores[$player_id]['bonus_card_total'] = array_sum($scores[$player_id]['bonus_card_points']);
 
         return $scores;
     }
@@ -83,7 +82,7 @@ class YXHBonusCardsManager extends APP_DbObject
         
         // Find highest score for this color
         foreach($scores as $playerId => $playerScore) {
-            $colorSize = $playerScore['color_size_'.$color];
+            $colorSize = $playerScore['color_size'][$color];
             if($colorSize > $maxSize) {
                 $maxSize = $colorSize;
                 $highestPlayerIDs = [$playerId => 1];
@@ -95,7 +94,7 @@ class YXHBonusCardsManager extends APP_DbObject
 
         foreach($scores as $playerId => $playerScore) {
             $cardBonus = isset($highestPlayerIDs[$playerId]) ? BONUS_CARD_POINTS : 0;
-            $scores[$playerId]['bonus_card_'.$bonusCardID] = $cardBonus;
+            $scores[$playerId]['bonus_card_points'][$bonusCardID] = $cardBonus;
         }
 
         return $scores;
@@ -120,11 +119,11 @@ class YXHBonusCardsManager extends APP_DbObject
             if(!isset($scores[$leftPlayerID]) || !isset($scores[$rightPlayerID]))
                 continue;
 
-            $rightPlayerSize = $scores[$rightPlayerID]['color_size_'.$color];
-            $leftPlayerSize = $scores[$leftPlayerID]['color_size_'.$color];
+            $rightPlayerSize = $scores[$rightPlayerID]['color_size'][$color];
+            $leftPlayerSize = $scores[$leftPlayerID]['color_size'][$color];
 
             $cardBonus = $leftPlayerSize > $rightPlayerSize ? BONUS_CARD_POINTS : 0;
-            $scores[$leftPlayerID]['bonus_card_'.$bonusCardID] = $cardBonus;
+            $scores[$leftPlayerID]['bonus_card_points'][$bonusCardID] = $cardBonus;
         }
 
         return $scores;
@@ -138,7 +137,7 @@ class YXHBonusCardsManager extends APP_DbObject
 
         foreach($scores as $playerId => $playerScore) {
             foreach(CUBE_COLORS as $colorIndex => $color) {
-                $colorSize = $playerScore['color_size_'.$colorIndex];
+                $colorSize = $playerScore['color_size'][$colorIndex];
                 if($colorSize > $maxSize) {
                     $maxSize = $colorSize;
                     $highestPlayerIDs = [$playerId => 1];
@@ -151,7 +150,7 @@ class YXHBonusCardsManager extends APP_DbObject
 
         foreach($scores as $playerId => $playerScore) {
             $cardBonus = isset($highestPlayerIDs[$playerId]) ? BONUS_CARD_POINTS : 0;
-            $scores[$playerId]['bonus_card_'.$bonusCardID] = $cardBonus;
+            $scores[$playerId]['bonus_card_points'][$bonusCardID] = $cardBonus;
         }
 
         return $scores;
@@ -189,7 +188,7 @@ class YXHBonusCardsManager extends APP_DbObject
 
         foreach($scores as $playerId => $playerScore) {
             $cardBonus = isset($highestPlayerIDs[$playerId]) ? BONUS_CARD_POINTS : 0;
-            $scores[$playerId]['bonus_card_'.$bonusCardID] = $cardBonus;
+            $scores[$playerId]['bonus_card_points'][$bonusCardID] = $cardBonus;
         }
 
         return $scores;
@@ -229,7 +228,7 @@ class YXHBonusCardsManager extends APP_DbObject
 
         foreach ($scores as $playerId => $playerScore) {
             $cardBonus = isset($highestPlayerIDs[$playerId]) ? BONUS_CARD_POINTS : 0;
-            $scores[$playerId]['bonus_card_'.$bonusCardID] = $cardBonus;
+            $scores[$playerId]['bonus_card_points'][$bonusCardID] = $cardBonus;
         }
 
         return $scores;
@@ -264,7 +263,7 @@ class YXHBonusCardsManager extends APP_DbObject
 
         foreach($scores as $playerId => $playerScore) {
             $cardBonus = isset($highestPlayerIDs[$playerId]) ? BONUS_CARD_POINTS : 0;
-            $scores[$playerId]['bonus_card_'.$bonusCardID] = $cardBonus;
+            $scores[$playerId]['bonus_card_points'][$bonusCardID] = $cardBonus;
         }
 
         return $scores;
@@ -284,7 +283,7 @@ class YXHBonusCardsManager extends APP_DbObject
                     $uniqueColors[$cube['color']] = 1;
             
             $cardBonus = count($uniqueColors) >= 5 ? BONUS_CARD_POINTS : 0;
-            $scores[$playerId]['bonus_card_'.$bonusCardID] = $cardBonus;
+            $scores[$playerId]['bonus_card_points'][$bonusCardID] = $cardBonus;
         }
 
         return $scores;
@@ -359,7 +358,7 @@ class YXHBonusCardsManager extends APP_DbObject
             }
 
             $cardBonus = $hasSingleColorSide ? BONUS_CARD_POINTS : 0;
-            $scores[$playerId]['bonus_card_'.$bonusCardID] = $cardBonus;
+            $scores[$playerId]['bonus_card_points'][$bonusCardID] = $cardBonus;
         }
 
         return $scores;
@@ -374,7 +373,7 @@ class YXHBonusCardsManager extends APP_DbObject
                 $uniqueColors[$cube['color']] = 1;
             
             $cardBonus = count($uniqueColors) == 3 ? BONUS_CARD_POINTS : 0;
-            $scores[$playerId]['bonus_card_'.$bonusCardID] = $cardBonus;
+            $scores[$playerId]['bonus_card_points'][$bonusCardID] = $cardBonus;
         }
 
         return $scores;

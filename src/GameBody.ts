@@ -11,6 +11,7 @@ class GameBody extends GameGui {
     public tooltipHandler: TooltipHandler;
     public logMutationObserver: LogMutationObserver;
     public myself: PlayerHandler;
+    public endGameScoringHandler: EndGameScoringHandler;
 
     public players: Record<number, PlayerHandler> = {};
     public CUBE_COLORS: CubeColor[];
@@ -105,6 +106,10 @@ class GameBody extends GameGui {
 
         this.tooltipHandler = new TooltipHandler(this);
         this.logMutationObserver = new LogMutationObserver(this);
+        this.endGameScoringHandler = new EndGameScoringHandler(this);
+
+        if(gamedatas.hasOwnProperty('endGameScoring'))
+            this.endGameScoringHandler.displayEndGameScore(gamedatas.endGameScoring);
 
         // Setup game notifications to handle (see "setupNotifications" method below)
         this.setupNotifications();
@@ -112,7 +117,7 @@ class GameBody extends GameGui {
         console.log( "Ending game setup" );
     }
 
-    public onEnteringState(stateName: string, args: any) {
+    public async onEnteringState(stateName: string, args: any) {
         console.log( 'Entering state: '+stateName, args );
 
         switch( stateName )
@@ -236,10 +241,13 @@ class GameBody extends GameGui {
         let pos = this.getBoundingClientRectIgnoreZoom(node); 
         pos.w = pos.width; pos.h = pos.height; 
         return pos;
-     }
+    }
     public isDesktop(): boolean { return document.body.classList.contains('desktop_version'); }
     public isMobile(): boolean { return document.body.classList.contains('mobile_version'); }
-    public updateStatusText(statusText): void{ $('gameaction_status').innerHTML = statusText; $('pagemaintitletext').innerHTML = statusText; }
+    public clickOrTap(capitalized: boolean = false): string { if(capitalized) { return this.capitalizeFirstLetter(this.clickOrTap()); } return this.isDesktop() ? 'click' : 'tap'; }
+    public capitalizeFirstLetter(str: string): string { return `${str[0].toUpperCase()}${str.slice(1)}`; }
+
+    public updateStatusText(statusText): void{ $('gameaction_status').innerHTML = statusText; $('pagemaintitletext').innerHTML = statusText; } //ekmek sil?
     public ajaxAction(action: string, args: Record<string, any> = {}, lock: boolean = true, checkAction: boolean = true): void{
         args.version = this.gamedatas.version;
         this.bgaPerformAction(action, args, { lock: lock, checkAction: checkAction });
@@ -357,7 +365,6 @@ class GameBody extends GameGui {
         cubeDiv.style.setProperty('--side-bg-y', (Math.random() * 100) + '%');
         cubeDiv.style.setProperty('--bottom-bg-x', (Math.random() * 100) + '%');
         cubeDiv.style.setProperty('--bottom-bg-y', (Math.random() * 100) + '%');
-        // cubeDiv.style.setProperty('--cube-color', '#' + this.CUBE_COLORS[Number(cube.color)].colorCode); //ekmek sil
 
         return cubeDiv;
     }
@@ -412,12 +419,10 @@ class GameBody extends GameGui {
         await this.marketHandler.animateSwapTurnOrders(args.swapData);
     }
 
-    public async notif_displayEndGameScore(args) {
+    public async notif_displayEndGameScore(args) { //ekmek sil
         console.log('notif_displayEndGameScore');
-console.log('PUANLAR', args.endGameScoring);
-        // this.endGameScoringHandler = new bgagame.EndGameScoringHandler(this, notif.args.endGameScoring.player_scores, notif.args.endGameScoring.winner_ids);
 
-        // await this.marketHandler.animateEndGameScore(args.endGameScoring);
+        await this.endGameScoringHandler.displayEndGameScore(args.endGameScoring);
     }
 }
 
@@ -477,3 +482,14 @@ interface ContentsRectangle {
     height: number;
 }
 
+interface PlayerScore {
+    player_id: number;
+    color_points: { [color_index: number]: number };
+    bonus_card_points: { [bonus_card_id: number]: number };
+    total: number;
+}
+
+interface EndGameScoreData {
+    winner_ids: number[];
+    player_scores: { [player_id: number]: PlayerScore };
+}

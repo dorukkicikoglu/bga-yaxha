@@ -409,6 +409,7 @@ class PyramidHandler {
             cube.style.left = cubeStyle.left;
         });
 
+        let delay = 0;
         for(const move of cubeMoves){
             let marketCubeDiv: HTMLDivElement = marketTile.querySelector(`.a-cube[cube-id="${move.cube_id}"]`);
 
@@ -444,7 +445,7 @@ class PyramidHandler {
                 goTo: pyramidCubeDiv,
                 duration: animSpeed + Math.floor(Math.random() * 101) - 50,
                 easing: 'circleOut',
-                delay: Math.floor(Math.random() * 51),
+                delay: delay + Math.floor(Math.random() * 100),
                 onEnd: () => { 
                     marketCubeDiv.remove();
                     pyramidCubeDiv.style.opacity = '1';
@@ -452,6 +453,7 @@ class PyramidHandler {
             });
     
             cubeAnimArray.push(builtCubeAnim);
+            delay += 50;
         }
 
         this.arrangeCubesZIndex();
@@ -703,7 +705,7 @@ class PyramidHandler {
 
         this.gameui.ajaxAction('actPyramidCubeColorSwitched', { cube_id: this.unplacedCube.cube_id, pos_x: this.unplacedCube.pos_x, pos_y: this.unplacedCube.pos_y, pos_z: this.unplacedCube.pos_z }, false, false);
     }
-    
+
     private notifyCubeMovedOnGrid() { //ekmek gerekli mi
         console.log('notifyCubeMovedOnGrid');
     }

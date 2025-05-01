@@ -26,13 +26,13 @@ class YXHScoringManager extends APP_DbObject
 
         $scores = $this->bonusCardsManager->addBonusCardScores($scores, $pyramidDataByPlayerId);
 
-        foreach($scores as $player_id => $playerScore){
+        foreach($scores as $player_id => $playerScore){ //prune data to send to client
+            $scores[$player_id]['player_id'] = $player_id;
             $scores[$player_id]['total'] = $playerScore['color_total'] + $playerScore['bonus_card_total'];
-            // unset($scores[$player_id]['color_total']); //ekmek uncomment
-            // unset($scores[$player_id]['bonus_card_total']);
-            // unset($scores[$player_id]['groups_by_color']);
-            // foreach(CUBE_COLORS as $colorIndex => $color)
-            //     unset($scores[$player_id]['color_size_'.$colorIndex]);
+            unset($scores[$player_id]['color_total']);
+            unset($scores[$player_id]['bonus_card_total']);
+            unset($scores[$player_id]['groups_by_color']);
+            unset($scores[$player_id]['color_size']);
         }
         $winnerIDs = [];
         $maxScore = 0;
@@ -52,7 +52,7 @@ class YXHScoringManager extends APP_DbObject
     }
 
     private function getColorGroupScores(array $visibleCubes): array {
-        $colorGroupScores = [];
+        $colorGroupScores = ['color_points' => [], 'color_size' => []];
         $totalColorScore = 0;
         $groupsByColor = [];
 
@@ -64,8 +64,8 @@ class YXHScoringManager extends APP_DbObject
 
         foreach(CUBE_COLORS as $colorIndex => $color) {
             if(!isset($cubesByColor[$colorIndex])){
-                $colorGroupScores['color_points_'.$colorIndex] = 0;
-                $colorGroupScores['color_size_'.$colorIndex] = 0;
+                $colorGroupScores['color_points'][$colorIndex] = 0;
+                $colorGroupScores['color_size'][$colorIndex] = 0;
                 continue;
             }
 
@@ -74,8 +74,8 @@ class YXHScoringManager extends APP_DbObject
 
             $largestGroupSize = $colorGroups['largest_group_size'];
             $colorScore = $largestGroupSize >= count(LARGEST_GROUP_POINTS) ? LARGEST_GROUP_POINTS[count(LARGEST_GROUP_POINTS) - 1] : LARGEST_GROUP_POINTS[$largestGroupSize];
-            $colorGroupScores['color_points_'.$colorIndex] = $colorScore;
-            $colorGroupScores['color_size_'.$colorIndex] = $largestGroupSize;
+            $colorGroupScores['color_points'][$colorIndex] = $colorScore;
+            $colorGroupScores['color_size'][$colorIndex] = $largestGroupSize;
             $totalColorScore += $colorScore;
         }
 
