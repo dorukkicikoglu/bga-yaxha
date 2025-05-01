@@ -1,11 +1,13 @@
 class TooltipHandler{
 	constructor(private gameui: GameBody) { 
-        this.addTooltipToBonusCards();
+        this.addTooltipToBonusCards('market');
         this.addTooltipToTurnOrder();
 	}
 
-	public addTooltipToBonusCards(){
-        const bonusCardIcons = this.gameui.marketHandler.getBonusCardIconsContainer().querySelectorAll('.a-bonus-card-icon');
+	public addTooltipToBonusCards(where: 'market' | 'scoreSheet' ){
+        const container = where === 'market' ? this.gameui.marketHandler.getBonusCardIconsContainer() : document.querySelector('.end-game-score-container');
+        const bonusCardIcons = container.querySelectorAll('.a-bonus-card-icon');
+
         bonusCardIcons.forEach(cardIcon => {
             const cardIconID = cardIcon.getAttribute('id');
             const cardID = cardIcon.getAttribute('bonus-card-id');

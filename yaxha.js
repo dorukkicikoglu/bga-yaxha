@@ -129,6 +129,217 @@ var AnimationHandlerPromiseBased = /** @class */ (function () {
     };
     return AnimationHandlerPromiseBased;
 }());
+var EndGameScoringHandler = /** @class */ (function () {
+    function EndGameScoringHandler(gameui) {
+        this.gameui = gameui;
+        this.bodyClickHandler = null;
+    }
+    EndGameScoringHandler.prototype.displayEndGameScore = function (endGameScoring) {
+        return __awaiter(this, void 0, void 0, function () {
+            var anim;
+            var _this = this;
+            var _a, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        this.endGameScoring = endGameScoring;
+                        if (this.scoreContainer) {
+                            console.error('end-game-score-container already exists');
+                            return [2 /*return*/];
+                        }
+                        this.endGameScoring.player_scores = endGameScoring.player_scores;
+                        this.winner_ids = endGameScoring.winner_ids;
+                        (_a = document.getElementById('end-game-score-container')) === null || _a === void 0 ? void 0 : _a.remove();
+                        this.scoreContainer = document.createElement('div');
+                        this.scoreContainer.classList.add('end-game-score-container');
+                        this.scoreContainer.style.opacity = '0';
+                        this.scoreContainer.innerHTML = "\n            <div class=\"show-table-button\" style=\"display: none;\">\n                <i class=\"fa6 fa6-ranking-star\"></i>\n            </div> \n            <div class=\"maximized-content\"> \n                <i class=\"fa6 fa6-minimize close-table-button\"></i>\n                <table>\n                    <thead></thead>\n                    <tbody></tbody>\n                </table>\n                <div class=\"fast-forward-text\"></div> \n            </div>\n        ";
+                        (_b = document.getElementById('game_play_area_wrap')) === null || _b === void 0 ? void 0 : _b.appendChild(this.scoreContainer);
+                        this.table = this.scoreContainer.querySelector('table');
+                        this.thead = this.scoreContainer.querySelector('thead');
+                        this.tbody = this.scoreContainer.querySelector('tbody');
+                        this.showButton = this.scoreContainer.querySelector('.show-table-button');
+                        this.hideButton = this.scoreContainer.querySelector('.close-table-button');
+                        this.fastForwardButton = this.scoreContainer.querySelector('.fast-forward-text');
+                        this.fillTable();
+                        this.bindShowHideButtons();
+                        this.fastForwardButton.innerHTML = '* ' + _(this.gameui.clickOrTap(true) + ' anywhere to fast forward');
+                        anim = this.gameui.animationHandler.animateProperty({
+                            node: this.scoreContainer,
+                            properties: { opacity: 1 },
+                            duration: 1000,
+                            delay: 100,
+                            onEnd: function () { return __awaiter(_this, void 0, void 0, function () {
+                                return __generator(this, function (_a) {
+                                    this.scoreContainer.style.opacity = null;
+                                    this.bindBodyScroll();
+                                    return [2 /*return*/];
+                                });
+                            }); }
+                        });
+                        return [4 /*yield*/, anim.start()];
+                    case 1:
+                        _c.sent();
+                        return [4 /*yield*/, this.fadeInNextCell()];
+                    case 2:
+                        _c.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    EndGameScoringHandler.prototype.fillTable = function () {
+        // Create header row with player names
+        var headerRow = document.createElement('tr');
+        headerRow.innerHTML = '<th class="corner-no-border-cell"></th>'; // Empty corner cell
+        // Add player name columns
+        for (var _i = 0, _a = this.gameui.playerSeatOrder; _i < _a.length; _i++) {
+            var player_id = _a[_i];
+            var playerNameDiv = this.gameui.divColoredPlayer(player_id, {}, false);
+            headerRow.innerHTML += "<th class=\"player-name-cell\" player-id=\"".concat(player_id, "\">").concat(playerNameDiv, "</th>");
+        }
+        this.thead.appendChild(headerRow);
+        // Create rows for each score type
+        var scoreTypes = [];
+        for (var colorIndex in this.gameui.CUBE_COLORS)
+            scoreTypes.push({ index: colorIndex, type: 'color' });
+        var firstPlayerScore = this.endGameScoring.player_scores[Object.keys(this.endGameScoring.player_scores)[0]];
+        for (var bonusCardID in firstPlayerScore.bonus_card_points)
+            scoreTypes.push({ index: bonusCardID, type: 'bonus' });
+        scoreTypes.push({ index: 0, type: 'total' });
+        // Add score rows
+        for (var i = 0; i < scoreTypes.length; i++) {
+            var row = document.createElement('tr');
+            var scoreType = scoreTypes[i];
+            var scoreTypeIconHTML = void 0;
+            if (scoreType.type === 'color')
+                scoreTypeIconHTML = this.gameui.createCubeDiv({ color: scoreType.index, cube_id: 'score-sheet-cube' }).outerHTML;
+            else if (scoreType.type === 'bonus')
+                scoreTypeIconHTML = "<div class=\"a-bonus-card-icon-wrapper\"><div class=\"a-bonus-card-icon\" bonus-card-id=\"".concat(scoreType.index, "\" id=\"score-sheet-bonus-card-").concat(scoreType.index, "\"></div></div>");
+            else
+                scoreTypeIconHTML = "<i class=\"fa fa-star total-icon\"></i>";
+            row.innerHTML = "<td class=\"score-type-icon-cell\"><div class=\"score-type-icon ".concat(scoreType.type, "-").concat(scoreType.index, "\">").concat(scoreTypeIconHTML, "</div></td>");
+            for (var _b = 0, _c = this.gameui.playerSeatOrder; _b < _c.length; _b++) {
+                var player_id = _c[_b];
+                var playerScore = this.endGameScoring.player_scores[player_id];
+                var cellScore = scoreTypes[i].type === 'color' ?
+                    playerScore.color_points[scoreType.index] :
+                    (scoreTypes[i].type === 'bonus' ? playerScore.bonus_card_points[scoreType.index] : playerScore.total);
+                row.innerHTML += "<td><div class=\"cell-text\" style=\"opacity: 0;\" row-index=\"".concat(i, "\" player-id=\"").concat(player_id, "\">").concat(cellScore, "</div></td>");
+            }
+            this.tbody.appendChild(row);
+        }
+        this.gameui.tooltipHandler.addTooltipToBonusCards('scoreSheet');
+    };
+    EndGameScoringHandler.prototype.bindShowHideButtons = function () {
+        var _this = this;
+        this.hideButton.addEventListener('click', function () {
+            _this.hideButton.style.display = 'none';
+            _this.scoreContainer.querySelectorAll('.maximized-content').forEach(function (node) { node.style.display = 'none'; });
+            _this.showButton.style.display = null;
+        });
+        this.showButton.addEventListener('click', function () {
+            _this.hideButton.style.display = null;
+            _this.scoreContainer.querySelectorAll('.maximized-content').forEach(function (node) { node.style.display = null; });
+            _this.showButton.style.display = 'none';
+        });
+    };
+    EndGameScoringHandler.prototype.bindBodyScroll = function () {
+        var _this = this;
+        var fadeInTimeout = null;
+        var scrollFadeAnim = false;
+        var ANIM_STATE = { still: 1, fadingIn: 2, fadingOut: 3 };
+        var animStatus = ANIM_STATE.still;
+        // Bind scroll event listener to the body
+        window.addEventListener('scroll', function () {
+            clearTimeout(fadeInTimeout);
+            fadeInTimeout = setTimeout(function () {
+                if (scrollFadeAnim)
+                    scrollFadeAnim.stop();
+                animStatus = ANIM_STATE.fadingIn;
+                scrollFadeAnim = _this.gameui.animationHandler.animateProperty({
+                    node: _this.scoreContainer,
+                    duration: 300,
+                    properties: { opacity: 1 },
+                    onEnd: function () { animStatus = ANIM_STATE.still; }
+                });
+                scrollFadeAnim.start();
+            }, 100); // Adjust delay as needed
+            if (animStatus === ANIM_STATE.fadingOut)
+                return;
+            if (animStatus === ANIM_STATE.fadingIn && scrollFadeAnim)
+                scrollFadeAnim.stop();
+            animStatus = ANIM_STATE.fadingOut;
+            scrollFadeAnim = _this.gameui.animationHandler.animateProperty({
+                node: _this.scoreContainer,
+                duration: 300,
+                properties: { opacity: 0.3 },
+                onEnd: function () { animStatus = ANIM_STATE.still; }
+            });
+            scrollFadeAnim.start();
+        });
+    };
+    EndGameScoringHandler.prototype.fadeInNextCell = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var cells, overallContent, allCells, cell, fadeInAnim;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        cells = Array.from(this.tbody.querySelectorAll('.cell-text:not(.displayed)'));
+                        overallContent = document.getElementById('overall-content');
+                        overallContent.removeEventListener('click', this.bodyClickHandler);
+                        if (cells.length <= Object.keys(this.gameui.players).length * 2)
+                            this.gameui.animationHandler.animateProperty({ node: this.fastForwardButton, duration: 400, properties: { opacity: 0 } }).start();
+                        if (cells.length <= 0) {
+                            allCells = Array.from(this.tbody.querySelectorAll('.cell-text'));
+                            allCells.forEach(function (cell) { cell.style.opacity = ''; });
+                            this.makeWinnersJump();
+                            this.setPlayerScores();
+                            return [2 /*return*/];
+                        }
+                        cell = cells[0];
+                        cell.classList.add('displayed');
+                        fadeInAnim = this.gameui.animationHandler.animateProperty({
+                            properties: { opacity: 1 },
+                            node: cell,
+                            duration: 500,
+                            delay: 100,
+                        });
+                        this.bodyClickHandler = function (event) { return __awaiter(_this, void 0, void 0, function () {
+                            return __generator(this, function (_a) {
+                                cell.style.opacity = '1 !important';
+                                fadeInAnim.onEnd();
+                                return [2 /*return*/];
+                            });
+                        }); };
+                        overallContent.addEventListener('click', this.bodyClickHandler);
+                        return [4 /*yield*/, fadeInAnim.start()];
+                    case 1:
+                        _a.sent();
+                        return [4 /*yield*/, this.fadeInNextCell()];
+                    case 2:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    EndGameScoringHandler.prototype.makeWinnersJump = function () {
+        for (var _i = 0, _a = this.winner_ids; _i < _a.length; _i++) {
+            var winner_id = _a[_i];
+            this.thead.querySelector(".player-name-cell[player-id=\"".concat(winner_id, "\"]")).classList.add('jumping-text');
+        }
+    };
+    EndGameScoringHandler.prototype.setPlayerScores = function () {
+        for (var _i = 0, _a = this.gameui.playerSeatOrder; _i < _a.length; _i++) {
+            var player_id = _a[_i];
+            this.gameui.players[player_id].setPlayerScore(this.endGameScoring.player_scores[player_id].total);
+        }
+    };
+    return EndGameScoringHandler;
+}());
+//ekmek tipini guzellestir
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
@@ -201,20 +412,28 @@ var GameBody = /** @class */ (function (_super) {
         this.marketHandler = new MarketHandler(this, gamedatas.marketData, gamedatas.bonusCardIDs, gamedatas.collectedMarketTilesData);
         this.tooltipHandler = new TooltipHandler(this);
         this.logMutationObserver = new LogMutationObserver(this);
+        this.endGameScoringHandler = new EndGameScoringHandler(this);
+        if (gamedatas.hasOwnProperty('endGameScoring'))
+            this.endGameScoringHandler.displayEndGameScore(gamedatas.endGameScoring);
         // Setup game notifications to handle (see "setupNotifications" method below)
         this.setupNotifications();
         console.log("Ending game setup");
     };
     GameBody.prototype.onEnteringState = function (stateName, args) {
-        console.log('Entering state: ' + stateName, args);
-        switch (stateName) {
-            case 'allSelectMarketTile':
-                if (args.args._private.selected_market_index === null)
-                    this.marketHandler.addSelectableClassToMarketTiles('all');
-                else
-                    this.marketHandler.addSelectableClassToMarketTiles('none');
-                break;
-        }
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                console.log('Entering state: ' + stateName, args);
+                switch (stateName) {
+                    case 'allSelectMarketTile':
+                        if (args.args._private.selected_market_index === null)
+                            this.marketHandler.addSelectableClassToMarketTiles('all');
+                        else
+                            this.marketHandler.addSelectableClassToMarketTiles('none');
+                        break;
+                }
+                return [2 /*return*/];
+            });
+        });
     };
     GameBody.prototype.onLeavingState = function (stateName) {
         console.log('Leaving state: ' + stateName);
@@ -330,7 +549,15 @@ var GameBody = /** @class */ (function (_super) {
     };
     GameBody.prototype.isDesktop = function () { return document.body.classList.contains('desktop_version'); };
     GameBody.prototype.isMobile = function () { return document.body.classList.contains('mobile_version'); };
-    GameBody.prototype.updateStatusText = function (statusText) { $('gameaction_status').innerHTML = statusText; $('pagemaintitletext').innerHTML = statusText; };
+    GameBody.prototype.clickOrTap = function (capitalized) {
+        if (capitalized === void 0) { capitalized = false; }
+        if (capitalized) {
+            return this.capitalizeFirstLetter(this.clickOrTap());
+        }
+        return this.isDesktop() ? 'click' : 'tap';
+    };
+    GameBody.prototype.capitalizeFirstLetter = function (str) { return "".concat(str[0].toUpperCase()).concat(str.slice(1)); };
+    GameBody.prototype.updateStatusText = function (statusText) { $('gameaction_status').innerHTML = statusText; $('pagemaintitletext').innerHTML = statusText; }; //ekmek sil?
     GameBody.prototype.ajaxAction = function (action, args, lock, checkAction) {
         if (args === void 0) { args = {}; }
         if (lock === void 0) { lock = true; }
@@ -442,7 +669,6 @@ var GameBody = /** @class */ (function (_super) {
         cubeDiv.style.setProperty('--side-bg-y', (Math.random() * 100) + '%');
         cubeDiv.style.setProperty('--bottom-bg-x', (Math.random() * 100) + '%');
         cubeDiv.style.setProperty('--bottom-bg-y', (Math.random() * 100) + '%');
-        // cubeDiv.style.setProperty('--cube-color', '#' + this.CUBE_COLORS[Number(cube.color)].colorCode); //ekmek sil
         return cubeDiv;
     };
     //notification functions
@@ -561,9 +787,14 @@ var GameBody = /** @class */ (function (_super) {
     GameBody.prototype.notif_displayEndGameScore = function (args) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                console.log('notif_displayEndGameScore');
-                console.log('PUANLAR', args.endGameScoring);
-                return [2 /*return*/];
+                switch (_a.label) {
+                    case 0:
+                        console.log('notif_displayEndGameScore');
+                        return [4 /*yield*/, this.endGameScoringHandler.displayEndGameScore(args.endGameScoring)];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
             });
         });
     };
@@ -1007,7 +1238,8 @@ var MarketHandler = /** @class */ (function () {
                             if (this_2.gameui.myself && this_2.gameui.myself.playerID == Number(playerID))
                                 return "continue";
                             var player = this_2.gameui.players[playerID];
-                            var playerCubesAnimation = player.pyramid.animatePlayerCubesToPyramid(built_cubes[playerID]);
+                            var playerCubes = built_cubes[playerID].sort(function (a, b) { return a.pos_z - b.pos_z; });
+                            var playerCubesAnimation = player.pyramid.animatePlayerCubesToPyramid(playerCubes);
                             playerCubesAnimation = playerCubesAnimation.addDelay(delay);
                             delay += 400;
                             cubeAnimArray.push(playerCubesAnimation);
@@ -1251,6 +1483,7 @@ var PlayerHandler = /** @class */ (function () {
             return null;
         }
     };
+    PlayerHandler.prototype.setPlayerScore = function (newScore) { this.overallPlayerBoard.querySelector('.player_score_value').innerHTML = newScore.toString(); };
     PlayerHandler.prototype.getPlayerName = function () { return this.playerName; };
     PlayerHandler.prototype.getTurnOrder = function () { return this.turnOrder; };
     PlayerHandler.prototype.getCollectedMarketTileData = function () {
@@ -1589,6 +1822,7 @@ var PyramidHandler = /** @class */ (function () {
             cube.style.top = cubeStyle.top;
             cube.style.left = cubeStyle.left;
         });
+        var delay = 0;
         var _loop_3 = function (move) {
             var marketCubeDiv = marketTile.querySelector(".a-cube[cube-id=\"".concat(move.cube_id, "\"]"));
             if (!marketCubeDiv)
@@ -1617,13 +1851,14 @@ var PyramidHandler = /** @class */ (function () {
                 goTo: pyramidCubeDiv,
                 duration: animSpeed + Math.floor(Math.random() * 101) - 50,
                 easing: 'circleOut',
-                delay: Math.floor(Math.random() * 51),
+                delay: delay + Math.floor(Math.random() * 100),
                 onEnd: function () {
                     marketCubeDiv.remove();
                     pyramidCubeDiv.style.opacity = '1';
                 }
             });
             cubeAnimArray.push(builtCubeAnim);
+            delay += 50;
         };
         var this_3 = this;
         for (var _i = 0, cubeMoves_1 = cubeMoves; _i < cubeMoves_1.length; _i++) {
@@ -1845,12 +2080,13 @@ var PyramidHandler = /** @class */ (function () {
 var TooltipHandler = /** @class */ (function () {
     function TooltipHandler(gameui) {
         this.gameui = gameui;
-        this.addTooltipToBonusCards();
+        this.addTooltipToBonusCards('market');
         this.addTooltipToTurnOrder();
     }
-    TooltipHandler.prototype.addTooltipToBonusCards = function () {
+    TooltipHandler.prototype.addTooltipToBonusCards = function (where) {
         var _this = this;
-        var bonusCardIcons = this.gameui.marketHandler.getBonusCardIconsContainer().querySelectorAll('.a-bonus-card-icon');
+        var container = where === 'market' ? this.gameui.marketHandler.getBonusCardIconsContainer() : document.querySelector('.end-game-score-container');
+        var bonusCardIcons = container.querySelectorAll('.a-bonus-card-icon');
         bonusCardIcons.forEach(function (cardIcon) {
             var cardIconID = cardIcon.getAttribute('id');
             var cardID = cardIcon.getAttribute('bonus-card-id');

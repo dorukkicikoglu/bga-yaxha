@@ -391,22 +391,11 @@ $this->globalsManager->set('rounds_remaining', 0); //ekmek sil
     public function stEndGameScoring(): void {
         $endGameScoring = $this->scoringManager->getEndGameScoring(); 
         
-        // self::setStat($this->getWinningBidsStandardDeviation(), "winning_bids_std_dev");
-
-        // foreach($endGameScoring['player_scores'] as $player_id => $playerScoreData){
-        //     $playerTotal = $playerScoreData['total'];
-        //     $playerMoney = $playerScoreData['money'];
-
-        //     self::DbQuery("UPDATE player SET player_score = $playerTotal, player_score_aux = $playerMoney WHERE player_id = $player_id");
-
-        //     self::setStat($playerScoreData['score_beach'], "score_beach", $player_id);
-        //     self::setStat($playerScoreData['score_themepark'], "score_themepark", $player_id);
-        //     self::setStat($playerScoreData['score_house_garden'], "score_house_garden", $player_id);
-        //     self::setStat($playerScoreData['statue_scores']['r'], "score_statue_r", $player_id);
-        //     self::setStat($playerScoreData['statue_scores']['g'], "score_statue_g", $player_id);
-        //     self::setStat($playerScoreData['statue_scores']['b'], "score_statue_b", $player_id);
-        // }
-
+        foreach($endGameScoring['player_scores'] as $player_id => $playerScoreData){
+            $playerTotal = $playerScoreData['total'];
+            self::DbQuery("UPDATE player SET player_score = $playerTotal WHERE player_id = $player_id");
+        }
+        
         self::notifyAllPlayers('displayEndGameScore', '', array(
             'endGameScoring' => $endGameScoring
         ));
@@ -478,6 +467,9 @@ $this->globalsManager->set('rounds_remaining', 0); //ekmek sil
         $result['collectedMarketTilesData'] = $this->marketManager->getCollectedMarketTiles();
 
         $result['nextPlayerTable'] = $this->getNextPlayerTable();
+
+        if($this->gamestate->state()['name'] == 'gameEnd')
+            $result['endGameScoring'] = $this->scoringManager->getEndGameScoring();
 
         return $result;
     }

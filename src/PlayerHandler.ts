@@ -52,6 +52,8 @@ class PlayerHandler{
 		}
     }
 
+	public setPlayerScore(newScore: number):void { this.overallPlayerBoard.querySelector('.player_score_value').innerHTML = newScore.toString(); }
+
 	public getPlayerName(): string{ return this.playerName; }
 	public getTurnOrder(): number{ return this.turnOrder; }
 
