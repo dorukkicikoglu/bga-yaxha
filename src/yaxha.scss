@@ -30,12 +30,11 @@
     .right-side{ z-index: 0; position: absolute; width: 100%; height: 136%; filter: brightness(0.85); clip-path: polygon(86% 20%, 59.8% -2%, 59% 74%, 86% 93.3%); top: 0%; left: 39.1%; background-position: var(--side-bg-x) var(--side-bg-y); background-image: url('img/wood_texture_overlay.png'), linear-gradient(rgba(255,255,255,0.2), rgba(255,255,255,0.1)); } //side face
     .bottom-side{ z-index: 1; position: absolute; width: 139%; height: 71%; filter: brightness(0.9); clip-path: polygon(18.6% 39%, 90% 39%, 71% 0%, -2% 0%); top: 98.6%; left: 0%; background-position: var(--bottom-bg-x) var(--bottom-bg-y); background-image: url('img/wood_texture_overlay.png'), linear-gradient(rgba(255,255,255,0.2), rgba(255,255,255,0.1)); } //bottom face
     .cube-background { z-index: 0; width: 102%; height: 102%; top: 5%; left: 0%; transform: scale(1.32); transform-origin: 11% 23%; position: absolute; background-size: contain, 300% 100%; background-repeat: no-repeat, no-repeat; background-image: url(img/cube_background.png), linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%); background-position: center, -100% 0; filter: blur(1px); }
-    &.selected-for-pyramid { opacity: 0.6; 
+    &[built-status]{ transition: opacity 0.2s ease; 
         .cube-background { display: none; }
     }
-    &.built-in-pyramid { opacity: 0.0; transition: opacity 0.2s ease; 
-        .cube-background { display: none; }
-    }    
+    &[built-status="selected-cube"] { opacity: 0.6; }
+    &[built-status="built-cube"], &[built-status="discarded-cube"] { opacity: 0; }
 }
 
 .market-container{ position: relative; display: flex; justify-content: center; align-items: flex-start; width: 100%; margin-top: 10px;
@@ -59,8 +58,7 @@
         }
     }
 
-    // ekmek pointer-events: none; ekle
-    .waiting-players-container{ position: absolute; bottom: -18px; background-color: rgba(0, 0, 0, 0.5); transform: translateX(-50%); left: 50%; opacity: 0; transition: opacity 0.2s ease;
+    .waiting-players-container{ position: absolute; pointer-events: none; bottom: -18px; background-color: rgba(0, 0, 0, 0.5); transform: translateX(-50%); left: 50%; opacity: 0; transition: opacity 0.2s ease;
         .pending-player-avatar{ display: inline-block; width: var(--gamearea-avatar-size); height: var(--gamearea-avatar-size); margin: 10px; margin-left: calc(var(--gamearea-avatar-size) * 0.5 + 10px); margin-right: calc(var(--gamearea-avatar-size) * -0.5 + 10px); }
     }
 
@@ -112,8 +110,7 @@
                 &:hover .a-cube { animation: shine-cube 1.6s ease-in-out; }
                 .a-cube, .pyramid-cube-snap-point, .switch-color-button{ position: absolute; width: var(--pyramid-cube-width, 0px); height: var(--pyramid-cube-width, 0px); max-width: var(--pyramid-cube-width, 0px); max-height: var(--pyramid-cube-width, 0px); transform: translate(-50%, -50%);}
                 .pyramid-cube-snap-point{ z-index: 0; opacity: 0; background-color: rgba(0, 0, 0, 0.24); outline: 1px solid; outline-color: rgba(var(--player-color-hex), 0.5); outline-offset: -1px; }
-                .a-cube{ z-index: 1;
-                    // pointer-events: none; //ekmek uncomment
+                .a-cube{ z-index: 1; /* pointer-events: none; ekmek uncomment */
                     .cube-background{ top: 18%; left: 14%; width: 92%; height: 92%; }
                     &.animating-cube{ z-index: 100 !important; }
                     .top-side{ box-shadow: 0px 0px 3px #000000; }
@@ -137,8 +134,7 @@
     &[turn-order="4"] { background-position-x: 100%; } 
 }
 
-// ekmek pointer-events: none; ekle
-.yaxha-player-avatar{ border-radius: 100%; outline: 3px solid var(--player-color); transform: translateX(-50%); 
+.yaxha-player-avatar{ pointer-events: none; border-radius: 100%; outline: 3px solid var(--player-color); transform: translateX(-50%); 
     img{ border-radius: 100%; }
 }
  

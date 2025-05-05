@@ -796,18 +796,17 @@
   background-position: center, -100% 0;
   filter: blur(1px);
 }
-.a-cube.selected-for-pyramid {
-  opacity: 0.6;
-}
-.a-cube.selected-for-pyramid .cube-background {
-  display: none;
-}
-.a-cube.built-in-pyramid {
-  opacity: 0;
+.a-cube[built-status] {
   transition: opacity 0.2s ease;
 }
-.a-cube.built-in-pyramid .cube-background {
+.a-cube[built-status] .cube-background {
   display: none;
+}
+.a-cube[built-status=selected-cube] {
+  opacity: 0.6;
+}
+.a-cube[built-status=built-cube], .a-cube[built-status=discarded-cube] {
+  opacity: 0;
 }
 
 .market-container {
@@ -877,6 +876,7 @@
 }
 .market-container .waiting-players-container {
   position: absolute;
+  pointer-events: none;
   bottom: -18px;
   background-color: rgba(0, 0, 0, 0.5);
   transform: translateX(-50%);
@@ -1152,7 +1152,7 @@
   outline-offset: -1px;
 }
 #player-tables .pyramids-container .a-pyramid-container .cubes-container .a-cube {
-  z-index: 1;
+  z-index: 1; /* pointer-events: none; ekmek uncomment */
 }
 #player-tables .pyramids-container .a-pyramid-container .cubes-container .a-cube .cube-background {
   top: 18%;
@@ -1208,6 +1208,7 @@
 }
 
 .yaxha-player-avatar {
+  pointer-events: none;
   border-radius: 100%;
   outline: 3px solid var(--player-color);
   transform: translateX(-50%);

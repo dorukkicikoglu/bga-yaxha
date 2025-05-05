@@ -17,22 +17,22 @@ class YXHScoringManager extends APP_DbObject
         $players = $this->parent->loadPlayersBasicInfos();
         $pyramidDataByPlayerId = [];
         
-        foreach($players as $player_id => $player) {
-            $playerPyramidData = $this->parent->pyramidManager->getPlayerPyramidData($player_id);
+        foreach($players as $playerID => $player) {
+            $playerPyramidData = $this->parent->pyramidManager->getPlayerPyramidData($playerID);
             $visibleCubes = $this->getVisibleCubes($playerPyramidData);
-            $pyramidDataByPlayerId[$player_id] = $visibleCubes;
-            $scores[$player_id] = $this->getColorGroupScores($visibleCubes);
+            $pyramidDataByPlayerId[$playerID] = $visibleCubes;
+            $scores[$playerID] = $this->getColorGroupScores($visibleCubes);
         }
 
         $scores = $this->bonusCardsManager->addBonusCardScores($scores, $pyramidDataByPlayerId);
 
-        foreach($scores as $player_id => $playerScore){ //prune data to send to client
-            $scores[$player_id]['player_id'] = $player_id;
-            $scores[$player_id]['total'] = $playerScore['color_total'] + $playerScore['bonus_card_total'];
-            unset($scores[$player_id]['color_total']);
-            unset($scores[$player_id]['bonus_card_total']);
-            unset($scores[$player_id]['groups_by_color']);
-            unset($scores[$player_id]['color_size']);
+        foreach($scores as $playerID => $playerScore){ //prune data to send to client
+            $scores[$playerID]['player_id'] = $playerID;
+            $scores[$playerID]['total'] = $playerScore['color_total'] + $playerScore['bonus_card_total'];
+            unset($scores[$playerID]['color_total']);
+            unset($scores[$playerID]['bonus_card_total']);
+            unset($scores[$playerID]['groups_by_color']);
+            unset($scores[$playerID]['color_size']);
         }
         $winnerIDs = [];
         $maxScore = 0;

@@ -10,8 +10,8 @@ class YXHBonusCardsManager extends APP_DbObject
     }
 
     public function addBonusCardScores(array $scores, array $pyramidDataByPlayerId): array {
-        foreach($scores as $player_id => $playerScore)
-            $scores[$player_id]['bonus_card_points'] = [];
+        foreach($scores as $playerID => $playerScore)
+            $scores[$playerID]['bonus_card_points'] = [];
 
         $bonusCardIDs = $this->getObjectListFromDB("SELECT bonus_card_id FROM bonus_cards", true);
         
@@ -58,8 +58,8 @@ class YXHBonusCardsManager extends APP_DbObject
 
         }
 
-        foreach($scores as $player_id => $playerScore)
-            $scores[$player_id]['bonus_card_total'] = array_sum($scores[$player_id]['bonus_card_points']);
+        foreach($scores as $playerID => $playerScore)
+            $scores[$playerID]['bonus_card_total'] = array_sum($scores[$playerID]['bonus_card_points']);
 
         return $scores;
     }
@@ -196,7 +196,6 @@ class YXHBonusCardsManager extends APP_DbObject
 
     private function getCardBonusForGroupWithMostLevels(array $scores): array {
         $bonusCardID = BONUS_CARD_GROUP_WITH_MOST_LEVELS;
-        $this->parent->message('getCardBonusForGroupWithMostLevels scores', $scores);
 
         $maxLevels = 0;
         $highestPlayerIDs = [];
