@@ -118,7 +118,7 @@ $machinestates = [
         "description" => clienttranslate('Waiting for other players to build their Pyramids'),
         "descriptionmyturn" => clienttranslate('${you} must place your cubes in your Pyramid'),
         "type" => "multipleactiveplayer",
-        "args" => "argBuildPyramid",
+        // "args" => "argBuildPyramid", //ekmek sil
         "action" => "stBuildPyramid",
         "possibleactions" => ["actBuildPyramid"],
         "transitions" => array( "allPyramidsBuilt" => STATE_ALL_PYRAMIDS_BUILT)

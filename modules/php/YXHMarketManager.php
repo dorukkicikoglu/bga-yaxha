@@ -24,7 +24,7 @@ class YXHMarketManager extends APP_DbObject
     public function getMarketData(): array
     {
         $marketCubes = [];
-        $uncollectedMarketCubes = $this->getCollectionFromDb("SELECT card_id as cube_id, card_location as location, card_location_arg as market_index, color FROM cubes WHERE card_location = 'market'");
+        $uncollectedMarketCubes = $this->getCollectionFromDb("SELECT card_id as cube_id, card_location as location, card_location_arg as market_index, color FROM cubes WHERE card_location IN ('market', 'to_discard')");
 
         foreach ($uncollectedMarketCubes as $cube) {
             $marketCubes[$cube['market_index']][] = $cube;

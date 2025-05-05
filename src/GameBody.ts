@@ -433,6 +433,7 @@ interface BaseCube {
 
 interface MarketCube extends BaseCube {
     market_index: string;
+    location: 'market' | 'pyramid' | 'to_discard';
 }
 
 interface PyramidCube extends BaseCube {
@@ -480,6 +481,13 @@ interface ContentsRectangle {
     maxY: number;
     width: number;
     height: number;
+}
+
+interface PossibleMove {
+    pos_x: number;
+    pos_y: number;
+    pos_z: number;
+    possible_colors: string[];
 }
 
 interface PlayerScore {

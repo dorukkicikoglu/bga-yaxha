@@ -55,11 +55,12 @@ class EndGameScoringHandler{
 
         this.fastForwardButton.innerHTML = '* ' + _(this.gameui.clickOrTap(true) + ' anywhere to fast forward');
 
+        const instantFadeIn = this.gameui.gamedatas.gamestate.name === 'gameEnd';
         const anim = this.gameui.animationHandler.animateProperty({
             node: this.scoreContainer,
             properties: { opacity: 1 },
-            duration: 1000,
-            delay: 100,
+            duration: instantFadeIn ? 0 : 1000,
+            delay: instantFadeIn ? 0 : 100,
             onEnd: async () => {
                 this.scoreContainer.style.opacity = null;
                 this.bindBodyScroll();
@@ -160,8 +161,8 @@ class EndGameScoringHandler{
                 });
 
                 scrollFadeAnim.start();
-            }, 100); // Adjust delay as needed
-
+            }, 100);
+            
             if(animStatus === ANIM_STATE.fadingOut)
                 return;
 
@@ -198,12 +199,13 @@ class EndGameScoringHandler{
         }
 
         let cell: HTMLDivElement = cells[0];
+        const instantFadeIn = this.gameui.gamedatas.gamestate.name === 'gameEnd';
         cell.classList.add('displayed');
         const fadeInAnim = this.gameui.animationHandler.animateProperty({
             properties: {opacity: 1},
             node: cell, 
-            duration: 500,
-            delay: 100,
+            duration: instantFadeIn ? 0 : 500,
+            delay: instantFadeIn ? 0 : 100,
         });
 
         this.bodyClickHandler = async (event: MouseEvent) => {
@@ -228,4 +230,4 @@ class EndGameScoringHandler{
     }
 }
 
-//ekmek tipini guzellestir
+//ekmek skor tipini guzellestir

@@ -31,7 +31,7 @@ CREATE TABLE `cubes` (
   `card_id` int(10) UNSIGNED NOT NULL,
   `card_type` varchar(16) NOT NULL,
   `card_type_arg` int(11) NOT NULL,
-  `card_location` enum('bag','market','in_construction','pyramid') NOT NULL,
+  `card_location` enum('bag', 'market', 'pyramid', 'to_discard', 'discarded') NOT NULL,
   `card_location_arg` int(11) NOT NULL,
   `color` tinyint(4) NOT NULL,
   `pos_x` tinyint(4) DEFAULT NULL,

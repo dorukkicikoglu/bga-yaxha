@@ -66,10 +66,17 @@ class MarketHandler{
                     const unplacedCube = this.gameui.myself.pyramid.getUnplacedCube();
                     const cubesInConstruction = this.gameui.myself.pyramid.getCubesInConstruction();
 
+                    // if (cube.cube_id === unplacedCube?.cube_id) //ekmek borek sil
+                    //     cubeDiv.classList.add('selected-for-pyramid');
+                    // else if (parseInt(cube.cube_id) in cubesInConstruction)
+                    //     cubeDiv.classList.add('built-in-pyramid');
+
                     if (cube.cube_id === unplacedCube?.cube_id)
-                        cubeDiv.classList.add('selected-for-pyramid');
+                        cubeDiv.setAttribute('built-status', 'selected-cube');
                     else if (parseInt(cube.cube_id) in cubesInConstruction)
-                        cubeDiv.classList.add('built-in-pyramid');
+                        cubeDiv.setAttribute('built-status', 'built-cube');
+                    else if (cube.location == 'to_discard')
+                        cubeDiv.setAttribute('built-status', 'discarded-cube');
                 }
 
                 cubesContainer.appendChild(cubeDiv);

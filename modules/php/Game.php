@@ -231,26 +231,9 @@ class Game extends \Table
         $possibleMarketIndexes = array_diff(range(0, $tileCount - 1), $this->getObjectListFromDB("SELECT collected_market_index FROM player WHERE collected_market_index IS NOT NULL", true));
         $possibleMarketIndexes = array_values($possibleMarketIndexes);
 
-        $possibleMoves = $this->pyramidManager->getPossibleMoves();
-        $privateData = [];
-        foreach($possibleMoves as $playerID => $moves)
-            $privateData[$playerID]['possible_moves'] = $moves;
-
         return [
             'possible_market_indexes' => $possibleMarketIndexes,
-            'collectedMarketTilesData' => $this->marketManager->getCollectedMarketTiles(),
-            '_private' => $privateData //ekmek possible moves client'a tasininca sil
-        ];
-    }
-
-    public function argBuildPyramid(): array{
-        $possibleMoves = $this->pyramidManager->getPossibleMoves();
-        $privateData = [];
-        foreach($possibleMoves as $playerID => $moves)
-            $privateData[$playerID]['possible_moves'] = $moves;
-
-        return [
-            '_private' => $privateData //ekmek possible moves client'a tasininca sil
+            'collectedMarketTilesData' => $this->marketManager->getCollectedMarketTiles()
         ];
     }
 
@@ -302,7 +285,7 @@ class Game extends \Table
 
                 $collectedIndexes = self::getObjectListFromDB("SELECT collected_market_index FROM player WHERE collected_market_index IS NOT NULL", true);
                 foreach($collectedIndexes as $collectedIndex)
-                    unset($possibleMarketIndexes[(int)$collectedIndex]);
+                    unset($possibleMarketIndexes[(int) $collectedIndex]);
 
                 if(count($possibleMarketIndexes) != 1)
                     throw new \BgaUserException(clienttranslate('Error: Multiple market tiles are still available but only one player remains'));
@@ -333,6 +316,8 @@ class Game extends \Table
     }
 
     public function stAllPyramidsBuilt(): void{
+        self::DbQuery("UPDATE cubes SET card_location = 'discarded' WHERE card_location = 'to_discard'");
+
         $builtCubes = self::getObjectListFromDB("SELECT card_location_arg as owner_id, card_id as cube_id, color, pos_x, pos_y, pos_z FROM cubes WHERE order_in_construction IS NOT NULL ORDER BY order_in_construction ASC");
         
         $builtCubesByPlayer = array();
@@ -367,16 +352,7 @@ class Game extends \Table
             'DISPLAY_BUILT_CUBES_STR' => $builtCubesDataStr
         ]);
 
-
-        // $this->parent->notify->all('animateAllMarketTileSelections', '${REVEALED_MARKET_TILES_DATA_STR}', array( //ekmek sil lahmacun
-        //     'LOG_CLASS' => 'all-selected-tiles-log',
-        //     'preserve' => ['LOG_CLASS', 'collectedMarketTilesData'],
-        //     'collectedMarketTilesData' => ['collectingPlayers' => $collectingPlayers, 'pendingPlayers' => $pendingPlayers],
-        //     'REVEALED_MARKET_TILES_DATA_STR' => $marketTilesDataStr
-        // ));
-
-$this->globalsManager->set('rounds_remaining', 0); //ekmek sil
-        if((int)$this->globalsManager->get('rounds_remaining') == 0)
+        if((int) $this->globalsManager->get('rounds_remaining') == 0)
             $this->gamestate->nextState('endGameScoring');
         else { 
             $this->gamestate->nextState('newCubesDrawn');
@@ -391,17 +367,16 @@ $this->globalsManager->set('rounds_remaining', 0); //ekmek sil
     public function stEndGameScoring(): void {
         $endGameScoring = $this->scoringManager->getEndGameScoring(); 
         
-        foreach($endGameScoring['player_scores'] as $player_id => $playerScoreData){
+        foreach($endGameScoring['player_scores'] as $playerID => $playerScoreData){
             $playerTotal = $playerScoreData['total'];
-            self::DbQuery("UPDATE player SET player_score = $playerTotal WHERE player_id = $player_id");
+            self::DbQuery("UPDATE player SET player_score = $playerTotal WHERE player_id = $playerID");
         }
         
         self::notifyAllPlayers('displayEndGameScore', '', array(
             'endGameScoring' => $endGameScoring
         ));
 
-        $this->gamestate->nextState('allSelectMarketTile'); //ekmek sil
-        // $this->gamestate->nextState('gameEnd'); //ekmek uncomment
+        $this->gamestate->nextState('gameEnd');
     }
 
     /**
