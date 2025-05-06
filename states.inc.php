@@ -146,7 +146,7 @@ $machinestates = [
         "type" => "game",
         "action" => "stEndGameScoring",
         "updateGameProgression" => true,
-        "transitions" => array("gameEnd" => STATE_GAME_END, "allSelectMarketTile" => STATE_ALL_SELECT_MARKET_TILE)
+        "transitions" => array("gameEnd" => STATE_GAME_END)
     ),
 
     // Final state.

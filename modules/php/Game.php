@@ -255,7 +255,7 @@ class Game extends \Table
         $roundsRemaining = (int) $this->globalsManager->get('rounds_remaining');
         $progress = (ROUND_COUNT - $roundsRemaining) / ROUND_COUNT;
         // Check if any players haven't collected market tiles yet
-        $pendingPlayers = self::getUniqueValueFromDB("SELECT COUNT(*) FROM player WHERE collected_market_index IS NULL");
+        $pendingPlayers = $this->getUniqueValueFromDB("SELECT COUNT(*) FROM player WHERE collected_market_index IS NULL");
         $everyoneHasCollected = ($pendingPlayers <= 0);
         if($everyoneHasCollected)
             $progress += 0.5 * (1 / ROUND_COUNT);
@@ -265,7 +265,7 @@ class Game extends \Table
     }
 
     public function stAllSelectMarketTile(): void {
-        self::DbQuery("UPDATE player SET made_market_index_selection_this_round = 'false', selected_market_index = NULL, collected_market_index = NULL");
+        $this->DbQuery("UPDATE player SET made_market_index_selection_this_round = 'false', selected_market_index = NULL, collected_market_index = NULL");
         $this->gamestate->setAllPlayersMultiactive();
     }
 
@@ -274,7 +274,7 @@ class Game extends \Table
     }
 
     public function stGetNextPendingPlayerToSelectMarketTile(): void {
-        $waitingPlayers = self::getObjectListFromDB("SELECT * FROM player WHERE player_zombie = 0 AND collected_market_index IS NULL ORDER BY turn_order ASC");
+        $waitingPlayers = $this->getObjectListFromDB("SELECT * FROM player WHERE player_zombie = 0 AND collected_market_index IS NULL ORDER BY turn_order ASC");
 
         if (!$waitingPlayers) { // No more pending players to select Market Tiles
             $this->gamestate->nextState('buildPyramid');
@@ -284,12 +284,12 @@ class Game extends \Table
             $this->gamestate->nextState('individualPlayerSelectMarketTile');
 
             if(!$waitingPlayers){
-                $playerCount = self::getPlayersNumber();
+                $playerCount = $this->getPlayersNumber();
                 $possibleMarketIndexes = array();
                 for ($i = 0; $i < $playerCount; $i++)
                     $possibleMarketIndexes[$i] = $i;
 
-                $collectedIndexes = self::getObjectListFromDB("SELECT collected_market_index FROM player WHERE collected_market_index IS NOT NULL", true);
+                $collectedIndexes = $this->getObjectListFromDB("SELECT collected_market_index FROM player WHERE collected_market_index IS NOT NULL", true);
                 foreach($collectedIndexes as $collectedIndex)
                     unset($possibleMarketIndexes[(int) $collectedIndex]);
 
@@ -305,8 +305,8 @@ class Game extends \Table
     public function stBuildPyramid(): void {
         $this->marketManager->swapTurnOrders();
         
-        $players = self::loadPlayersBasicInfos();
-        $playersToActivate = self::getCollectionFromDB("SELECT player_id, are_cubes_built FROM player WHERE are_cubes_built = 'false' AND player_zombie = 0");
+        $players = $this->loadPlayersBasicInfos();
+        $playersToActivate = $this->getCollectionFromDB("SELECT player_id, are_cubes_built FROM player WHERE are_cubes_built = 'false' AND player_zombie = 0");
         $playersToDeactivate = [];
 
         foreach($players as $playerID => $player){
@@ -322,9 +322,24 @@ class Game extends \Table
     }
 
     public function stAllPyramidsBuilt(): void{
-        self::DbQuery("UPDATE cubes SET card_location = 'discarded' WHERE card_location = 'to_discard'");
+        $discardedCubesByPlayer = $this->getCollectionFromDB("
+            SELECT p.player_id, COUNT(c.card_id) as discard_count 
+            FROM player p
+            LEFT JOIN cubes c ON c.card_location = 'to_discard' AND c.card_location_arg = p.collected_market_index
+            GROUP BY p.player_id
+        ");
 
-        $builtCubes = self::getObjectListFromDB("SELECT card_location_arg as owner_id, card_id as cube_id, color, pos_x, pos_y, pos_z FROM cubes WHERE order_in_construction IS NOT NULL ORDER BY order_in_construction ASC");
+        $discardedCubesCount = 0;
+        foreach($discardedCubesByPlayer as $playerID => $data) {
+            $this->incStat($data['discard_count'], 'player_discarded_cubes_count', $playerID);
+            $discardedCubesCount += $data['discard_count'];
+        }
+
+        $this->incStat($discardedCubesCount, 'table_discarded_cubes_count');
+
+        $this->DbQuery("UPDATE cubes SET card_location = 'discarded' WHERE card_location = 'to_discard'");
+
+        $builtCubes = $this->getObjectListFromDB("SELECT card_location_arg as owner_id, card_id as cube_id, color, pos_x, pos_y, pos_z FROM cubes WHERE order_in_construction IS NOT NULL ORDER BY order_in_construction ASC");
         
         $builtCubesByPlayer = array();
         foreach($builtCubes as $cube) {
@@ -335,8 +350,8 @@ class Game extends \Table
             $builtCubesByPlayer[$ownerID][] = $cube;
         }
 
-        self::DbQuery("UPDATE cubes SET order_in_construction = NULL");
-        self::DbQuery("UPDATE player SET 
+        $this->DbQuery("UPDATE cubes SET order_in_construction = NULL");
+        $this->DbQuery("UPDATE player SET 
             are_cubes_built = 'false',
             cubes_built_this_round = 'false',
             made_market_index_selection_this_round = 'false', 
@@ -358,7 +373,7 @@ class Game extends \Table
             'built_cubes' => $builtCubesByPlayer,
             'DISPLAY_BUILT_CUBES_STR' => $builtCubesDataStr
         ]);
-
+// $this->globalsManager->set('rounds_remaining', 0); //ekmek sil
         if((int) $this->globalsManager->get('rounds_remaining') == 0)
             $this->gamestate->nextState('endGameScoring');
         else { 
@@ -373,16 +388,63 @@ class Game extends \Table
 
     public function stEndGameScoring(): void {
         $endGameScoring = $this->scoringManager->getEndGameScoring(); 
+
+        $totalPointsFromCubeColors = 0;
+        $totalPointsFromBonusCards = 0;
+        $playerCount = count($endGameScoring['player_scores']);
         
-        foreach($endGameScoring['player_scores'] as $playerID => $playerScoreData){
-            $playerTotal = $playerScoreData['total'];
-            self::DbQuery("UPDATE player SET player_score = $playerTotal WHERE player_id = $playerID");
+        foreach($endGameScoring['player_scores'] as $playerScoreData) {
+// $this->message('playerScoreData', $playerScoreData);
+            $playerID = $playerScoreData['player_id'];
+            $playerColorTotalScore = array_sum($playerScoreData['color_points']);
+            $playerColorAverageScore = $playerColorTotalScore / count(CUBE_COLORS);
+            
+            $this->setStat($playerColorTotalScore, 'player_total_points_from_cube_colors', $playerID);
+            $this->setStat($playerColorAverageScore, 'player_avg_points_from_cube_colors', $playerID);
+
+            $totalPointsFromCubeColors += $playerColorTotalScore;
+
+            $playerBonusCardTotalScore = array_sum($playerScoreData['bonus_card_points']);
+            $playerBonusCardAverageScore = $playerBonusCardTotalScore / SETUP_BONUS_CARDS_COUNT;
+
+            $this->setStat($playerBonusCardTotalScore, 'player_total_points_from_bonus_cards', $playerID);
+            $this->setStat($playerBonusCardAverageScore, 'player_avg_points_from_bonus_cards', $playerID);
+
+// $this->message('player_total_points_from_bonus_cards, playerID: '.$playerID, $this->getStat('player_total_points_from_bonus_cards', $playerID));
+// $this->message('player_avg_points_from_bonus_cards, playerID: '.$playerID, $this->getStat('player_avg_points_from_bonus_cards', $playerID));
+
+            $totalPointsFromBonusCards += $playerBonusCardTotalScore;
+
+            foreach($playerScoreData['bonus_card_points'] as $bonusCardID => $bonusCardPoints)
+                $this->setStat($bonusCardPoints, BONUS_CARDS_DATA[$bonusCardID]['statName'], $playerID);
+// foreach($playerScoreData['bonus_card_points'] as $bonusCardID => $bonusCardPoints){ //ekmek sil
+//     $this->message('bonusCardID: '.$bonusCardID.', statName: '.BONUS_CARDS_DATA[$bonusCardID]['statName'], $this->getStat(BONUS_CARDS_DATA[$bonusCardID]['statName'], $playerID));
+// }
         }
         
-        self::notifyAllPlayers('displayEndGameScore', '', array(
+        $avgPointsFromCubeColors = $totalPointsFromCubeColors / $playerCount;
+        
+        $this->setStat($avgPointsFromCubeColors, 'table_avg_points_from_cube_colors');
+        $this->setStat($totalPointsFromCubeColors, 'table_total_points_from_cube_colors');
+        
+        $avgPointsFromBonusCards = $totalPointsFromBonusCards / $playerCount;
+
+        $this->setStat($avgPointsFromBonusCards, 'table_avg_points_from_bonus_cards');
+        $this->setStat($totalPointsFromBonusCards, 'table_total_points_from_bonus_cards');
+        
+// $this->message('table_avg_points_from_bonus_cards', $this->getStat('table_avg_points_from_bonus_cards'));
+// $this->message('table_total_points_from_bonus_cards', $this->getStat('table_total_points_from_bonus_cards'));
+
+        foreach($endGameScoring['player_scores'] as $playerID => $playerScoreData){
+            $playerTotal = $playerScoreData['total'];
+            $this->DbQuery("UPDATE player SET player_score = $playerTotal WHERE player_id = $playerID");
+        }
+        
+        $this->notifyAllPlayers('displayEndGameScore', '', array(
             'endGameScoring' => $endGameScoring
         ));
 
+        // $this->gamestate->nextState('allSelectMarketTile'); //ekmek sil
         $this->gamestate->nextState('gameEnd');
     }
 
@@ -507,12 +569,10 @@ class Game extends \Table
         $this->globalsManager->initValues(array(
             "rounds_remaining" => ROUND_COUNT
         ));
-        
-        //ekmek stat yap
+    
         // Init game statistics.
-        //
-        // NOTE: statistics used in this file must be defined in your `stats.inc.php` file.
-
+        $this->initGameStatistics();
+        
         // Get the bonus cards preference from options
         $isRandomBonusCardsSetup = (int) $this->tableOptions->get(100) == (int) RANDOM_BONUS_CARDS_OPTION;
 
@@ -542,6 +602,42 @@ class Game extends \Table
 
         // Activate first player once everything has been initialized and ready.
         $this->activeNextPlayer();
+    }
+
+    public function initGameStatistics(): void {
+        // Table statistics
+        $this->initStat("table", "table_discarded_cubes_count", 0);
+        $this->initStat("table", "table_times_market_tile_denied", 0);
+        $this->initStat("table", "table_avg_points_from_cube_colors", 0);
+        $this->initStat("table", "table_total_points_from_cube_colors", 0);
+        $this->initStat("table", "table_avg_points_from_bonus_cards", 0);
+        $this->initStat("table", "table_total_points_from_bonus_cards", 0);
+
+        // Player statistics
+        $this->initStat("player", "player_discarded_cubes_count", 0);
+        $this->initStat("player", "player_times_market_tile_denied", 0);
+        $this->initStat("player", "player_avg_points_from_cube_colors", 0);
+        $this->initStat("player", "player_total_points_from_cube_colors", 0);
+        $this->initStat("player", "player_avg_points_from_bonus_cards", 0);
+        $this->initStat("player", "player_total_points_from_bonus_cards", 0);
+        $this->initStat("player", "player_bonus_card_largest_orange", 0);
+        $this->initStat("player", "player_bonus_card_largest_blue", 0);
+        $this->initStat("player", "player_bonus_card_largest_green", 0);
+        $this->initStat("player", "player_bonus_card_largest_yellow", 0);
+        $this->initStat("player", "player_bonus_card_largest_white", 0);
+        $this->initStat("player", "player_bonus_card_larger_right_orange", 0);
+        $this->initStat("player", "player_bonus_card_larger_right_blue", 0);
+        $this->initStat("player", "player_bonus_card_larger_right_green", 0);
+        $this->initStat("player", "player_bonus_card_larger_right_yellow", 0);
+        $this->initStat("player", "player_bonus_card_larger_right_white", 0);
+        $this->initStat("player", "player_bonus_card_largest_group_any_color", 0);
+        $this->initStat("player", "player_bonus_card_largest_group_any_color_level_1", 0);
+        $this->initStat("player", "player_bonus_card_group_with_most_levels", 0);
+        $this->initStat("player", "player_bonus_card_second_largest_group", 0);
+        $this->initStat("player", "player_bonus_card_5_colors_level_1", 0);
+        $this->initStat("player", "player_bonus_card_single_color_one_side", 0);
+        $this->initStat("player", "player_bonus_card_3_colors", 0);
+        $this->initStat("player", "player_bonus_card_5_colors_level_2", 0);
     }
 
     //////////////////////////////////////////////////////////////////////////////
