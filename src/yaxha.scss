@@ -249,11 +249,14 @@
 .dijitTooltipContainer{
     &:has(.tooltip-wrapper){ background: none; }
     .tooltip-wrapper{ background: var(--bg-gradient-tooltip); padding: 10px; margin: -6px -6px -6px -6px;
-        &.bonus-card-tooltip{ max-width: 200px; }
+        &.bonus-card-tooltip{ max-width: 430px; }
         .tooltip-text{ font-size: 16px; color: #070031d9; @include text-shade(#ffcae7e0, 2px); text-indent: 6px; text-align: center; }
-        .tooltip-image { width: 200px; height: 280px; background-image: var(--image-source-bonus-cards); background-size: 500% 400%; background-repeat: no-repeat; margin-top: 10px; }
-        @for $i from 0 through 18 {
-            &.bonus-card-tooltip[bonus-card-id="#{$i}"] .tooltip-image { @include bonus-card-position($i); }
+        &.bonus-card-tooltip{ text-align: center;
+            .tooltip-card { display: inline-block; width: 200px; height: 280px; background-image: var(--image-source-bonus-cards); background-size: 500% 400%; background-repeat: no-repeat; border-radius: 18px; margin-top: 10px; }
+            @for $i from 0 through 18 {
+                &.bonus-card-tooltip[bonus-card-id="#{$i}"] .tooltip-bonus-card { @include bonus-card-position($i); }
+            }
+            .tooltip-cubes-card{ margin-left: 10px; @include bonus-card-position(18); }
         }
     }
     .tooltip-bold{ font-weight: bold; }
