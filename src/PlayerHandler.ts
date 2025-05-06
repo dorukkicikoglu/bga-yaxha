@@ -3,7 +3,7 @@ class PlayerHandler{
     public pyramid: PyramidHandler;
 	// public collectedMarketTileIndex: number; //ekmek sil
 
-	constructor(private gameui: GameBody, public playerID: number, private playerName: string, public playerColor: string, private playerNo: number, private turnOrder: number, pyramidData: PyramidCube[], public built_cubes_this_round: boolean) {
+	constructor(private gameui: GameBody, public playerID: number, private playerName: string, public playerColor: string, private playerNo: number, private turnOrder: number, pyramidData: PyramidCube[], public are_cubes_built: boolean) {
 		this.overallPlayerBoard = $('overall_player_board_' + this.playerID);
 		this.pyramid = new PyramidHandler(this.gameui, this, this.gameui.PYRAMID_MAX_SIZE, pyramidData);
 	}

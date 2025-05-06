@@ -176,9 +176,10 @@ class YXHPyramidManager extends APP_DbObject{
 
         if($playerMarketIndex === null)
             throw new \BgaUserException(clienttranslate("You have not selected any Market Tile to undo build"));
-
+            
+        $this->parent->not_a_move_notification = true;
         $this->DbQuery("UPDATE cubes SET card_location = 'market', card_location_arg = $playerMarketIndex, pos_x = NULL, pos_y = NULL, pos_z = NULL, order_in_construction = NULL WHERE (order_in_construction IS NOT NULL AND card_location_arg = $playerID) OR (card_location = 'to_discard' AND card_location_arg = $playerMarketIndex)");
-        $this->DbQuery("UPDATE player SET built_cubes_this_round = 'false' WHERE player_id = $playerID");
+        $this->DbQuery("UPDATE player SET are_cubes_built = 'false' WHERE player_id = $playerID");
         $this->parent->notify->player($playerID, 'undoneBuildPyramid', '', []);
 
         if ($this->parent->gamestate->state()['name'] === 'buildPyramid')
@@ -198,8 +199,12 @@ class YXHPyramidManager extends APP_DbObject{
     }
 
     public function confirmBuildPyramid($playerID): void {
-        $playerHasBuilt = $this->getUniqueValueFromDB("SELECT built_cubes_this_round FROM player WHERE player_id = $playerID");
-        if ($playerHasBuilt === 'true')
+        $playerRow = $this->getObjectFromDB("SELECT are_cubes_built, cubes_built_this_round FROM player WHERE player_id = $playerID");
+
+        $playerHasBuilt = $playerRow['are_cubes_built'] === 'true';
+        $builtCubesThisRound = $playerRow['cubes_built_this_round'] === 'true';
+$this->parent->message('builtCubesThisRound', $builtCubesThisRound ? 'true' : 'false');
+        if ($playerHasBuilt)
             throw new \BgaUserException(clienttranslate("You have already built your pyramid this round"));
 
         $unbuiltCubes = $this->checkUnbuiltCubesAreNotBuildable($playerID);
@@ -207,8 +212,12 @@ class YXHPyramidManager extends APP_DbObject{
         foreach ($unbuiltCubes as $cube)
             $this->DbQuery("UPDATE cubes SET card_location = 'to_discard' WHERE card_id = ".$cube['card_id']);
 
-        $this->DbQuery("UPDATE player SET built_cubes_this_round = 'true' WHERE player_id = $playerID");
+        $this->DbQuery("UPDATE player SET are_cubes_built = 'true', cubes_built_this_round = 'true' WHERE player_id = $playerID");
         $this->parent->notify->player($playerID, 'confirmedBuildPyramid', '');
+
+        if (!$builtCubesThisRound)
+            $this->parent->giveExtraTime($playerID);
+        else $this->parent->not_a_move_notification = true;
 
         if ($this->parent->gamestate->state()['name'] === 'buildPyramid')
             $this->parent->gamestate->setPlayerNonMultiactive($playerID, 'allPyramidsBuilt');

@@ -6,6 +6,7 @@ class PyramidHandler {
     private unplacedCube: PyramidCube;
     private cubesInConstruction: { [cubeId: number]: PyramidCube } = {};
     private centerTilesAnim: ReturnType<typeof dojo.animateProperty>;
+    private moveCubeAnim: ReturnType<typeof dojo.animateProperty> = null;
 
     constructor(private gameui: GameBody,private owner: PlayerHandler,private PYRAMID_MAX_SIZE: number,private pyramidData: PyramidCube[]) {
         this.initPyramidContainer();
@@ -59,7 +60,7 @@ class PyramidHandler {
         });
         this.pyramidData = buildCubes;
 
-        if(!this.owner.built_cubes_this_round && maxOrderCubeInConstruction)
+        if(!this.owner.are_cubes_built && maxOrderCubeInConstruction)
             this.unplacedCube = maxOrderCubeInConstruction;
         
         this.arrangeCubesZIndex();
@@ -68,7 +69,7 @@ class PyramidHandler {
     }
 
 	public enableBuildPyramid() {
-        if(this.owner.built_cubes_this_round){
+        if(this.owner.are_cubes_built){
             this.updatePyramidStatusText();
             return;
         }
@@ -90,6 +91,9 @@ class PyramidHandler {
     }
 
     private onSnapPointClicked(args) { //args is either event target or an array [posX, posY, posZ]
+        if(this.moveCubeAnim)
+            return;
+        
         let myPyramid = this.owner.playerID.toString() == this.gameui.player_id;
         if(!myPyramid)
             return;
@@ -367,7 +371,7 @@ class PyramidHandler {
         let statusText = null;
 
         if (this.gameui.gamedatas.gamestate.name === 'individualPlayerSelectMarketTile'){
-            if(this.owner.built_cubes_this_round)
+            if(this.owner.are_cubes_built)
                 statusText = dojo.string.substitute(_('${actplayer} must select an available Market Tile'), {actplayer: this.gameui.divActivePlayer()});
             else {
                 statusText = dojo.string.substitute(_('${you} may build while others are selecting Market Tiles'), {you: this.gameui.divYou()});
@@ -378,7 +382,7 @@ class PyramidHandler {
                 document.title = '◣' + tempDiv.innerText;
             }
         } else if (this.gameui.gamedatas.gamestate.name === 'buildPyramid'){
-            if(this.owner.built_cubes_this_round)
+            if(this.owner.are_cubes_built)
                 statusText = dojo.string.substitute(_('Waiting for other players to build Pyramids'), {you: this.gameui.divYou()});
             else statusText = dojo.string.substitute(_('${you} need to build your Pyramid'), {you: this.gameui.divYou()});
         }
@@ -386,7 +390,7 @@ class PyramidHandler {
         if(!statusText)
             return;
         
-        const showConfirmButton = this.pyramidContainer.querySelectorAll('.pyramid-cube-snap-point').length <= 0 && !this.owner.built_cubes_this_round;
+        const showConfirmButton = (Object.keys(this.cubesInConstruction).length >= this.gameui.CUBES_PER_MARKET_TILE || this.pyramidContainer.querySelectorAll('.pyramid-cube-snap-point').length <= 0) && !this.owner.are_cubes_built;
         const showUndoButton = Object.keys(this.cubesInConstruction).length > 0;
         
         if(showConfirmButton || showUndoButton){
@@ -417,6 +421,9 @@ class PyramidHandler {
     }
 
     private animateUnplacedCubeToPyramid(cubeData: PyramidCube, moveType: PyramidCubeMoveType) {
+        if(this.moveCubeAnim)
+            return;
+
         this.cubesContainer.querySelectorAll('.switch-color-button').forEach(el => el.remove());
 
         this.unplacedCube = cubeData;
@@ -438,7 +445,7 @@ class PyramidHandler {
 
         let goTo: HTMLDivElement = this.cubesContainer.querySelector(`.pyramid-cube-snap-point[pos-x="${this.unplacedCube.pos_x}"][pos-y="${this.unplacedCube.pos_y}"][pos-z="${this.unplacedCube.pos_z}"]`);
 
-        const cubeAnim = this.gameui.animationHandler.animateProperty({
+        this.moveCubeAnim = this.gameui.animationHandler.animateProperty({
             node: this.unplacedCube.div,
             properties: { top: goTo.offsetTop, left: goTo.offsetLeft },
             duration: animSpeed,
@@ -455,13 +462,17 @@ class PyramidHandler {
 
                 this.gameui.ajaxAction(moveType == 'from_market' ? 'actAddCubeToPyramid' : 'actMoveCubeInPyramid', { cube_id: this.unplacedCube.cube_id, pos_x: this.unplacedCube.pos_x, pos_y: this.unplacedCube.pos_y, pos_z: this.unplacedCube.pos_z }, false, false);
                 this.enableBuildPyramid();
+                this.moveCubeAnim = null;
             }
         });
 
-        cubeAnim.start();
+        this.moveCubeAnim.start();
     }
 
     public animatePlayerCubesToPyramid(cubeMoves: CubeToPyramidMoveData[]): ReturnType<typeof dojo.animateProperty> {
+        if(this.moveCubeAnim)
+            return;
+
         const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
         const animSpeed = 600;
         let cubeAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
@@ -535,10 +546,10 @@ class PyramidHandler {
 
         this.arrangeCubesZIndex();
 
-        let cubeAnim: ReturnType<typeof dojo.animateProperty> = this.gameui.animationHandler.combine(cubeAnimArray);
-        cubeAnim.onEnd = () => { this.arrangeCubesZIndex(); }
+        this.moveCubeAnim = this.gameui.animationHandler.combine(cubeAnimArray);
+        this.moveCubeAnim.onEnd = () => { this.arrangeCubesZIndex(); this.moveCubeAnim = null; }
 
-        return cubeAnim;
+        return this.moveCubeAnim;
     }
 
     public saveAllCubesInPyramid() {
@@ -547,7 +558,7 @@ class PyramidHandler {
 
         this.unplacedCube = null;
         this.cubesInConstruction = {};
-        this.owner.built_cubes_this_round = false;
+        this.owner.are_cubes_built = false;
     }
     
     private confirmPlaceCubeButtonClicked() {
@@ -555,7 +566,7 @@ class PyramidHandler {
     }
 
     public confirmedBuildPyramid() {
-        this.owner.built_cubes_this_round = true;
+        this.owner.are_cubes_built = true;
 
         // Save all cubes in construction to pyramid data
         Object.values(this.cubesInConstruction).forEach(cube => {
@@ -614,7 +625,7 @@ class PyramidHandler {
         );
         this.cubesInConstruction = {};
         this.unplacedCube = null;
-        this.owner.built_cubes_this_round = false;
+        this.owner.are_cubes_built = false;
 
         this.gameui.ajaxAction('actUndoBuildPyramid', {}, true, false);
         

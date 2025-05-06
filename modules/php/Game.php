@@ -29,7 +29,6 @@ require_once(APP_GAMEMODULE_PATH . "module/table/table.game.php");
 
 class Game extends \Table
 {
-    // private static array $CARD_TYPES; //ekmek birgun sil
     public YXHGlobalsManager $globalsManager;
     public YXHMarketManager $marketManager;
     public YXHPyramidManager $pyramidManager;
@@ -253,9 +252,16 @@ class Game extends \Table
      */
     public function getGameProgression()
     {
-        // TODO: compute and return the game progression
-//ekmek yap
-        return 0;
+        $roundsRemaining = (int) $this->globalsManager->get('rounds_remaining');
+        $progress = (ROUND_COUNT - $roundsRemaining) / ROUND_COUNT;
+        // Check if any players haven't collected market tiles yet
+        $pendingPlayers = self::getUniqueValueFromDB("SELECT COUNT(*) FROM player WHERE collected_market_index IS NULL");
+        $everyoneHasCollected = ($pendingPlayers <= 0);
+        if($everyoneHasCollected)
+            $progress += 0.5 * (1 / ROUND_COUNT);
+        
+        $progress = (int) ($progress * 100);
+        return $progress;
     }
 
     public function stAllSelectMarketTile(): void {
@@ -300,7 +306,7 @@ class Game extends \Table
         $this->marketManager->swapTurnOrders();
         
         $players = self::loadPlayersBasicInfos();
-        $playersToActivate = self::getCollectionFromDB("SELECT player_id, built_cubes_this_round FROM player WHERE built_cubes_this_round = 'false' AND player_zombie = 0");
+        $playersToActivate = self::getCollectionFromDB("SELECT player_id, are_cubes_built FROM player WHERE are_cubes_built = 'false' AND player_zombie = 0");
         $playersToDeactivate = [];
 
         foreach($players as $playerID => $player){
@@ -331,7 +337,8 @@ class Game extends \Table
 
         self::DbQuery("UPDATE cubes SET order_in_construction = NULL");
         self::DbQuery("UPDATE player SET 
-            built_cubes_this_round = 'false',
+            are_cubes_built = 'false',
+            cubes_built_this_round = 'false',
             made_market_index_selection_this_round = 'false', 
             selected_market_index = NULL,
             collected_market_index = NULL");
@@ -425,7 +432,7 @@ class Game extends \Table
         $current_player_id = (int) $this->getCurrentPlayerId();
 
         // Get information about players.
-        $result["players"] = $this->getCollectionFromDb("SELECT player_id, player_no, player_score score, turn_order, built_cubes_this_round = 'true' as built_cubes_this_round FROM player");
+        $result["players"] = $this->getCollectionFromDb("SELECT player_id, player_no, player_score score, turn_order, are_cubes_built = 'true' as are_cubes_built FROM player");
 
         $result['marketData'] = $this->marketManager->getMarketData();
         $result['bonusCardIDs'] = $this->getObjectListFromDB("SELECT bonus_card_id FROM bonus_cards ORDER BY bonus_card_position", true);

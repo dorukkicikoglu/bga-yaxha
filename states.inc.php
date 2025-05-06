@@ -118,7 +118,6 @@ $machinestates = [
         "description" => clienttranslate('Waiting for other players to build their Pyramids'),
         "descriptionmyturn" => clienttranslate('${you} must place your cubes in your Pyramid'),
         "type" => "multipleactiveplayer",
-        // "args" => "argBuildPyramid", //ekmek sil
         "action" => "stBuildPyramid",
         "possibleactions" => ["actBuildPyramid"],
         "transitions" => array( "allPyramidsBuilt" => STATE_ALL_PYRAMIDS_BUILT)
@@ -147,7 +146,7 @@ $machinestates = [
         "type" => "game",
         "action" => "stEndGameScoring",
         "updateGameProgression" => true,
-        "transitions" => array("gameEnd" => STATE_GAME_END, "allSelectMarketTile" => STATE_ALL_SELECT_MARKET_TILE) //ekmek allSelectMarketTile sil
+        "transitions" => array("gameEnd" => STATE_GAME_END, "allSelectMarketTile" => STATE_ALL_SELECT_MARKET_TILE)
     ),
 
     // Final state.

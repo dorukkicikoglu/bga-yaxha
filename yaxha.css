@@ -1511,7 +1511,7 @@
   margin: -6px -6px -6px -6px;
 }
 .dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip {
-  max-width: 200px;
+  max-width: 430px;
 }
 .dijitTooltipContainer .tooltip-wrapper .tooltip-text {
   font-size: 16px;
@@ -1520,69 +1520,78 @@
   text-indent: 6px;
   text-align: center;
 }
-.dijitTooltipContainer .tooltip-wrapper .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip {
+  text-align: center;
+}
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip .tooltip-card {
+  display: inline-block;
   width: 200px;
   height: 280px;
   background-image: var(--image-source-bonus-cards);
   background-size: 500% 400%;
   background-repeat: no-repeat;
+  border-radius: 18px;
   margin-top: 10px;
 }
-.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="0"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip.bonus-card-tooltip[bonus-card-id="0"] .tooltip-bonus-card {
   background-position: 0% 0%;
 }
-.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="1"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip.bonus-card-tooltip[bonus-card-id="1"] .tooltip-bonus-card {
   background-position: 25% 0%;
 }
-.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="2"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip.bonus-card-tooltip[bonus-card-id="2"] .tooltip-bonus-card {
   background-position: 50% 0%;
 }
-.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="3"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip.bonus-card-tooltip[bonus-card-id="3"] .tooltip-bonus-card {
   background-position: 75% 0%;
 }
-.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="4"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip.bonus-card-tooltip[bonus-card-id="4"] .tooltip-bonus-card {
   background-position: 100% 0%;
 }
-.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="5"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip.bonus-card-tooltip[bonus-card-id="5"] .tooltip-bonus-card {
   background-position: 0% 33.33%;
 }
-.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="6"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip.bonus-card-tooltip[bonus-card-id="6"] .tooltip-bonus-card {
   background-position: 25% 33.33%;
 }
-.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="7"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip.bonus-card-tooltip[bonus-card-id="7"] .tooltip-bonus-card {
   background-position: 50% 33.33%;
 }
-.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="8"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip.bonus-card-tooltip[bonus-card-id="8"] .tooltip-bonus-card {
   background-position: 75% 33.33%;
 }
-.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="9"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip.bonus-card-tooltip[bonus-card-id="9"] .tooltip-bonus-card {
   background-position: 100% 33.33%;
 }
-.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="10"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip.bonus-card-tooltip[bonus-card-id="10"] .tooltip-bonus-card {
   background-position: 0% 66.66%;
 }
-.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="11"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip.bonus-card-tooltip[bonus-card-id="11"] .tooltip-bonus-card {
   background-position: 25% 66.66%;
 }
-.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="12"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip.bonus-card-tooltip[bonus-card-id="12"] .tooltip-bonus-card {
   background-position: 50% 66.66%;
 }
-.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="13"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip.bonus-card-tooltip[bonus-card-id="13"] .tooltip-bonus-card {
   background-position: 75% 66.66%;
 }
-.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="14"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip.bonus-card-tooltip[bonus-card-id="14"] .tooltip-bonus-card {
   background-position: 100% 66.66%;
 }
-.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="15"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip.bonus-card-tooltip[bonus-card-id="15"] .tooltip-bonus-card {
   background-position: 0% 99.99%;
 }
-.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="16"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip.bonus-card-tooltip[bonus-card-id="16"] .tooltip-bonus-card {
   background-position: 25% 99.99%;
 }
-.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="17"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip.bonus-card-tooltip[bonus-card-id="17"] .tooltip-bonus-card {
   background-position: 50% 99.99%;
 }
-.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip[bonus-card-id="18"] .tooltip-image {
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip.bonus-card-tooltip[bonus-card-id="18"] .tooltip-bonus-card {
+  background-position: 75% 99.99%;
+}
+.dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip .tooltip-cubes-card {
+  margin-left: 10px;
   background-position: 75% 99.99%;
 }
 .dijitTooltipContainer .tooltip-bold {

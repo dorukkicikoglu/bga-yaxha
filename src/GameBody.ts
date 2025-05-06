@@ -91,8 +91,8 @@ class GameBody extends GameGui {
         this.animationHandler = new AnimationHandlerPromiseBased(this);
 
         for(let player_id of this.playerSeatOrder) {
-            const {name, color, player_no, turn_order, built_cubes_this_round} = this.gamedatas.players[player_id];
-            this.players[player_id] = new PlayerHandler(this, player_id, name, color, parseInt(player_no), turn_order, gamedatas.pyramidData[player_id], built_cubes_this_round == '1');
+            const {name, color, player_no, turn_order, are_cubes_built} = this.gamedatas.players[player_id];
+            this.players[player_id] = new PlayerHandler(this, player_id, name, color, parseInt(player_no), turn_order, gamedatas.pyramidData[player_id], are_cubes_built == '1');
 
             if(player_id == parseInt(this.player_id))
                 this.myself = this.players[player_id];

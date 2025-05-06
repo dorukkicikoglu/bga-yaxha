@@ -20,9 +20,10 @@ class TooltipHandler{
             this.gameui.addTooltipHtml(
                 cardIconID,
                 `<div class="bonus-card-tooltip tooltip-wrapper" bonus-card-id="${cardID}">
-                    <div class="tooltip-text">${tooltipHTML}</div>
-                    <div class="tooltip-image"></div>
-                </div>`,
+                        <div class="tooltip-text">${tooltipHTML}</div>
+                        <div class="tooltip-card tooltip-bonus-card"></div>
+                        <div class="tooltip-card tooltip-cubes-card"></div>
+                    </div>`,
                 400
             );
         });
