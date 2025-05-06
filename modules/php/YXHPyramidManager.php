@@ -11,7 +11,7 @@ class YXHPyramidManager extends APP_DbObject{
         $pyramidsData = [];
 
         if(empty($players))
-            $players = self::getObjectListFromDB("SELECT player_id FROM player", true);
+            $players = $this->getObjectListFromDB("SELECT player_id FROM player", true);
 
         foreach ($players as $playerID)
             $pyramidsData[$playerID] = [];
@@ -20,7 +20,7 @@ class YXHPyramidManager extends APP_DbObject{
         if(!$includeInConstruction)
             $sql .= " AND order_in_construction IS NULL";
 
-        $cubes = self::getObjectListFromDB($sql);
+        $cubes = $this->getObjectListFromDB($sql);
 
         foreach($cubes as $cube)
             $pyramidsData[$cube['owner_id']][] = $cube;
@@ -203,7 +203,7 @@ class YXHPyramidManager extends APP_DbObject{
 
         $playerHasBuilt = $playerRow['are_cubes_built'] === 'true';
         $builtCubesThisRound = $playerRow['cubes_built_this_round'] === 'true';
-$this->parent->message('builtCubesThisRound', $builtCubesThisRound ? 'true' : 'false');
+
         if ($playerHasBuilt)
             throw new \BgaUserException(clienttranslate("You have already built your pyramid this round"));
 
@@ -225,7 +225,7 @@ $this->parent->message('builtCubesThisRound', $builtCubesThisRound ? 'true' : 'f
 
     private function checkUnbuiltCubesAreNotBuildable($playerID): array {
         $playerMarketIndex = $this->getUniqueValueFromDB("SELECT collected_market_index FROM player WHERE player_id = $playerID");
-        $unbuiltCubes = self::getObjectListFromDB("SELECT * FROM cubes WHERE card_location = 'market' AND card_location_arg = $playerMarketIndex");
+        $unbuiltCubes = $this->getObjectListFromDB("SELECT * FROM cubes WHERE card_location = 'market' AND card_location_arg = $playerMarketIndex");
         if (count($unbuiltCubes) <= 0)
             return [];
 

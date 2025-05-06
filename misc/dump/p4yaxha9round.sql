@@ -27,7 +27,6 @@ SET time_zone = "+00:00";
 -- Table structure for table `cubes`
 --
 
-UPDATE `global` SET `global_value` = '1' WHERE `global`.`global_id` = 20;
 DROP TABLE IF EXISTS cubes;
 
 CREATE TABLE `cubes` (

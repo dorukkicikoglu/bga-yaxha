@@ -69,7 +69,7 @@ class YXHMarketManager extends APP_DbObject
 
     public function handleAllMarketTileSelectionsMade()
     {
-        $selectedMarketIndexes = self::getCollectionFromDb("SELECT player_id, selected_market_index, collected_market_index, turn_order FROM player WHERE player_zombie = 0");
+        $selectedMarketIndexes = $this->getCollectionFromDb("SELECT player_id, selected_market_index, collected_market_index, turn_order FROM player WHERE player_zombie = 0");
         $playersBySelectedMarketIndex = array_reduce($selectedMarketIndexes, function($acc, $player) {
             $acc[$player['selected_market_index']][] = $player;
             return $acc;
@@ -100,8 +100,13 @@ class YXHMarketManager extends APP_DbObject
             }
         }
 
+        foreach ($pendingPlayers as $player)
+            $this->parent->incStat(1, 'player_times_market_tile_denied', $player['player_id']);
+
+        $this->parent->incStat(count($pendingPlayers), 'table_times_market_tile_denied');
+
         foreach ($collectingPlayers as $index => $player){
-            self::DbQuery("UPDATE player SET collected_market_index = selected_market_index WHERE player_id = " . $player['player_id']);
+            $this->DbQuery("UPDATE player SET collected_market_index = selected_market_index WHERE player_id = " . $player['player_id']);
             $collectingPlayers[$index]['collected_market_index'] = $player['selected_market_index'];
         }
 
@@ -125,7 +130,7 @@ class YXHMarketManager extends APP_DbObject
 
     public function swapTurnOrders(){
         // Get all players who played the same card
-        $players = self::getCollectionFromDb("SELECT player_id, selected_market_index, turn_order FROM player");
+        $players = $this->getCollectionFromDb("SELECT player_id, selected_market_index, turn_order FROM player");
         
         // Group players by their selected market index
         $playersBySelectedMarketIndex = array();
@@ -164,8 +169,8 @@ class YXHMarketManager extends APP_DbObject
         function makeInlineTurnOrderCardHTML($turnOrderIn){ return '<span style="background-color:#222838; color:#EE894A; display: inline-block; width: 18px; height: 18px; text-align: center; line-height: 18px;">'.$turnOrderIn.'</span>'; }
 
         foreach($swaps as $swap){
-            self::DbQuery("UPDATE player SET turn_order = {$swap[1]['turn_order']} WHERE player_id = {$swap[0]['player_id']}");
-            self::DbQuery("UPDATE player SET turn_order = {$swap[0]['turn_order']} WHERE player_id = {$swap[1]['player_id']}");
+            $this->DbQuery("UPDATE player SET turn_order = {$swap[1]['turn_order']} WHERE player_id = {$swap[0]['player_id']}");
+            $this->DbQuery("UPDATE player SET turn_order = {$swap[0]['turn_order']} WHERE player_id = {$swap[1]['player_id']}");
 
             $swapTurnOrdersDataStr = $this->parent->getPlayerNameById($swap[0]['player_id']).'&nbsp;'.makeInlineTurnOrderCardHTML($swap[0]['turn_order']).' ↔ '.makeInlineTurnOrderCardHTML($swap[1]['turn_order']).'&nbsp;'.$this->parent->getPlayerNameById($swap[1]['player_id']);
 

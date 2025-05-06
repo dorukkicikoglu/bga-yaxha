@@ -11,16 +11,16 @@
 
 $gameinfos = [
     // Name of the game in English (will serve as the basis for translation)
-    'game_name' => "My Great Game",
+    'game_name' => "Yaxha",
 
     // Game publisher (use empty string if there is no publisher)
-    'publisher' => 'My Publishing Company',
+    'publisher' => 'Helvetiq',
 
     // Url of game publisher website
-    'publisher_website' => 'http://www.mypublishingcompany.com/',
+    'publisher_website' => 'https://helvetiq.com/',
 
     // Board Game Geek ID of the publisher
-    'publisher_bgg_id' => 1234,
+    'publisher_bgg_id' => 21478,
 
     // Board game geek ID of the game
     'bgg_id' => 420061,
@@ -37,7 +37,7 @@ $gameinfos = [
     // 'not_recommend_player_number' => array( 2, 3 ),      // <= example: this is not recommended to play this game with 2 or 3 players
 
     // Estimated game duration, in minutes (used only for the launch, afterward the real duration is computed)
-    'estimated_duration' => 30,
+    'estimated_duration' => 20,
 
     // Time in second add to a player when "giveExtraTime" is called (speed profile = fast)
     'fast_additional_time' => 30,

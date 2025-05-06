@@ -1,1 +1,188 @@
-{}
+{
+    "table":
+    {
+        "table_discarded_cubes_count":
+        {
+            "id": 10,
+            "name": "Number of discarded cubes",
+            "type": "int"
+        },
+        "table_times_market_tile_denied":
+        {
+            "id": 11,
+            "name": "Times selected market tile denied",
+            "type": "int"
+        },
+        "table_avg_points_from_cube_colors":
+        {
+            "id": 12,
+            "name": "Average of players' points from cube colors",
+            "type": "float"
+        },
+        "table_total_points_from_cube_colors":
+        {
+            "id": 13,
+            "name": "Total points from cube numbers",
+            "type": "int"
+        },
+        "table_avg_points_from_bonus_cards":
+        {
+            "id": 14,
+            "name": "Average points from bonus cards",
+            "type": "float"
+        },
+        "table_total_points_from_bonus_cards":
+        {
+            "id": 15,
+            "name": "Total points from bonus cards",
+            "type": "int"
+        }
+    },
+    "player":
+    {
+        "player_discarded_cubes_count":
+        {
+            "id": 10,
+            "name": "Number of discarded cubes",
+            "type": "int"
+        },
+        "player_times_market_tile_denied":
+        {
+            "id": 11,
+            "name": "Times selected market tile denied",
+            "type": "int"
+        },
+        "player_avg_points_from_cube_colors":
+        {
+            "id": 12,
+            "name": "Average points from cube colors",
+            "type": "float"
+        },
+        "player_total_points_from_cube_colors":
+        {
+            "id": 13,
+            "name": "Total points from cube numbers",
+            "type": "int"
+        },
+        "player_avg_points_from_bonus_cards":
+        {
+            "id": 14,
+            "name": "Average points from bonus cards",
+            "type": "float"
+        },
+        "player_total_points_from_bonus_cards":
+        {
+            "id": 15,
+            "name": "Total points from bonus cards",
+            "type": "int"
+        },
+        "player_bonus_card_largest_orange":
+        {
+            "id": 20,
+            "name": "Points from bonus card - largest group of orange cubes",
+            "type": "int"
+        },
+        "player_bonus_card_largest_blue":
+        {
+            "id": 21,
+            "name": "Points from bonus card - largest group of blue cubes",
+            "type": "int"
+        },
+        "player_bonus_card_largest_green":
+        {
+            "id": 22,
+            "name": "Points from bonus card - largest group of green cubes",
+            "type": "int"
+        },
+        "player_bonus_card_largest_yellow":
+        {
+            "id": 23,
+            "name": "Points from bonus card - largest group of yellow cubes",
+            "type": "int"
+        },
+        "player_bonus_card_largest_white":
+        {
+            "id": 24,
+            "name": "Points from bonus card - largest group of white cubes",
+            "type": "int"
+        },
+        "player_bonus_card_larger_right_orange":
+        {
+            "id": 25,
+            "name": "Points from bonus card - large orange group than player to the right",
+            "type": "int"
+        },
+        "player_bonus_card_larger_right_blue":
+        {
+            "id": 26,
+            "name": "Points from bonus card - large blue group than player to the right",
+            "type": "int"
+        },
+        "player_bonus_card_larger_right_green":
+        {
+            "id": 27,
+            "name": "Points from bonus card - large green group than player to the right",
+            "type": "int"
+        },
+        "player_bonus_card_larger_right_yellow":
+        {
+            "id": 28,
+            "name": "Points from bonus card - large yellow group than player to the right",
+            "type": "int"
+        },
+        "player_bonus_card_larger_right_white":
+        {
+            "id": 29,
+            "name": "Points from bonus card - large white group than player to the right",
+            "type": "int"
+        },
+        "player_bonus_card_largest_group_any_color":
+        {
+            "id": 30,
+            "name": "Points from bonus card - largest group of any color",
+            "type": "int"
+        },
+        "player_bonus_card_largest_group_any_color_level_1":
+        {
+            "id": 31,
+            "name": "Points from bonus card - largest group of any color at level 1",
+            "type": "int"
+        },
+        "player_bonus_card_group_with_most_levels":
+        {
+            "id": 32,
+            "name": "Points from bonus card - group with most levels",
+            "type": "int"
+        },
+        "player_bonus_card_second_largest_group":
+        {
+            "id": 33,
+            "name": "Points from bonus card - second largest group",
+            "type": "int"
+        },
+        "player_bonus_card_5_colors_level_1":
+        {
+            "id": 34,
+            "name": "Points from bonus card - 5 colors on level 1",
+            "type": "int"
+        },
+        "player_bonus_card_single_color_one_side":
+        {
+            "id": 35,
+            "name": "Points from bonus card - single color on one side",
+            "type": "int"
+        },
+        "player_bonus_card_3_colors":
+        {
+            "id": 36,
+            "name": "Points from bonus card - 3 colors",
+            "type": "int"
+        },
+        "player_bonus_card_5_colors_level_2":
+        {
+            "id": 37,
+            "name": "Points from bonus card - 5 colors on level 2",
+            "type": "int"
+        }
+    }
+}
