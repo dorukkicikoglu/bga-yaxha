@@ -394,7 +394,6 @@ class Game extends \Table
         $playerCount = count($endGameScoring['player_scores']);
         
         foreach($endGameScoring['player_scores'] as $playerScoreData) {
-// $this->message('playerScoreData', $playerScoreData);
             $playerID = $playerScoreData['player_id'];
             $playerColorTotalScore = array_sum($playerScoreData['color_points']);
             $playerColorAverageScore = $playerColorTotalScore / count(CUBE_COLORS);
@@ -410,16 +409,10 @@ class Game extends \Table
             $this->setStat($playerBonusCardTotalScore, 'player_total_points_from_bonus_cards', $playerID);
             $this->setStat($playerBonusCardAverageScore, 'player_avg_points_from_bonus_cards', $playerID);
 
-// $this->message('player_total_points_from_bonus_cards, playerID: '.$playerID, $this->getStat('player_total_points_from_bonus_cards', $playerID));
-// $this->message('player_avg_points_from_bonus_cards, playerID: '.$playerID, $this->getStat('player_avg_points_from_bonus_cards', $playerID));
-
             $totalPointsFromBonusCards += $playerBonusCardTotalScore;
 
             foreach($playerScoreData['bonus_card_points'] as $bonusCardID => $bonusCardPoints)
                 $this->setStat($bonusCardPoints, BONUS_CARDS_DATA[$bonusCardID]['statName'], $playerID);
-// foreach($playerScoreData['bonus_card_points'] as $bonusCardID => $bonusCardPoints){ //ekmek sil
-//     $this->message('bonusCardID: '.$bonusCardID.', statName: '.BONUS_CARDS_DATA[$bonusCardID]['statName'], $this->getStat(BONUS_CARDS_DATA[$bonusCardID]['statName'], $playerID));
-// }
         }
         
         $avgPointsFromCubeColors = $totalPointsFromCubeColors / $playerCount;
@@ -432,9 +425,6 @@ class Game extends \Table
         $this->setStat($avgPointsFromBonusCards, 'table_avg_points_from_bonus_cards');
         $this->setStat($totalPointsFromBonusCards, 'table_total_points_from_bonus_cards');
         
-// $this->message('table_avg_points_from_bonus_cards', $this->getStat('table_avg_points_from_bonus_cards'));
-// $this->message('table_total_points_from_bonus_cards', $this->getStat('table_total_points_from_bonus_cards'));
-
         foreach($endGameScoring['player_scores'] as $playerID => $playerScoreData){
             $playerTotal = $playerScoreData['total'];
             $this->DbQuery("UPDATE player SET player_score = $playerTotal WHERE player_id = $playerID");

@@ -293,7 +293,7 @@ class MarketHandler{
 
             const player = this.gameui.players[playerID];
             let playerCubes = built_cubes[playerID].sort((a, b) => a.pos_z - b.pos_z);
-            let playerCubesAnimation = player.pyramid.animatePlayerCubesToPyramid(playerCubes);
+            let playerCubesAnimation = player.pyramid.animateOtherPlayerCubesToPyramid(playerCubes);
             playerCubesAnimation = playerCubesAnimation.addDelay(delay);
             delay += 400;
 

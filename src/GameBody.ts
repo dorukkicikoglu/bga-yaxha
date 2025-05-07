@@ -64,10 +64,10 @@ class GameBody extends GameGui {
                 pyramidCSSRange.forEach(posZ => {
                     pyramidCSS += `
                     .pyramids-container .a-pyramid-container .cubes-container *[pos-z="${posZ}"][pos-x="${posXY}"] {
-                    left: calc(min(var(--pyramid-cube-width), var(--max-cube-width)) * ${posXY + 0.42 * posZ});
+                    left: calc(min(var(--pyramid-cube-size), var(--max-cube-width)) * ${posXY + 0.42 * posZ});
                     }
                     .pyramids-container .a-pyramid-container .cubes-container *[pos-z="${posZ}"][pos-y="${posXY}"] {
-                    bottom: calc(min(var(--pyramid-cube-width), var(--max-cube-width)) * ${posXY + 0.7 * posZ});
+                    bottom: calc(min(var(--pyramid-cube-size), var(--max-cube-width)) * ${posXY + 0.7 * posZ});
                     }
                     `;
                 });
