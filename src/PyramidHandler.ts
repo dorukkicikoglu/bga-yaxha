@@ -101,11 +101,7 @@ class PyramidHandler {
         const lastBuiltCube = this.unplacedCube;
         if(this.unplacedCube){ //save the last built cube
             const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
-            // marketTile.querySelectorAll('.a-cube').forEach(marketCube => { 
-            //     marketCube.classList.remove('selected-for-pyramid'); //ekmek borek sil
-            //     if(marketCube.getAttribute('cube-id') === this.unplacedCube.cube_id)
-            //         marketCube.classList.add('built-in-pyramid');
-            // });
+            
             marketTile.querySelectorAll('.a-cube[built-status="selected-cube"]').forEach(cube => { cube.removeAttribute('built-status'); });
             marketTile.querySelector('.a-cube[cube-id="' + this.unplacedCube.cube_id + '"]').setAttribute('built-status', 'built-cube');
 
@@ -355,7 +351,6 @@ class PyramidHandler {
 
     private getAvailableColorsOnMarketTile(): string[] {
         const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
-        // const availableCubes: HTMLDivElement[] = Array.from(marketTile.querySelectorAll('.a-cube:not(.built-in-pyramid):not(.selected-for-pyramid)')); //ekmek borek sil
         const availableCubes: HTMLDivElement[] = Array.from(marketTile.querySelectorAll('.a-cube:not([built-status])'));
 
         let availableColorsDict = {};
@@ -421,6 +416,8 @@ class PyramidHandler {
     }
 
     private animateUnplacedCubeToPyramid(cubeData: PyramidCube, moveType: PyramidCubeMoveType) {
+        console.log('animateUnplacedCubeToPyramid', cubeData);
+        console.log('moveType', moveType);
         if(this.moveCubeAnim)
             return;
 
@@ -428,6 +425,8 @@ class PyramidHandler {
 
         this.unplacedCube = cubeData;
 
+        const marketCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--market-cube-size'));
+        const pyramidCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--pyramid-cube-size'));
         let animSpeed = 400;
 
         if(!this.unplacedCube.div){ //search Market Tiles
@@ -435,8 +434,13 @@ class PyramidHandler {
             let marketCubeDiv: HTMLDivElement = marketTile.querySelector(`.a-cube[cube-id="${cubeData.cube_id}"]`);
 
             this.unplacedCube.div = marketCubeDiv.cloneNode(true) as HTMLDivElement;
+            this.unplacedCube.div.style.width = marketCubeSize + 'px';
+            this.unplacedCube.div.style.height = marketCubeSize + 'px';
+            this.unplacedCube.div.style.maxWidth = pyramidCubeSize + 'px'; //so that the expansion animation happens half way
+            this.unplacedCube.div.style.maxHeight = pyramidCubeSize + 'px';
+            
             this.cubesContainer.appendChild(this.unplacedCube.div);
-            // marketCubeDiv.classList.add('selected-for-pyramid'); //ekmek borek sil
+
             marketCubeDiv.setAttribute('built-status', 'selected-cube');
             this.gameui.placeOnObject(this.unplacedCube.div, marketCubeDiv);
 
@@ -447,34 +451,41 @@ class PyramidHandler {
 
         this.moveCubeAnim = this.gameui.animationHandler.animateProperty({
             node: this.unplacedCube.div,
-            properties: { top: goTo.offsetTop, left: goTo.offsetLeft },
+            properties: { top: goTo.offsetTop, left: goTo.offsetLeft, width: pyramidCubeSize * 2, height: pyramidCubeSize * 2 },
             duration: animSpeed,
-            onBegin: () => {
-                this.unplacedCube.div.classList.add('animating-cube');
-            },
+            onBegin: () => { this.unplacedCube.div.classList.add('animating-cube'); },
             onEnd: () => { 
                 this.unplacedCube.div.classList.remove('animating-cube');
-                this.unplacedCube.div.setAttribute('pos-x', this.unplacedCube.pos_x.toString());
-                this.unplacedCube.div.setAttribute('pos-y', this.unplacedCube.pos_y.toString()); 
-                this.unplacedCube.div.setAttribute('pos-z', this.unplacedCube.pos_z.toString());
-                this.unplacedCube.div.style.top = null;
-                this.unplacedCube.div.style.left = null;
+                            
+                this.unplacedCube.div.setAttribute('pos-x', goTo.getAttribute('pos-x'));
+                this.unplacedCube.div.setAttribute('pos-y', goTo.getAttribute('pos-y'));
+                this.unplacedCube.div.setAttribute('pos-z', goTo.getAttribute('pos-z'));
+
+                goTo.replaceWith(this.unplacedCube.div);
+                this.unplacedCube.div.style.width = null;
+                this.unplacedCube.div.style.height = null;
+                this.unplacedCube.div.style.maxWidth = null;
+                this.unplacedCube.div.style.maxHeight = null;
 
                 this.gameui.ajaxAction(moveType == 'from_market' ? 'actAddCubeToPyramid' : 'actMoveCubeInPyramid', { cube_id: this.unplacedCube.cube_id, pos_x: this.unplacedCube.pos_x, pos_y: this.unplacedCube.pos_y, pos_z: this.unplacedCube.pos_z }, false, false);
-                this.enableBuildPyramid();
                 this.moveCubeAnim = null;
+                this.enableBuildPyramid();
             }
         });
 
         this.moveCubeAnim.start();
     }
 
-    public animatePlayerCubesToPyramid(cubeMoves: CubeToPyramidMoveData[]): ReturnType<typeof dojo.animateProperty> {
+    public animateOtherPlayerCubesToPyramid(cubeMoves: CubeToPyramidMoveData[]): ReturnType<typeof dojo.animateProperty> {
         if(this.moveCubeAnim)
             return;
 
         const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
         const animSpeed = 600;
+
+        const marketCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--market-cube-size'));
+        const pyramidCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--pyramid-cube-size'));
+
         let cubeAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
 
         const collectingAvatar = marketTile.querySelector('.yaxha-player-avatar.collecting-player-avatar');
@@ -498,6 +509,7 @@ class PyramidHandler {
         });
 
         let delay = 0;
+        let animatingCubes: { [cubeID: number]: true } = {};
         for(const move of cubeMoves){
             let marketCubeDiv: HTMLDivElement = marketTile.querySelector(`.a-cube[cube-id="${move.cube_id}"]`);
 
@@ -507,13 +519,19 @@ class PyramidHandler {
             marketCubeDiv.setAttribute('pos-x', move.pos_x.toString());
             marketCubeDiv.setAttribute('pos-y', move.pos_y.toString());
             marketCubeDiv.setAttribute('pos-z', move.pos_z.toString());
-
+            marketCubeDiv.classList.add('animating-cube');
+            
             let pyramidCubeDiv: HTMLDivElement = marketCubeDiv.cloneNode(true) as HTMLDivElement;
             pyramidCubeDiv.style.opacity = '0';
             pyramidCubeDiv.style.top = null;
             pyramidCubeDiv.style.left = null;
             this.cubesContainer.appendChild(pyramidCubeDiv);
 
+            marketCubeDiv.style.width = marketCubeSize + 'px';
+            marketCubeDiv.style.height = marketCubeSize + 'px';
+            marketCubeDiv.style.maxWidth = pyramidCubeSize + 'px';
+            marketCubeDiv.style.maxHeight = pyramidCubeSize + 'px';
+            
             marketCubeDiv = this.gameui.attachToNewParent(marketCubeDiv, this.cubesContainer);
 
             let cubeData: PyramidCube = {
@@ -527,16 +545,31 @@ class PyramidHandler {
             };
 
             this.pyramidData.push(cubeData);
+            animatingCubes[move.cube_id] = true;
 
-            const builtCubeAnim = this.gameui.animationHandler.animateOnObject({
+            const builtCubeAnim = this.gameui.animationHandler.animateProperty({
                 node: marketCubeDiv,
-                goTo: pyramidCubeDiv,
+                properties: { top: pyramidCubeDiv.offsetTop, left: pyramidCubeDiv.offsetLeft, width: pyramidCubeSize * 2, height: pyramidCubeSize * 2 },
                 duration: animSpeed + Math.floor(Math.random() * 101) - 50,
                 easing: 'circleOut',
                 delay: delay + Math.floor(Math.random() * 100),
                 onEnd: () => { 
-                    marketCubeDiv.remove();
-                    pyramidCubeDiv.style.opacity = '1';
+                    if(this.owner.playerID == 2367142)
+                        console.log('aaaa');
+                    pyramidCubeDiv.replaceWith(marketCubeDiv);
+                    marketCubeDiv.classList.remove('animating-cube');
+                    marketCubeDiv.style.width = null;
+                    marketCubeDiv.style.height = null;
+                    marketCubeDiv.style.maxWidth = null;
+                    marketCubeDiv.style.maxHeight = null;
+
+                    delete animatingCubes[move.cube_id];
+
+                    if(Object.keys(animatingCubes).length == 0){
+                        this.arrangeCubesZIndex();
+                        this.centerCubesContainer();
+                        this.moveCubeAnim = null; 
+                    }
                 }
             });
     
@@ -547,8 +580,7 @@ class PyramidHandler {
         this.arrangeCubesZIndex();
 
         this.moveCubeAnim = this.gameui.animationHandler.combine(cubeAnimArray);
-        this.moveCubeAnim.onEnd = () => { this.arrangeCubesZIndex(); this.moveCubeAnim = null; }
-
+        
         return this.moveCubeAnim;
     }
 
@@ -577,8 +609,6 @@ class PyramidHandler {
 
         const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
         marketTile.querySelectorAll('.a-cube').forEach(cube => {
-            // cube.classList.remove('selected-for-pyramid'); //ekmek borek sil
-            // cube.classList.add('built-in-pyramid');
             if(!cube.hasAttribute('built-status'))
                 cube.setAttribute('built-status', 'discarded-cube');
             else cube.setAttribute('built-status', 'built-cube');
@@ -594,24 +624,41 @@ class PyramidHandler {
         });
         
         const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
+        marketTile.style.zIndex = '1'; //animating cubes need to render above the pyramidContainer
+
+        const marketCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--market-cube-size'));
+        const pyramidCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--pyramid-cube-size'));
 
         let undoAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
-
+        
         // Get all cubes in construction and animate them back to their market positions
         Object.values(this.cubesInConstruction).forEach(cube => {
-            const goTo = marketTile.querySelector(`.a-cube[cube-id="${cube.cube_id}"]`);
-            if (!goTo) return;
+            const goTo: HTMLDivElement = marketTile.querySelector(`.a-cube[cube-id="${cube.cube_id}"]`);
+            if (!goTo) 
+                return;
 
-            undoAnimArray.push(this.gameui.animationHandler.animateOnObject({
+            cube.div.style.width = pyramidCubeSize + 'px';
+            cube.div.style.height = pyramidCubeSize + 'px';
+            cube.div.style.minWidth = marketCubeSize + 'px'; //so that the shrinking animation happens half way
+            cube.div.style.minHeight = marketCubeSize + 'px';
+
+            // Transfer cube bg  to goTo
+            goTo.style.setProperty('--top-bg-x', cube.div.style.getPropertyValue('--top-bg-x'));
+            goTo.style.setProperty('--top-bg-y', cube.div.style.getPropertyValue('--top-bg-y'));
+            goTo.style.setProperty('--top-bg-z', cube.div.style.getPropertyValue('--top-bg-z'));
+
+            cube.div = this.gameui.attachToNewParent(cube.div, marketTile);
+
+            undoAnimArray.push(this.gameui.animationHandler.animateProperty({
                 node: cube.div,
-                goTo: goTo,
-                duration: 500,
+                properties: { width: marketCubeSize * -1, height: marketCubeSize * -1, left: goTo.offsetLeft, top: goTo.offsetTop },
+                duration: 400 + Math.floor(Math.random() * 50),
+                delay: Math.floor(Math.random() * 50),
                 onBegin: () => {
                     cube.div.classList.add('animating-cube');
                 },
                 onEnd: () => {
                     cube.div.remove();
-                    // goTo.classList.remove('selected-for-pyramid', 'built-in-pyramid'); //ekmek borek sil
                     goTo.removeAttribute('built-status');
                 }
             }));
@@ -630,7 +677,7 @@ class PyramidHandler {
         this.gameui.ajaxAction('actUndoBuildPyramid', {}, true, false);
         
         let undoAnim: ReturnType<typeof dojo.animateProperty> = this.gameui.animationHandler.combine(undoAnimArray);
-        undoAnim.onEnd = () => { this.enableBuildPyramid(); }
+        undoAnim.onEnd = () => { marketTile.style.zIndex = null; this.enableBuildPyramid(); }
         
         const fadeInDiscardedCubesAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
         marketTile.querySelectorAll('.a-cube[built-status="discarded-cube"]').forEach((cube: HTMLDivElement) => {
@@ -650,6 +697,7 @@ class PyramidHandler {
 
     private centerCubesContainer(doAnimate = true) {
         const contentsRect = this.gameui.getContentsRectangle(this.cubesContainer, 'animating-cube');
+        
         if(!contentsRect)
             return;
         
@@ -774,11 +822,7 @@ class PyramidHandler {
         this.cubesInConstruction[nextCubeData.cube_id] = this.unplacedCube;
 
         const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
-        // marketTile.querySelectorAll('.a-cube').forEach(cube => {  //ekmek borek sil
-        //         if(cube.getAttribute('cube-id') === nextCubeData.cube_id)
-        //         cube.classList.add('selected-for-pyramid');
-        //     else cube.classList.remove('selected-for-pyramid'); 
-        // });
+        
         marketTile.querySelectorAll('.a-cube[built-status="selected-cube"]').forEach(cube => { cube.removeAttribute('built-status'); });
         marketTile.querySelector('.a-cube[cube-id="' + nextCubeData.cube_id + '"]').setAttribute('built-status', 'selected-cube');
 
@@ -794,12 +838,7 @@ class PyramidHandler {
 
         const collectedMarketTileIndex: number = this.owner.getCollectedMarketTileData().collected_market_index;
         const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
-        // const nextCubeDiv:HTMLDivElement = Array.from(marketTile.querySelectorAll('.a-cube')).find((cube: HTMLDivElement) =>  //ekmek borek sil
-        //     !cube.classList.contains('selected-for-pyramid') && 
-        //     !cube.classList.contains('built-in-pyramid') &&
-        //     cube.getAttribute('color') === nextColor.toString()
-        // ) as HTMLDivElement;
-
+        
         const nextCubeDiv:HTMLDivElement = marketTile.querySelector(`.a-cube:not([built-status])[color="${nextColor}"]`) as HTMLDivElement;
 
         if(!nextCubeDiv)

@@ -720,14 +720,13 @@
 }
 
 :root {
-  --cube-size: 28px;
+  --market-cube-size: 28px;
   --bg-gradient-tooltip: linear-gradient(100deg, #ffcae7f7, #ffd6a5fa);
   --bg-gradient: linear-gradient(130deg, #ffcae7e0, #ffd6a5fa);
   --status-bar-color: #ffe6e6ef;
   --gamearea-avatar-size: 40px;
   --market-tile-glow-color: #2a119ac2;
-  --pyramid-cube-width: var(--cube-size);
-  --cubes-container-height: 100px;
+  --pyramid-cube-size: 80px;
   --max-cube-width: 200px;
   --image-source-market-tiles: url(img/market_tiles_minified.webp);
   --image-source-player-order-tiles: url(img/player_order_tiles_minified.jpg);
@@ -737,8 +736,8 @@
 }
 
 .a-cube {
-  width: var(--cube-size);
-  height: var(--cube-size);
+  width: var(--market-cube-size);
+  height: var(--market-cube-size);
   position: absolute;
   transition: transform 0.2s ease;
 }
@@ -821,11 +820,11 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  margin-right: calc(var(--cube-size) * 0.9);
-  margin-left: calc(var(--cube-size) * 5.9);
+  margin-right: calc(var(--market-cube-size) * 0.9);
+  margin-left: calc(var(--market-cube-size) * 5.9);
 }
 .market-container .market-tiles-container .a-market-tile {
-  --market-tile-size: calc(var(--cube-size) * 6);
+  --market-tile-size: calc(var(--market-cube-size) * 6);
   width: var(--market-tile-size);
   height: var(--market-tile-size);
   margin: 5px;
@@ -893,7 +892,7 @@
   margin-right: calc(var(--gamearea-avatar-size) * -0.5 + 10px);
 }
 .market-container .bonus-cards-container {
-  width: calc(var(--cube-size) * 3);
+  width: calc(var(--market-cube-size) * 3);
   min-width: 140px;
   position: relative;
 }
@@ -901,7 +900,7 @@
 .bonus-cards-container .a-bonus-card-icon, .end-game-score-container .score-type-icon .a-bonus-card-icon {
   width: 100%;
   aspect-ratio: 2.7;
-  margin-top: calc(var(--cube-size) * 0.2);
+  margin-top: calc(var(--market-cube-size) * 0.2);
   cursor: help;
   background-color: #002f35;
   background-image: url("data:image/svg+xml, <svg xmlns='http://www.w3.org/2000/svg' width='180' height='100' viewBox='0 0 180 100'> <polygon points='50,-46 95,40 5,40' fill='%2384b578' transform='rotate(90, 50, 50)'/> </svg>"), url("data:image/svg+xml, <svg xmlns='http://www.w3.org/2000/svg' width='180' height='100' viewBox='0 0 180 100'> <polygon points='94,34 139,120 49,120' fill='%2384b578' transform='rotate(-90, 90, 50)'/> </svg>");
@@ -1130,18 +1129,16 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
 }
 #player-tables .pyramids-container .a-pyramid-container .cubes-container:hover .a-cube {
   animation: shine-cube 1.6s ease-in-out;
 }
 #player-tables .pyramids-container .a-pyramid-container .cubes-container .a-cube, #player-tables .pyramids-container .a-pyramid-container .cubes-container .pyramid-cube-snap-point, #player-tables .pyramids-container .a-pyramid-container .cubes-container .switch-color-button {
   position: absolute;
-  width: var(--pyramid-cube-width, 0px);
-  height: var(--pyramid-cube-width, 0px);
-  max-width: var(--pyramid-cube-width, 0px);
-  max-height: var(--pyramid-cube-width, 0px);
-  transform: translate(-50%, -50%);
+  width: var(--pyramid-cube-size, 0px);
+  height: var(--pyramid-cube-size, 0px);
+  max-width: var(--pyramid-cube-size, 0px);
+  max-height: var(--pyramid-cube-size, 0px);
 }
 #player-tables .pyramids-container .a-pyramid-container .cubes-container .pyramid-cube-snap-point {
   z-index: 0;
@@ -1179,7 +1176,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   text-shadow: 1px 0 #000000, -1px 0 #000000, 0 1px #000000, 0 -1px #000000, 0.5px 0.5px #000000, -0.5px -0.5px #000000, 0.5px -0.5px #000000, -0.5px 0.5px #000000;
-  font-size: calc(var(--cubes-container-height, 40px) * 0.21);
+  font-size: calc(var(--pyramid-cube-size) * 0.7);
 }
 #player-tables .pyramids-container .a-pyramid-container[build-pyramid-enabled=true] .pyramid-cube-snap-point {
   cursor: pointer;
