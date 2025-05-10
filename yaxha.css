@@ -1466,6 +1466,9 @@
   font-size: 30px;
   line-height: 24px;
 }
+.end-game-score-container table tbody td .cell-total {
+  transition: opacity 0.2s ease;
+}
 .end-game-score-container .close-table-button {
   position: absolute;
   top: 12px;

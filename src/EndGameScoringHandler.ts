@@ -107,7 +107,6 @@ class EndGameScoringHandler{
             else scoreTypeIconHTML = `<i class="fa fa-star total-icon"></i>`;
 
             row.innerHTML = `<td class="score-type-icon-cell"><div class="score-type-icon ${scoreType.type}-${scoreType.index}">${scoreTypeIconHTML}</div></td>`;
-            
 
             for(let player_id of this.gameui.playerSeatOrder) {
                 const playerScore = this.endGameScoring.player_scores[player_id];
@@ -115,7 +114,7 @@ class EndGameScoringHandler{
                     playerScore.color_points[scoreType.index] :
                     (scoreTypes[i].type === 'bonus' ? playerScore.bonus_card_points[scoreType.index] : playerScore.total);
 
-                row.innerHTML += `<td><div class="cell-text" style="opacity: 0;" row-index="${i}" player-id="${player_id}">${cellScore}</div></td>`;
+                row.innerHTML += `<td><div class="cell-text cell-${scoreType.type}" style="opacity: 0;" row-index="${i}" player-id="${player_id}">${cellScore}</div></td>`;
             }
             
             this.tbody.appendChild(row);
@@ -215,8 +214,28 @@ class EndGameScoringHandler{
 
         overallContent.addEventListener('click', this.bodyClickHandler);
 
+        this.addColumnTotal(cell.getAttribute('player-id'));
+        
+
         await fadeInAnim.start();
         await this.fadeInNextCell();
+    }
+
+    private addColumnTotal(playerID: string) {
+        const cells = Array.from(this.tbody.querySelectorAll(`.cell-text.displayed[player-id="${playerID}"]:not(.cell-total)`)) as HTMLDivElement[];
+        let total: number = 0;
+        cells.forEach(cell => {
+            const value: number = parseInt(cell.textContent || '0');
+            if (!isNaN(value))
+                total += value;
+        });
+
+        const totalCell = this.tbody.querySelector(`.cell-total[player-id="${playerID}"]`) as HTMLDivElement;
+        if (totalCell){
+            totalCell.textContent = total.toString();
+            totalCell.classList.add('displayed');
+            totalCell.style.opacity = '1';
+        }
     }
 
     private makeWinnersJump() {
