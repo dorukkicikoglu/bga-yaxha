@@ -416,8 +416,6 @@ class PyramidHandler {
     }
 
     private animateUnplacedCubeToPyramid(cubeData: PyramidCube, moveType: PyramidCubeMoveType) {
-        console.log('animateUnplacedCubeToPyramid', cubeData);
-        console.log('moveType', moveType);
         if(this.moveCubeAnim)
             return;
 
@@ -554,8 +552,6 @@ class PyramidHandler {
                 easing: 'circleOut',
                 delay: delay + Math.floor(Math.random() * 100),
                 onEnd: () => { 
-                    if(this.owner.playerID == 2367142)
-                        console.log('aaaa');
                     pyramidCubeDiv.replaceWith(marketCubeDiv);
                     marketCubeDiv.classList.remove('animating-cube');
                     marketCubeDiv.style.width = null;
@@ -624,42 +620,53 @@ class PyramidHandler {
         });
         
         const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
-        marketTile.style.zIndex = '1'; //animating cubes need to render above the pyramidContainer
 
         const marketCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--market-cube-size'));
         const pyramidCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--pyramid-cube-size'));
 
         let undoAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
-        
+        let animatingCubes: { [cubeID: number]: true } = {};
+
         // Get all cubes in construction and animate them back to their market positions
         Object.values(this.cubesInConstruction).forEach(cube => {
-            const goTo: HTMLDivElement = marketTile.querySelector(`.a-cube[cube-id="${cube.cube_id}"]`);
-            if (!goTo) 
+            const marketCube: HTMLDivElement = marketTile.querySelector(`.a-cube[cube-id="${cube.cube_id}"]`);
+            if (!marketCube) 
                 return;
+
+            marketCube.style.setProperty('--top-bg-x', cube.div.style.getPropertyValue('--top-bg-x'));
+            marketCube.style.setProperty('--top-bg-y', cube.div.style.getPropertyValue('--top-bg-y'));
+            marketCube.style.setProperty('--top-bg-z', cube.div.style.getPropertyValue('--top-bg-z'));
+
+            const goTo: HTMLDivElement = marketCube.cloneNode(true) as HTMLDivElement;
+            goTo.style.width = marketCubeSize + 'px';
+            goTo.style.height = marketCubeSize + 'px';
+            goTo.style.opacity = '0';
+            goTo.classList.add('animating-cube');
+
+            this.cubesContainer.appendChild(goTo);
+            this.gameui.placeOnObject(goTo, marketCube);
+
+            animatingCubes[cube.cube_id] = true;
 
             cube.div.style.width = pyramidCubeSize + 'px';
             cube.div.style.height = pyramidCubeSize + 'px';
             cube.div.style.minWidth = marketCubeSize + 'px'; //so that the shrinking animation happens half way
             cube.div.style.minHeight = marketCubeSize + 'px';
-
-            // Transfer cube bg  to goTo
-            goTo.style.setProperty('--top-bg-x', cube.div.style.getPropertyValue('--top-bg-x'));
-            goTo.style.setProperty('--top-bg-y', cube.div.style.getPropertyValue('--top-bg-y'));
-            goTo.style.setProperty('--top-bg-z', cube.div.style.getPropertyValue('--top-bg-z'));
-
-            cube.div = this.gameui.attachToNewParent(cube.div, marketTile);
+            cube.div.classList.add('animating-cube');
 
             undoAnimArray.push(this.gameui.animationHandler.animateProperty({
                 node: cube.div,
-                properties: { width: marketCubeSize * -1, height: marketCubeSize * -1, left: goTo.offsetLeft, top: goTo.offsetTop },
-                duration: 400 + Math.floor(Math.random() * 50),
+                properties: { width: marketCubeSize / 2, height: marketCubeSize / 2, left: goTo.offsetLeft, top: goTo.offsetTop },
+                duration: 450 + Math.floor(Math.random() * 50),
                 delay: Math.floor(Math.random() * 50),
-                onBegin: () => {
-                    cube.div.classList.add('animating-cube');
-                },
+                easing: 'circleOut',
                 onEnd: () => {
+                    goTo.remove();
                     cube.div.remove();
-                    goTo.removeAttribute('built-status');
+                    marketCube.removeAttribute('built-status');
+                    delete animatingCubes[cube.cube_id];
+
+                    if(Object.keys(animatingCubes).length == 0){ this.enableBuildPyramid(); }
                 }
             }));
         });
@@ -676,21 +683,21 @@ class PyramidHandler {
 
         this.gameui.ajaxAction('actUndoBuildPyramid', {}, true, false);
         
-        let undoAnim: ReturnType<typeof dojo.animateProperty> = this.gameui.animationHandler.combine(undoAnimArray);
-        undoAnim.onEnd = () => { marketTile.style.zIndex = null; this.enableBuildPyramid(); }
-        
-        const fadeInDiscardedCubesAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
+        const fadeInDiscardedCubesAnimArray: ReturnType<typeof dojo.animateProperty>[] = []; //ekmek sil
         marketTile.querySelectorAll('.a-cube[built-status="discarded-cube"]').forEach((cube: HTMLDivElement) => {
             fadeInDiscardedCubesAnimArray.push(this.gameui.animationHandler.animateProperty({
                 node: cube,
                 duration: 400,
                 properties: {opacity: 1},
-                onEnd: () => { cube.removeAttribute('built-status'); }
+                onEnd: () => { cube.removeAttribute('built-status'); cube.style.opacity = null; }
             }));
         });
 
-        if(fadeInDiscardedCubesAnimArray.length > 0)
-            undoAnim = this.gameui.animationHandler.combine([undoAnim, this.gameui.animationHandler.combine(fadeInDiscardedCubesAnimArray)]);
+        let undoAnim: ReturnType<typeof dojo.animateProperty> = this.gameui.animationHandler.combine(undoAnimArray);
+        let fadeInDiscardedCubesAnim: ReturnType<typeof dojo.animateProperty> = this.gameui.animationHandler.combine(fadeInDiscardedCubesAnimArray);
+
+        if(fadeInDiscardedCubesAnimArray.length > 0) //ekmek uncomment
+            undoAnim = this.gameui.animationHandler.combine([undoAnim, fadeInDiscardedCubesAnim]);
 
         undoAnim.start();
     }
