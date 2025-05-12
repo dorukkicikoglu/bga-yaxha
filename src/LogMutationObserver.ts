@@ -76,13 +76,19 @@ class LogMutationObserver{
 
         cardsData.collectingPlayers.sort((a, b) => a.turn_order - b.turn_order);
         cardsData.pendingPlayers.sort((a, b) => a.turn_order - b.turn_order);
-        
+
         const createPlayerRow = (cardData, isCollecting = true) => {
-            return `<div class="player-selected-market-tile-row ${isCollecting ? 'collecting' : 'pending'}">${
-                this.gameui.divColoredPlayer(cardData.player_id, {class: 'playername'}, false)
-            }<i class="log-arrow log-arrow-left fa6 ${isCollecting ? 'fa-arrow-left' : 'fa-ban'}"></i><div class="a-market-tile-icon" market-index="${
-                cardData.selected_market_index
-            }"></div></div>`;
+            const cubesHTML = isCollecting ? '&nbsp; <div class="log-cubes-wrapper">' + cardData.collected_cubes.map(cube => this.gameui.createCubeDiv(cube).outerHTML).join('') + '</div>' : '';
+            let playerRowHTML = `
+                <div class="player-selected-market-tile-row ${isCollecting ? 'collecting' : 'pending'}">
+                    ${this.gameui.divColoredPlayer(cardData.player_id, {class: 'playername'}, false)}
+                    <i class="log-arrow log-arrow-left fa6 ${isCollecting ? 'fa-arrow-left' : 'fa-ban'}"></i>
+                    <div class="a-market-tile-icon" market-index="${cardData.selected_market_index}"></div>
+                    ${cubesHTML}
+                </div>
+            `;
+
+            return playerRowHTML;
         };
 
         cardsData.collectingPlayers.forEach(cardData => { logHTML += createPlayerRow(cardData, true); });
@@ -90,6 +96,10 @@ class LogMutationObserver{
         logHTML = `<div class="market-interaction-rows-wrapper">${logHTML}</div>`;
 
         return logHTML;
+    }
+
+    public createLogIndividualMarketTileCollection(player_id: number, collected_market_index: number, collected_cubes: BaseCube[]): string {
+        return `<div class="player-collected-market-tile-row collecting">${this.gameui.divColoredPlayer(player_id, {class: 'playername'}, false)}<i class="log-arrow log-arrow-left fa6 fa-arrow-left"></i><div class="a-market-tile-icon" market-index="${collected_market_index}"></div></div>` + ' &nbsp; <div class="log-cubes-wrapper">' + collected_cubes.map(cube => this.gameui.createCubeDiv(cube).outerHTML).join('') + '</div>';
     }
 
     public createLogDisplayBuiltCubes(built_cubes: { [key: number]: CubeToPyramidMoveData[] }): string {
@@ -118,7 +128,7 @@ class LogMutationObserver{
             logHTML += `<div class="player-built-cubes-row">
             ${this.gameui.divColoredPlayer(playerID, {class: 'playername'}, false)}
             <i class="log-arrow log-place-cube-icon fa6 fa-download"></i>
-            ${cubesHTML}
+            <div class="log-cubes-wrapper">${cubesHTML}</div>
             </div>`;
         }
 

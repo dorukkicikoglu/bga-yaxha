@@ -411,7 +411,7 @@ var GameBody = /** @class */ (function (_super) {
         var pyramidCSS = '';
         pyramidCSSRange.forEach(function (posXY) {
             pyramidCSSRange.forEach(function (posZ) {
-                pyramidCSS += "\n                    .pyramids-container .a-pyramid-container .cubes-container *[pos-z=\"".concat(posZ, "\"][pos-x=\"").concat(posXY, "\"] {\n                    left: calc(min(var(--pyramid-cube-size), var(--max-cube-width)) * ").concat(posXY + 0.42 * posZ, ");\n                    }\n                    .pyramids-container .a-pyramid-container .cubes-container *[pos-z=\"").concat(posZ, "\"][pos-y=\"").concat(posXY, "\"] {\n                    bottom: calc(min(var(--pyramid-cube-size), var(--max-cube-width)) * ").concat(posXY + 0.7 * posZ, ");\n                    }\n                    ");
+                pyramidCSS += "\n                    .pyramids-container .a-pyramid-container .cubes-container *[pos-z=\"".concat(posZ, "\"][pos-x=\"").concat(posXY, "\"] {\n                    left: calc(var(--pyramid-cube-size) * ").concat(posXY + 0.42 * posZ, ");\n                    }\n                    .pyramids-container .a-pyramid-container .cubes-container *[pos-z=\"").concat(posZ, "\"][pos-y=\"").concat(posXY, "\"] {\n                    bottom: calc(var(--pyramid-cube-size) * ").concat(posXY + 0.7 * posZ, ");\n                    }\n                    ");
             });
         });
         document.getElementById('game_play_area').insertAdjacentHTML('beforeend', "\n            <style>\n                ".concat(cubeColorCSS, "\n                ").concat(pyramidCSS, "\n            </style>\n            <div id=\"player-tables\">\n            <div class=\"market-container\">\n                <div class=\"market-tiles-container\"></div>\n                <div class=\"waiting-players-container\"></div>\n                <div class=\"bonus-cards-container\"></div>\n            </div>\n            <div class=\"pyramids-container\"></div>\n        </div>"));
@@ -502,7 +502,7 @@ var GameBody = /** @class */ (function (_super) {
                         else if (key == 'REVEALED_MARKET_TILES_DATA_STR')
                             args['REVEALED_MARKET_TILES_DATA_STR'] = this.logMutationObserver.createLogSelectedMarketTiles(args['collectedMarketTilesData']);
                         else if (key == 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR')
-                            args['INDIVIDUAL_MARKET_TILES_COLLECTION_STR'] = "<div class=\"player-collected-market-tile-row collecting\">".concat(this.divColoredPlayer(args.player_id, { class: 'playername' }, false), "<i class=\"log-arrow log-arrow-left fa6 fa-arrow-left\"></i><div class=\"a-market-tile-icon\" market-index=\"").concat(args.collected_market_index, "\"></div></div>");
+                            args['INDIVIDUAL_MARKET_TILES_COLLECTION_STR'] = this.logMutationObserver.createLogIndividualMarketTileCollection(args.player_id, args.collected_market_index, args.collected_cubes);
                         else if (key == 'DISPLAY_BUILT_CUBES_STR')
                             args['DISPLAY_BUILT_CUBES_STR'] = this.logMutationObserver.createLogDisplayBuiltCubes(args['built_cubes']);
                         else if (key == 'SWAP_TURN_ORDERS_DATA_STR')
@@ -557,9 +557,6 @@ var GameBody = /** @class */ (function (_super) {
         return "".concat(key, "=\"").concat(value, "\"");
     }).join(' '); };
     GameBody.prototype.getPos = function (node) {
-        // let withinPageContent = document.getElementById('page-content').contains(node); //ekmek sil
-        // withinPageContent = true; //ekmek sil
-        // let pos = withinPageContent ? this.getBoundingClientRectIgnoreZoom(node) : node.getBoundingClientRect(); 
         var pos = this.getBoundingClientRectIgnoreZoom(node);
         pos.w = pos.width;
         pos.h = pos.height;
@@ -657,8 +654,7 @@ var GameBody = /** @class */ (function (_super) {
             var child = _a[_i];
             if (excludeClass && child.classList.contains(excludeClass))
                 continue;
-            // let rect = child.getBoundingClientRect(); //ekmek sil
-            var rect = this.getPos(child); //ekmek uncomment
+            var rect = this.getPos(child);
             minX = Math.min(minX, rect.left);
             minY = Math.min(minY, rect.top);
             maxX = Math.max(maxX, rect.right);
@@ -925,12 +921,18 @@ var LogMutationObserver = /** @class */ (function () {
         cardsData.pendingPlayers.sort(function (a, b) { return a.turn_order - b.turn_order; });
         var createPlayerRow = function (cardData, isCollecting) {
             if (isCollecting === void 0) { isCollecting = true; }
-            return "<div class=\"player-selected-market-tile-row ".concat(isCollecting ? 'collecting' : 'pending', "\">").concat(_this.gameui.divColoredPlayer(cardData.player_id, { class: 'playername' }, false), "<i class=\"log-arrow log-arrow-left fa6 ").concat(isCollecting ? 'fa-arrow-left' : 'fa-ban', "\"></i><div class=\"a-market-tile-icon\" market-index=\"").concat(cardData.selected_market_index, "\"></div></div>");
+            var cubesHTML = isCollecting ? '&nbsp; <div class="log-cubes-wrapper">' + cardData.collected_cubes.map(function (cube) { return _this.gameui.createCubeDiv(cube).outerHTML; }).join('') + '</div>' : '';
+            var playerRowHTML = "\n                <div class=\"player-selected-market-tile-row ".concat(isCollecting ? 'collecting' : 'pending', "\">\n                    ").concat(_this.gameui.divColoredPlayer(cardData.player_id, { class: 'playername' }, false), "\n                    <i class=\"log-arrow log-arrow-left fa6 ").concat(isCollecting ? 'fa-arrow-left' : 'fa-ban', "\"></i>\n                    <div class=\"a-market-tile-icon\" market-index=\"").concat(cardData.selected_market_index, "\"></div>\n                    ").concat(cubesHTML, "\n                </div>\n            ");
+            return playerRowHTML;
         };
         cardsData.collectingPlayers.forEach(function (cardData) { logHTML += createPlayerRow(cardData, true); });
         cardsData.pendingPlayers.forEach(function (cardData) { logHTML += createPlayerRow(cardData, false); });
         logHTML = "<div class=\"market-interaction-rows-wrapper\">".concat(logHTML, "</div>");
         return logHTML;
+    };
+    LogMutationObserver.prototype.createLogIndividualMarketTileCollection = function (player_id, collected_market_index, collected_cubes) {
+        var _this = this;
+        return "<div class=\"player-collected-market-tile-row collecting\">".concat(this.gameui.divColoredPlayer(player_id, { class: 'playername' }, false), "<i class=\"log-arrow log-arrow-left fa6 fa-arrow-left\"></i><div class=\"a-market-tile-icon\" market-index=\"").concat(collected_market_index, "\"></div></div>") + ' &nbsp; <div class="log-cubes-wrapper">' + collected_cubes.map(function (cube) { return _this.gameui.createCubeDiv(cube).outerHTML; }).join('') + '</div>';
     };
     LogMutationObserver.prototype.createLogDisplayBuiltCubes = function (built_cubes) {
         var logHTML = '';
@@ -953,7 +955,7 @@ var LogMutationObserver = /** @class */ (function () {
                 var cube = _a[_i];
                 cubesHTML += this_1.gameui.createCubeDiv(cube).outerHTML;
             }
-            logHTML += "<div class=\"player-built-cubes-row\">\n            ".concat(this_1.gameui.divColoredPlayer(playerID, { class: 'playername' }, false), "\n            <i class=\"log-arrow log-place-cube-icon fa6 fa-download\"></i>\n            ").concat(cubesHTML, "\n            </div>");
+            logHTML += "<div class=\"player-built-cubes-row\">\n            ".concat(this_1.gameui.divColoredPlayer(playerID, { class: 'playername' }, false), "\n            <i class=\"log-arrow log-place-cube-icon fa6 fa-download\"></i>\n            <div class=\"log-cubes-wrapper\">").concat(cubesHTML, "</div>\n            </div>");
         };
         var this_1 = this;
         for (var playerID in this.gameui.players) {
@@ -1865,7 +1867,7 @@ var PyramidHandler = /** @class */ (function () {
         this.cubesContainer.querySelectorAll('.switch-color-button').forEach(function (el) { return el.remove(); });
         this.unplacedCube = cubeData;
         var marketCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--market-cube-size'));
-        var pyramidCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--pyramid-cube-size'));
+        var pyramidCubeSize = parseInt(getComputedStyle(document.body).getPropertyValue('--pyramid-cube-size'));
         var animSpeed = 400;
         if (!this.unplacedCube.div) { //search Market Tiles
             var marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
@@ -1910,7 +1912,7 @@ var PyramidHandler = /** @class */ (function () {
         var marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
         var animSpeed = 600;
         var marketCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--market-cube-size'));
-        var pyramidCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--pyramid-cube-size'));
+        var pyramidCubeSize = parseInt(getComputedStyle(document.body).getPropertyValue('--pyramid-cube-size'));
         var cubeAnimArray = [];
         var collectingAvatar = marketTile.querySelector('.yaxha-player-avatar.collecting-player-avatar');
         if (collectingAvatar) {
@@ -2030,7 +2032,7 @@ var PyramidHandler = /** @class */ (function () {
         });
         var marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
         var marketCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--market-cube-size'));
-        var pyramidCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--pyramid-cube-size'));
+        var pyramidCubeSize = parseInt(getComputedStyle(document.body).getPropertyValue('--pyramid-cube-size'));
         var undoAnimArray = [];
         var animatingCubes = {};
         // Get all cubes in construction and animate them back to their market positions
@@ -2115,6 +2117,8 @@ var PyramidHandler = /** @class */ (function () {
             this.centerTilesAnim.stop();
             this.centerTilesAnim = null;
         }
+        var pyramidCubeSize = parseInt(getComputedStyle(document.body).getPropertyValue('--pyramid-cube-size'));
+        offsetX -= pyramidCubeSize * 0.16; //move slightly left to make up for right-side of cubes
         if (doAnimate) {
             this.centerTilesAnim = this.gameui.animationHandler.animateProperty({
                 node: this.cubesContainer,
