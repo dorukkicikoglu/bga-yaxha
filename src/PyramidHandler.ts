@@ -424,7 +424,8 @@ class PyramidHandler {
         this.unplacedCube = cubeData;
 
         const marketCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--market-cube-size'));
-        const pyramidCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--pyramid-cube-size'));
+        const pyramidCubeSize = parseInt(getComputedStyle(document.body).getPropertyValue('--pyramid-cube-size'));
+        
         let animSpeed = 400;
 
         if(!this.unplacedCube.div){ //search Market Tiles
@@ -482,7 +483,7 @@ class PyramidHandler {
         const animSpeed = 600;
 
         const marketCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--market-cube-size'));
-        const pyramidCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--pyramid-cube-size'));
+        const pyramidCubeSize = parseInt(getComputedStyle(document.body).getPropertyValue('--pyramid-cube-size'));
 
         let cubeAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
 
@@ -622,7 +623,7 @@ class PyramidHandler {
         const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
 
         const marketCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--market-cube-size'));
-        const pyramidCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--pyramid-cube-size'));
+        const pyramidCubeSize = parseInt(getComputedStyle(document.body).getPropertyValue('--pyramid-cube-size'));
 
         let undoAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
         let animatingCubes: { [cubeID: number]: true } = {};
@@ -719,13 +720,16 @@ class PyramidHandler {
         const midPointX = (contentsRect.maxX + contentsRect.minX) / 2;
         const midPointY = (contentsRect.maxY + contentsRect.minY) / 2;
         
-        const offsetX = centerPoint.x - midPointX;
+        let offsetX = centerPoint.x - midPointX;
         const offsetY = centerPoint.y - midPointY;
 
         if(this.centerTilesAnim){
             this.centerTilesAnim.stop();
             this.centerTilesAnim = null;
         }
+
+        const pyramidCubeSize = parseInt(getComputedStyle(document.body).getPropertyValue('--pyramid-cube-size'));
+        offsetX -= pyramidCubeSize * 0.16; //move slightly left to make up for right-side of cubes
 
         if(doAnimate){
             this.centerTilesAnim = this.gameui.animationHandler.animateProperty({

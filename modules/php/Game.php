@@ -165,17 +165,23 @@ class Game extends \Table
         if($playerAlreadyCollected !== null)
             throw new \BgaUserException(clienttranslate("You have already collected a Market Tile this round"));
 
-        $this->giveExtraTime($activePlayerID);
+        $collectedCubes = $this->getObjectListFromDB("SELECT card_id as cube_id, color FROM cubes WHERE card_location = 'market' AND card_location_arg = " . $marketIndex);
+        $logHTML = $this->getPlayerNameById($activePlayerID).' ← '.$this->marketManager->getMarketTileSelectionLogHTML($marketIndex).'&nbsp;';
+        foreach($collectedCubes as $cube)
+            $logHTML .= $this->marketManager->getCubeLogHTML($cube['color']);
 
         $this->DbQuery("UPDATE player SET collected_market_index = $marketIndex WHERE player_id = $activePlayerID");
 
         $this->notify->all('individualPlayerCollected', '${INDIVIDUAL_MARKET_TILES_COLLECTION_STR}', array(
             'LOG_CLASS' => 'individual-collected-tiles-log',
-            'preserve' => ['LOG_CLASS', 'player_id', 'collected_market_index'],
+            'preserve' => ['LOG_CLASS', 'player_id', 'collected_market_index', 'collected_cubes'],
             'player_id' => $activePlayerID,
             'collected_market_index' => $marketIndex,
-            'INDIVIDUAL_MARKET_TILES_COLLECTION_STR' => $this->getPlayerNameById($activePlayerID).' ← '.$this->marketManager->getMarketTileSelectionLogHTML($marketIndex)
+            'collected_cubes' => $collectedCubes,
+            'INDIVIDUAL_MARKET_TILES_COLLECTION_STR' => $logHTML
         ));
+
+        $this->giveExtraTime($activePlayerID);
 
         $this->gamestate->nextState('getNextPendingPlayerToSelectMarketTile');
     }
@@ -359,13 +365,10 @@ class Game extends \Table
             collected_market_index = NULL");
 
         $this->globalsManager->set('rounds_remaining', (int) $this->globalsManager->get('rounds_remaining') - 1);
-
+        
         $builtCubesDataStr = '';
-        foreach($builtCubesByPlayer as $playerID => $cubes){
-            $builtCubesDataStr .= $this->getPlayerNameById($playerID).' ↓ '.implode('', array_map(fn($cube) => 
-                '<div style="display: inline-block; border: 1px solid #000; margin: 0 2px; background-color: #'.CUBE_COLORS[$cube['color']]['colorCode'].'; width: 18px; height: 18px;"></div>'
-            , $cubes)).'<br>';
-        }
+        foreach($builtCubesByPlayer as $playerID => $cubes)
+            $builtCubesDataStr .= $this->getPlayerNameById($playerID).' ↓ '.implode('', array_map(fn($cube) => $this->marketManager->getCubeLogHTML($cube['color']), $cubes)).'<br>';
 
         $this->notify->all('displayBuiltCubes', '${DISPLAY_BUILT_CUBES_STR}', [
             'LOG_CLASS' => 'display-built-cubes-log',

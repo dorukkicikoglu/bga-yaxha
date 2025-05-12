@@ -64,10 +64,10 @@ class GameBody extends GameGui {
                 pyramidCSSRange.forEach(posZ => {
                     pyramidCSS += `
                     .pyramids-container .a-pyramid-container .cubes-container *[pos-z="${posZ}"][pos-x="${posXY}"] {
-                    left: calc(min(var(--pyramid-cube-size), var(--max-cube-width)) * ${posXY + 0.42 * posZ});
+                    left: calc(var(--pyramid-cube-size) * ${posXY + 0.42 * posZ});
                     }
                     .pyramids-container .a-pyramid-container .cubes-container *[pos-z="${posZ}"][pos-y="${posXY}"] {
-                    bottom: calc(min(var(--pyramid-cube-size), var(--max-cube-width)) * ${posXY + 0.7 * posZ});
+                    bottom: calc(var(--pyramid-cube-size) * ${posXY + 0.7 * posZ});
                     }
                     `;
                 });
@@ -186,7 +186,7 @@ class GameBody extends GameGui {
                         else if(key == 'REVEALED_MARKET_TILES_DATA_STR')
                             args['REVEALED_MARKET_TILES_DATA_STR'] = this.logMutationObserver.createLogSelectedMarketTiles(args['collectedMarketTilesData']);
                         else if(key == 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR')
-                            args['INDIVIDUAL_MARKET_TILES_COLLECTION_STR'] = `<div class="player-collected-market-tile-row collecting">${this.divColoredPlayer(args.player_id, {class: 'playername'}, false)}<i class="log-arrow log-arrow-left fa6 fa-arrow-left"></i><div class="a-market-tile-icon" market-index="${args.collected_market_index}"></div></div>`;
+                            args['INDIVIDUAL_MARKET_TILES_COLLECTION_STR'] = this.logMutationObserver.createLogIndividualMarketTileCollection(args.player_id, args.collected_market_index, args.collected_cubes);
                         else if(key == 'DISPLAY_BUILT_CUBES_STR')
                             args['DISPLAY_BUILT_CUBES_STR'] = this.logMutationObserver.createLogDisplayBuiltCubes(args['built_cubes']);
                         else if(key == 'SWAP_TURN_ORDERS_DATA_STR')
@@ -234,10 +234,6 @@ class GameBody extends GameGui {
     }
     private getAttributesHTML(attributes): string{ return Object.entries(attributes || {}).map(([key, value]) => `${key}="${value}"`).join(' '); }
     public getPos(node: HTMLDivElement): DOMRect { 
-        // let withinPageContent = document.getElementById('page-content').contains(node); //ekmek sil
-        // withinPageContent = true; //ekmek sil
-        // let pos = withinPageContent ? this.getBoundingClientRectIgnoreZoom(node) : node.getBoundingClientRect(); 
-
         let pos = this.getBoundingClientRectIgnoreZoom(node); 
         pos.w = pos.width; pos.h = pos.height; 
         return pos;
@@ -338,8 +334,7 @@ class GameBody extends GameGui {
             if (excludeClass && child.classList.contains(excludeClass))
                 continue;
             
-            // let rect = child.getBoundingClientRect(); //ekmek sil
-            let rect = this.getPos(child as HTMLDivElement); //ekmek uncomment
+            let rect = this.getPos(child as HTMLDivElement);
 
             minX = Math.min(minX, rect.left);
             minY = Math.min(minY, rect.top);
@@ -419,7 +414,7 @@ class GameBody extends GameGui {
         await this.marketHandler.animateSwapTurnOrders(args.swapData);
     }
 
-    public async notif_displayEndGameScore(args) { //ekmek sil
+    public async notif_displayEndGameScore(args) {
         console.log('notif_displayEndGameScore');
 
         await this.endGameScoringHandler.displayEndGameScore(args.endGameScoring);

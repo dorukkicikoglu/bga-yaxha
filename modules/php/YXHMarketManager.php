@@ -63,9 +63,8 @@ class YXHMarketManager extends APP_DbObject
         return $players;
     }
 
-    function getMarketTileSelectionLogHTML($marketIndex){
-        return '<span style="position: absolute; opacity: 0; width: 0px; height: 0px;">MARKET TILE </span><span style="background-color:#'.MARKET_TILE_COLORS[$marketIndex].';display: inline-block; width: 18px; height: 18px; text-align: center; line-height: 18px;">'.($marketIndex + 1).'</span>';
-    }
+    function getMarketTileSelectionLogHTML($marketIndex){ return '<span style="position: absolute; opacity: 0; width: 0px; height: 0px; outline: 1px solid #000;">MARKET TILE </span><span style="background-color:#'.MARKET_TILE_COLORS[$marketIndex].';display: inline-block; width: 18px; height: 18px; text-align: center; line-height: 18px; outline: 1px solid #000;">'.($marketIndex + 1).'</span>'; }
+    function getCubeLogHTML($colorIndex){ return '<div style="display: inline-block; outline: 1px solid #000; margin: 0 2px; background-color: #'.$colorCode = CUBE_COLORS[$colorIndex]['colorCode'].'; width: 18px; height: 18px;"><span style="position: absolute;opacity: 0;width: 0px;height: 0px;">&nbsp;'.$colorName = CUBE_COLORS[$colorIndex]['name'].'&nbsp;</span></div>'; }
 
     public function handleAllMarketTileSelectionsMade()
     {
@@ -108,12 +107,18 @@ class YXHMarketManager extends APP_DbObject
         foreach ($collectingPlayers as $index => $player){
             $this->DbQuery("UPDATE player SET collected_market_index = selected_market_index WHERE player_id = " . $player['player_id']);
             $collectingPlayers[$index]['collected_market_index'] = $player['selected_market_index'];
+            $collectingPlayers[$index]['collected_cubes'] = $this->getObjectListFromDB("SELECT card_id as cube_id, color FROM cubes WHERE card_location = 'market' AND card_location_arg = " . $player['selected_market_index']);
         }
 
         $collectedTilesData = []; //needed for the game replay page
         $pendingTilesData = []; //needed for the game replay page
-        foreach($collectingPlayers as $playerData)
-            $collectedTilesData[] = $this->parent->getPlayerNameById($playerData['player_id']).' ← '.$this->getMarketTileSelectionLogHTML($playerData['selected_market_index']);
+        foreach($collectingPlayers as $playerData){
+            $collectingLogHTML = $this->parent->getPlayerNameById($playerData['player_id']).' ← '.$this->getMarketTileSelectionLogHTML($playerData['selected_market_index']).' &nbsp; ';
+            foreach($playerData['collected_cubes'] as $cube)
+                $collectingLogHTML .= $this->getCubeLogHTML($cube['color']);
+            $collectedTilesData[] = $collectingLogHTML;
+        }
+            
         foreach($pendingPlayers as $playerData)
             $pendingTilesData[] = $this->parent->getPlayerNameById($playerData['player_id']).' ⏹ '.$this->getMarketTileSelectionLogHTML($playerData['selected_market_index']);
         $marketTilesDataStr = implode(', ', $collectedTilesData).'<br>'.implode(', ', $pendingTilesData);
@@ -166,7 +171,7 @@ class YXHMarketManager extends APP_DbObject
             }
         }
 
-        function makeInlineTurnOrderCardHTML($turnOrderIn){ return '<span style="background-color:#222838; color:#EE894A; display: inline-block; width: 18px; height: 18px; text-align: center; line-height: 18px;">'.$turnOrderIn.'</span>'; }
+        function makeInlineTurnOrderCardHTML($turnOrderIn){ return '<span style="background-color:#222838; color:#EE894A; display: inline-block; width: 18px; height: 18px; text-align: center; line-height: 18px; outline: 1px solid #000;">'.$turnOrderIn.'</span>'; }
 
         foreach($swaps as $swap){
             $this->DbQuery("UPDATE player SET turn_order = {$swap[1]['turn_order']} WHERE player_id = {$swap[0]['player_id']}");
