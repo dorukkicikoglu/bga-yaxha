@@ -2,7 +2,7 @@
 /**
  *------
  * BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
- * yaxha implementation : © <Your name here> <Your email address here>
+ * yaxha implementation : © Doruk Kicikoglu <doruk.kicikoglu@gmail.com>
  *
  * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
  * See http://en.boardgamearena.com/#!doc/Studio for more information.
@@ -69,23 +69,6 @@ class Game extends \Table
 
         $this->cubesBag = self::getNew("module.common.deck");
         $this->cubesBag->init("cubes");
-
-        //ekmek yap
-        /* example of notification decorator.
-        // automatically complete notification args when needed
-        $this->notify->addDecorator(function(string $message, array $args) {
-            if (isset($args['player_id']) && !isset($args['player_name']) && str_contains($message, '${player_name}')) {
-                $args['player_name'] = $this->getPlayerNameById($args['player_id']);
-            }
-        
-            if (isset($args['card_id']) && !isset($args['card_name']) && str_contains($message, '${card_name}')) {
-                $args['card_name'] = self::$CARD_TYPES[$args['card_id']]['card_name'];
-                $args['i18n'][] = ['card_name'];
-            }
-            
-            return $args;
-        });*/
-
     }
 
     /**
@@ -105,7 +88,9 @@ class Game extends \Table
             throw new \BgaUserException(sprintf( clienttranslate('Invalid Market Tile index: %d. Must be between 0 and %d'), $marketIndex, $playerCount - 1 ));
 
         $currentPlayerID = (int) $this->getCurrentPlayerId();
-    
+        if ($this->isPlayerZombie($currentPlayerID))
+            return;
+
         $madeSelectionThisRound = $this->getUniqueValueFromDB("SELECT made_market_index_selection_this_round FROM player WHERE player_id = $currentPlayerID");
 
         if($madeSelectionThisRound == 'false')
@@ -128,19 +113,22 @@ class Game extends \Table
      * @throws BgaUserException if the action is not currently allowed
      */
     #[CheckAction(false)]
-    public function actRevertAllSelectMarketTile(): void
+    public function actRevertAllSelectMarketTile($zombieCallerPlayerID = null): void
     {
         $this->gamestate->checkPossibleAction('actRevertAllSelectMarketTile');
 
-        $currentPlayerID = (int) $this->getCurrentPlayerId();
-        $this->DbQuery("UPDATE player SET selected_market_index = NULL WHERE player_id = $currentPlayerID");
+        $reverterPlayerID = $zombieCallerPlayerID ? $zombieCallerPlayerID : (int) $this->getCurrentPlayerId();
+        if (!$zombieCallerPlayerID && $this->isPlayerZombie($reverterPlayerID))
+            return;
+        
+        $this->DbQuery("UPDATE player SET selected_market_index = NULL WHERE player_id = $reverterPlayerID");
 
-        $this->notify->player($currentPlayerID, 'marketIndexSelectionReverted', '', []);
+        $this->notify->player($reverterPlayerID, 'marketIndexSelectionReverted', '', []);
 
-        $this->gamestate->setPlayersMultiactive([$currentPlayerID], '');
+        $this->gamestate->setPlayersMultiactive([$reverterPlayerID], '');
 
         $this->not_a_move_notification = true; // note: do not increase the move counter
-        $this->notify->player($currentPlayerID, 'marketIndexSelectionReverted', '', []);
+        $this->notify->player($reverterPlayerID, 'marketIndexSelectionReverted', '', []);
     }
     
     #[CheckAction(false)]
@@ -216,19 +204,6 @@ class Game extends \Table
         $this->pyramidManager->confirmBuildPyramid((int) $this->getCurrentPlayerId());
     }
 
-    public function argAllSelectMarketTile(): array{
-        $selectedMarketIndexes = $this->getCollectionFromDb("SELECT player_id, selected_market_index FROM player", true);
-
-        $privateData = [];
-        foreach($selectedMarketIndexes as $playerID => $marketIndex)
-            $privateData[$playerID]['selected_market_index'] = $marketIndex;
-
-        return [
-            'collectedMarketTilesData' => $this->marketManager->getCollectedMarketTiles(),
-            '_private' => $privateData
-        ];
-    }
-
     public function argIndividualPlayerSelectMarketTile(): array{
         $possibleMarketIndexes = [];
         $tileCount = $this->getPlayersNumber(); //tile count is the same as the number of players
@@ -244,6 +219,10 @@ class Game extends \Table
 
     public function argNewCubesDrawn(): array{
         return ['marketData' => $this->marketManager->getMarketData()];
+    }
+
+    public function isPlayerZombie(int $playerID): bool{
+        return $this->getUniqueValueFromDB("SELECT player_zombie FROM player WHERE player_id = $playerID") == 1;
     }
 
     /**
@@ -299,11 +278,10 @@ class Game extends \Table
                 foreach($collectedIndexes as $collectedIndex)
                     unset($possibleMarketIndexes[(int) $collectedIndex]);
 
-                if(count($possibleMarketIndexes) != 1)
-                    throw new \BgaUserException(clienttranslate('Error: Multiple market tiles are still available but only one player remains'));
-                    
-                $firstPossibleMarketIndex = array_keys($possibleMarketIndexes)[0];
-                $this->actIndividualPlayerSelectMarketTile($firstPossibleMarketIndex);
+                if(count($possibleMarketIndexes) == 1){ //there is only one player and one market tile left - there may be multiple market tiles if there are zombie players
+                    $firstPossibleMarketIndex = array_keys($possibleMarketIndexes)[0];
+                    $this->actIndividualPlayerSelectMarketTile($firstPossibleMarketIndex);
+                }
             }
         }
     }
@@ -342,10 +320,17 @@ class Game extends \Table
         }
 
         $this->incStat($discardedCubesCount, 'table_discarded_cubes_count');
-
         $this->DbQuery("UPDATE cubes SET card_location = 'discarded' WHERE card_location = 'to_discard'");
 
-        $builtCubes = $this->getObjectListFromDB("SELECT card_location_arg as owner_id, card_id as cube_id, color, pos_x, pos_y, pos_z FROM cubes WHERE order_in_construction IS NOT NULL ORDER BY order_in_construction ASC");
+        // Move unconfirmed cubes from zombie players' pyramids to discard pile
+        $this->DbQuery("UPDATE cubes SET card_location = 'discarded', order_in_construction = NULL
+            WHERE card_location = 'pyramid' AND order_in_construction IS NOT NULL 
+            AND card_location_arg IN (
+                SELECT player_id FROM player WHERE player_zombie = 1
+            )"
+        );
+
+        $builtCubes = $this->getObjectListFromDB("SELECT card_location_arg as owner_id, card_id as cube_id, color, pos_x, pos_y, pos_z FROM cubes WHERE card_location = 'pyramid' AND order_in_construction IS NOT NULL ORDER BY order_in_construction ASC");
         
         $builtCubesByPlayer = array();
         foreach($builtCubes as $cube) {
@@ -376,12 +361,10 @@ class Game extends \Table
             'built_cubes' => $builtCubesByPlayer,
             'DISPLAY_BUILT_CUBES_STR' => $builtCubesDataStr
         ]);
-// $this->globalsManager->set('rounds_remaining', 0); //ekmek sil
+
         if((int) $this->globalsManager->get('rounds_remaining') == 0)
             $this->gamestate->nextState('endGameScoring');
-        else { 
-            $this->gamestate->nextState('newCubesDrawn');
-        }
+        else $this->gamestate->nextState('newCubesDrawn');
     }
 
     public function stNewCubesDrawn(): void {
@@ -395,12 +378,12 @@ class Game extends \Table
         $totalPointsFromCubeColors = 0;
         $totalPointsFromBonusCards = 0;
         $playerCount = count($endGameScoring['player_scores']);
-        
+
         foreach($endGameScoring['player_scores'] as $playerScoreData) {
             $playerID = $playerScoreData['player_id'];
             $playerColorTotalScore = array_sum($playerScoreData['color_points']);
             $playerColorAverageScore = $playerColorTotalScore / count(CUBE_COLORS);
-            
+    
             $this->setStat($playerColorTotalScore, 'player_total_points_from_cube_colors', $playerID);
             $this->setStat($playerColorAverageScore, 'player_avg_points_from_cube_colors', $playerID);
 
@@ -408,16 +391,19 @@ class Game extends \Table
 
             $playerBonusCardTotalScore = array_sum($playerScoreData['bonus_card_points']);
             $playerBonusCardAverageScore = $playerBonusCardTotalScore / SETUP_BONUS_CARDS_COUNT;
-
+  
             $this->setStat($playerBonusCardTotalScore, 'player_total_points_from_bonus_cards', $playerID);
             $this->setStat($playerBonusCardAverageScore, 'player_avg_points_from_bonus_cards', $playerID);
 
             $totalPointsFromBonusCards += $playerBonusCardTotalScore;
 
-            foreach($playerScoreData['bonus_card_points'] as $bonusCardID => $bonusCardPoints)
+            foreach($playerScoreData['bonus_card_points'] as $bonusCardData){
+                $bonusCardID = $bonusCardData['bonus_card_id'];
+                $bonusCardPoints = $bonusCardData['bonus_card_points'];
                 $this->setStat($bonusCardPoints, BONUS_CARDS_DATA[$bonusCardID]['statName'], $playerID);
+            }
         }
-        
+
         $avgPointsFromCubeColors = $totalPointsFromCubeColors / $playerCount;
         
         $this->setStat($avgPointsFromCubeColors, 'table_avg_points_from_cube_colors');
@@ -432,12 +418,11 @@ class Game extends \Table
             $playerTotal = $playerScoreData['total'];
             $this->DbQuery("UPDATE player SET player_score = $playerTotal WHERE player_id = $playerID");
         }
-        
+
         $this->notifyAllPlayers('displayEndGameScore', '', array(
             'endGameScoring' => $endGameScoring
         ));
-
-        // $this->gamestate->nextState('allSelectMarketTile'); //ekmek sil
+        
         $this->gamestate->nextState('gameEnd');
     }
 
@@ -501,7 +486,7 @@ class Game extends \Table
         $current_player_id = (int) $this->getCurrentPlayerId();
         $result['pyramidData'][$current_player_id] = $this->pyramidManager->getPlayerPyramidData($current_player_id, true);
 
-        $result['collectedMarketTilesData'] = $this->marketManager->getCollectedMarketTiles();
+        $result['collectedMarketTilesData'] = $this->marketManager->getCollectedMarketTiles($current_player_id);
 
         $result['nextPlayerTable'] = $this->getNextPlayerTable();
 
@@ -570,6 +555,8 @@ class Game extends \Table
         $isRandomBonusCardsSetup = (int) $this->tableOptions->get(100) == (int) RANDOM_BONUS_CARDS_OPTION;
 
         $bonus_cards = $isRandomBonusCardsSetup ? range(0, 11) : BEGINNER_BONUS_CARDS_IDS;
+        if($this->getPlayersNumber() == 2) //in a 2 player game, remove bonus_cards that compare to the player sitting on the right
+            $bonus_cards = array_diff($bonus_cards, [5,6,7,8,9]);
         shuffle($bonus_cards);
         $selected_bonus_cards = array_slice($bonus_cards, 0, SETUP_BONUS_CARDS_COUNT);
         
@@ -651,7 +638,6 @@ class Game extends \Table
         $this->notify->all('plop',"<textarea style='height: 104px; width: 230px;color:$color'>$txt</textarea>",array());
     }
 
-    //ekmek zombie yap
     /**
      * This method is called each time it is the turn of a player who has quit the game (= "zombie" player).
      * You can do whatever you want in order to make sure the turn of this player ends appropriately
@@ -674,18 +660,35 @@ class Game extends \Table
 
         if ($state["type"] === "activeplayer") {
             switch ($state_name) {
-                default:
-                {
-                    $this->gamestate->nextState("zombiePass");
+                case "individualPlayerSelectMarketTile":
+                    $this->notify->all('zombieIndividualPlayerCollection', '', ['player_id' => $active_player]);
+                    $this->gamestate->nextState('zombiePass');
                     break;
-                }
+                default:
+                    $this->message("Unhandled zombieTurn state (activeplayer)", $state_name);
+                    break;
             }
-
             return;
         }
 
         // Make sure player is in a non-blocking status for role turn.
         if ($state["type"] === "multipleactiveplayer") {
+            switch ($state_name) {
+                case "allSelectMarketTile":
+                    $this->actRevertAllSelectMarketTile($active_player);
+                    $this->gamestate->setPlayerNonMultiactive($active_player, 'zombiePass');
+                    break;
+                case "buildPyramid":
+                    $collectedMarketIndex = $this->getUniqueValueFromDB("SELECT collected_market_index FROM player WHERE player_id = $active_player");
+
+                    $this->DbQuery("UPDATE cubes SET card_location = 'discarded' WHERE card_location = 'market' AND card_location_arg = $collectedMarketIndex");
+                    $this->gamestate->setPlayerNonMultiactive($active_player, 'zombiePass');
+
+                    break;
+                default:
+                    $this->message("Unhandled zombieTurn state (multipleactiveplayer)", $state_name);
+                    break;
+            }
             $this->gamestate->setPlayerNonMultiactive($active_player, '');
             return;
         }

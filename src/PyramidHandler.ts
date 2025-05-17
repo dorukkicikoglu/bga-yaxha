@@ -69,7 +69,7 @@ class PyramidHandler {
     }
 
 	public enableBuildPyramid() {
-        if(this.owner.are_cubes_built){
+        if(this.owner.are_cubes_built || this.owner.isZombie()){
             this.updatePyramidStatusText();
             return;
         }
@@ -94,7 +94,7 @@ class PyramidHandler {
         if(this.moveCubeAnim)
             return;
         
-        let myPyramid = this.owner.playerID.toString() == this.gameui.player_id;
+        const myPyramid = this.owner.playerID.toString() == this.gameui.player_id;
         if(!myPyramid)
             return;
 
@@ -112,12 +112,11 @@ class PyramidHandler {
         const posY = Number(args.target.getAttribute('pos-y'));
         const posZ = Number(args.target.getAttribute('pos-z'));
 
-        let marketCubeData: MarketCube = this.getNextUnplacedMarketCube(args.target.getAttribute('possible-colors'));
+        const marketCubeData: MarketCube = this.getNextUnplacedMarketCube(args.target.getAttribute('possible-colors'));
         const moveType: PyramidCubeMoveType = marketCubeData ? 'from_market' : 'from_last_built';
 
-        let cubeData: PyramidCube;
-        if(moveType == 'from_market') {
-            cubeData = {
+        const cubeData: PyramidCube = (moveType == 'from_market') ?
+            {
                 pos_x: posX,
                 pos_y: posY,
                 pos_z: posZ,
@@ -125,26 +124,34 @@ class PyramidHandler {
                 cube_id: marketCubeData.cube_id,
                 order_in_construction: Object.keys(this.cubesInConstruction).length + 1,
                 div: null
+            } :
+            {
+                pos_x: posX,
+                pos_y: posY,
+                pos_z: posZ,
+                color: lastBuiltCube.color,
+                cube_id: lastBuiltCube.cube_id,
+                order_in_construction: lastBuiltCube.order_in_construction,
+                div: lastBuiltCube.div
             };
-        } else {
-            cubeData = lastBuiltCube;
-            cubeData.pos_x = posX;
-            cubeData.pos_y = posY;
-            cubeData.pos_z = posZ;
-        }
 
-        this.cubesInConstruction[cubeData.cube_id] = cubeData; //ekmek buildleme bitince resetle
+        this.cubesInConstruction[cubeData.cube_id] = cubeData;
 
         this.animateUnplacedCubeToPyramid(cubeData, moveType); 
     }
     
     private drawSnapPoints() {
-        let myPyramid = this.owner.playerID.toString() == this.gameui.player_id;
+        const myPyramid = this.owner.playerID.toString() == this.gameui.player_id;
 
         if(!myPyramid)
             return;
 
         const possibleMoves = this.getPossibleMoves();
+
+        if(!possibleMoves){
+            console.error(`No possible moves for player ${this.owner.playerID} (likely a zombie player coming back to game)`, this.owner);
+            return;
+        }
 
         this.cubesContainer.querySelectorAll('.pyramid-cube-snap-point').forEach((el) => el.classList.add('to-remove'));
         possibleMoves.forEach((pos) => {
@@ -173,9 +180,17 @@ class PyramidHandler {
     }
 
     private getPossibleMoves(): PossibleMove[] {
+        if(this.owner.isZombie())
+            return null;
+
         const cubesInPyramid = this.getPyramidCubesExceptFinalBuilt();
 
         let colorsOnMarketTile = this.getAvailableColorsOnMarketTile();
+        if(colorsOnMarketTile == null){
+            console.error(`No available colors on market tile for player ${this.owner.playerID} (likely a zombie player coming back to game)`, this.owner);
+            return null;
+        }
+
         if(colorsOnMarketTile.length == 0 && this.unplacedCube) //if no colors on market tile, the unplaced cube will be moving around
             colorsOnMarketTile = [this.unplacedCube.color];
 
@@ -290,7 +305,6 @@ class PyramidHandler {
             posZ++;
         }
 
-
         if (this.unplacedCube) { //make sure the unplaced cube is not in the possible moves since getPyramidCubesExceptFinalBuilt rules it out
             playerPossibleMoves = playerPossibleMoves.filter(move => 
                 move.pos_x !== this.unplacedCube.pos_x || 
@@ -313,7 +327,7 @@ class PyramidHandler {
         return cubes;
     }
 
-    private getCubeNeighborColors(cube: PyramidCube, cubeCoordsZXY_Color: Record<number, Record<number, Record<number, string>>> | null = null, yazdir = false): string[] {
+    private getCubeNeighborColors(cube: PyramidCube, cubeCoordsZXY_Color: Record<number, Record<number, Record<number, string>>> | null = null): string[] {
         const posX = Number(cube.pos_x);
         const posY = Number(cube.pos_y);
         const posZ = Number(cube.pos_z);
@@ -340,7 +354,7 @@ class PyramidHandler {
         ];
 
         // Get colors of all neighbor cubes in a hash
-        let neighborColors = {};
+        const neighborColors = {};
         neighborPositions.forEach(([neighX, neighY, neighZ]) => {
             if (cubeCoordsZXY_Color[neighZ]?.[neighX]?.[neighY])
                 neighborColors[cubeCoordsZXY_Color[neighZ][neighX][neighY]] = 1;
@@ -351,9 +365,14 @@ class PyramidHandler {
 
     private getAvailableColorsOnMarketTile(): string[] {
         const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
+        if(!marketTile){
+            console.error(`No collected market tile for player ${this.owner.playerID} (likely a zombie player coming back to game)`, this.owner);
+            return null;
+        }
+
         const availableCubes: HTMLDivElement[] = Array.from(marketTile.querySelectorAll('.a-cube:not([built-status])'));
 
-        let availableColorsDict = {};
+        const availableColorsDict: Record<string, number> = {};
         availableCubes.forEach(cube => {
             const cubeColor = cube.getAttribute('color');
             availableColorsDict[cubeColor] = 1;
@@ -684,7 +703,7 @@ class PyramidHandler {
 
         this.gameui.ajaxAction('actUndoBuildPyramid', {}, true, false);
         
-        const fadeInDiscardedCubesAnimArray: ReturnType<typeof dojo.animateProperty>[] = []; //ekmek sil
+        const fadeInDiscardedCubesAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
         marketTile.querySelectorAll('.a-cube[built-status="discarded-cube"]').forEach((cube: HTMLDivElement) => {
             fadeInDiscardedCubesAnimArray.push(this.gameui.animationHandler.animateProperty({
                 node: cube,
@@ -697,7 +716,7 @@ class PyramidHandler {
         let undoAnim: ReturnType<typeof dojo.animateProperty> = this.gameui.animationHandler.combine(undoAnimArray);
         let fadeInDiscardedCubesAnim: ReturnType<typeof dojo.animateProperty> = this.gameui.animationHandler.combine(fadeInDiscardedCubesAnimArray);
 
-        if(fadeInDiscardedCubesAnimArray.length > 0) //ekmek uncomment
+        if(fadeInDiscardedCubesAnimArray.length > 0)
             undoAnim = this.gameui.animationHandler.combine([undoAnim, fadeInDiscardedCubesAnim]);
 
         undoAnim.start();
@@ -791,7 +810,7 @@ class PyramidHandler {
         availableColorsDict[this.unplacedCube.color] = 1;
 
         if(this.unplacedCube.pos_z > 0){
-            const neighborColors = this.getCubeNeighborColors(this.unplacedCube, null, true); //ekmek null ve true sil
+            const neighborColors = this.getCubeNeighborColors(this.unplacedCube);
             const filteredColors = {};
             neighborColors.forEach(color => {
                 if(color in availableColorsDict)
@@ -817,7 +836,7 @@ class PyramidHandler {
     }
      
     private onSwitchColorButtonClicked() {
-        let myPyramid = this.owner.playerID.toString() == this.gameui.player_id;
+        const myPyramid = this.owner.playerID.toString() == this.gameui.player_id;
         if(!myPyramid)
             return;
 

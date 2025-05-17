@@ -19,7 +19,7 @@ class LogMutationObserver{
         });
 
         // Configure the MutationObserver to observe changes to the container's child nodes
-        let config = {
+        const config = {
             childList: true,
             subtree: true // Set to true if you want to observe all descendants of the container
         };
@@ -107,6 +107,11 @@ class LogMutationObserver{
 
         for(const playerID in this.gameui.players){
             let cubesHTML = '';
+
+            if (!built_cubes[playerID]) {
+                console.error(`No built cubes data found for player ${playerID} (likely a zombie player)`, this.gameui.players[playerID]);
+                continue;
+            }
 
             // Sort cubes by counting and ordering colors
             const colorCounts = built_cubes[playerID].reduce((counts, cube) => {

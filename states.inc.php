@@ -80,7 +80,6 @@ $machinestates = [
         "description" => clienttranslate('Waiting for other players to select a Market Tile'),
         "descriptionmyturn" => clienttranslate('${you} must select a Market Tile'),
         "type" => "multipleactiveplayer",
-        "args" => "argAllSelectMarketTile",
         "action" => "stAllSelectMarketTile",
         "possibleactions" => array("actAllSelectMarketTile", "actRevertAllSelectMarketTile"),
         "updateGameProgression" => true,
@@ -110,7 +109,7 @@ $machinestates = [
         "type" => "activeplayer",
         "args" => "argIndividualPlayerSelectMarketTile",
         "possibleactions" => ["actIndividualPlayerSelectMarketTile"],
-        "transitions" => array( "getNextPendingPlayerToSelectMarketTile" => STATE_GET_NEXT_PENDING_PLAYER_TO_SELECT_MARKET_TILE, "zombiePass" => STATE_INDIVIDUAL_PLAYER_SELECT_MARKET_TILE )
+        "transitions" => array( "getNextPendingPlayerToSelectMarketTile" => STATE_GET_NEXT_PENDING_PLAYER_TO_SELECT_MARKET_TILE, "zombiePass" => STATE_GET_NEXT_PENDING_PLAYER_TO_SELECT_MARKET_TILE )
     ],
     
     STATE_BUILD_PYRAMID => [
@@ -120,7 +119,7 @@ $machinestates = [
         "type" => "multipleactiveplayer",
         "action" => "stBuildPyramid",
         "possibleactions" => ["actBuildPyramid"],
-        "transitions" => array( "allPyramidsBuilt" => STATE_ALL_PYRAMIDS_BUILT)
+        "transitions" => array( "allPyramidsBuilt" => STATE_ALL_PYRAMIDS_BUILT, "zombiePass" => STATE_ALL_PYRAMIDS_BUILT)
     ],
 
     STATE_ALL_PYRAMIDS_BUILT => [

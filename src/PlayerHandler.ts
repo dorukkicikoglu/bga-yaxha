@@ -1,9 +1,8 @@
 class PlayerHandler{
     public overallPlayerBoard: HTMLDivElement;
     public pyramid: PyramidHandler;
-	// public collectedMarketTileIndex: number; //ekmek sil
 
-	constructor(private gameui: GameBody, public playerID: number, private playerName: string, public playerColor: string, private playerNo: number, private turnOrder: number, pyramidData: PyramidCube[], public are_cubes_built: boolean) {
+	constructor(private gameui: GameBody, public playerID: number, private playerName: string, public playerColor: string, private playerNo: number, private isZombiePlayer: boolean, private turnOrder: number, pyramidData: PyramidCube[], public are_cubes_built: boolean) {
 		this.overallPlayerBoard = $('overall_player_board_' + this.playerID);
 		this.pyramid = new PyramidHandler(this.gameui, this, this.gameui.PYRAMID_MAX_SIZE, pyramidData);
 	}
@@ -17,7 +16,6 @@ class PlayerHandler{
 		if (srcAvatar) {
 			// Get dimensions and source from original avatar
 			let withinPageContent = document.getElementById('page-content').contains(srcAvatar);
-			// withinPageContent = true; //ekmek sil
 			const avatarRect = withinPageContent ? this.gameui.getPos(srcAvatar) : srcAvatar.getBoundingClientRect();
 
 			let avatarSrc = srcAvatar.getAttribute('src');
@@ -56,10 +54,12 @@ class PlayerHandler{
 
 	public getPlayerName(): string{ return this.playerName; }
 	public getTurnOrder(): number{ return this.turnOrder; }
+	public isZombie(): boolean{ return this.isZombiePlayer; }
 
 	public getCollectedMarketTileData(): CollectedMarketTilesData{
 		return this.gameui.marketHandler.getPlayerCollectedMarketTile(this.playerID);
 	}
 
 	public setTurnOrder(turnOrder: number){ this.turnOrder = turnOrder; }
+	public setZombie(isZombieIn: boolean){ this.isZombiePlayer = isZombieIn; }
 }

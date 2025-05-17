@@ -2,7 +2,7 @@
 
 if (!defined('RANDOM_BONUS_CARDS_OPTION')) { // guard since this included multiple times
     define('RANDOM_BONUS_CARDS_OPTION', 2);
-    define('BEGINNER_BONUS_CARDS_IDS', [0, 1, 2, 3, 4]);
+    define('BEGINNER_BONUS_CARDS_IDS', [0, 1, 2, 3, 4, 10, 11, 12]);
 
     define('SETUP_BONUS_CARDS_COUNT', 3);
     define('ROUND_COUNT', 10);
@@ -50,11 +50,11 @@ if (!defined('RANDOM_BONUS_CARDS_OPTION')) { // guard since this included multip
         BONUS_CARD_LARGEST_GREEN => ['id' => BONUS_CARD_LARGEST_GREEN, 'statName' => 'player_bonus_card_largest_green', 'tooltip_text' => _('5 bonus points for the *largest group of green cubes*')],
         BONUS_CARD_LARGEST_YELLOW => ['id' => BONUS_CARD_LARGEST_YELLOW, 'statName' => 'player_bonus_card_largest_yellow', 'tooltip_text' => _('5 bonus points for the *largest group of yellow cubes*')],
         BONUS_CARD_LARGEST_WHITE => ['id' => BONUS_CARD_LARGEST_WHITE, 'statName' => 'player_bonus_card_largest_white', 'tooltip_text' => _('5 bonus points for the *largest group of white cubes*')],
-        BONUS_CARD_LARGER_RIGHT_ORANGE => ['id' => BONUS_CARD_LARGER_RIGHT_ORANGE, 'statName' => 'player_bonus_card_larger_right_orange', 'tooltip_text' => _('5 bonus points for having the *larger group of orange cubes* compared to your neighbor on your *right* (${rightPlayer})')],
-        BONUS_CARD_LARGER_RIGHT_BLUE => ['id' => BONUS_CARD_LARGER_RIGHT_BLUE, 'statName' => 'player_bonus_card_larger_right_blue', 'tooltip_text' => _('5 bonus points for having the *larger group of blue cubes* compared to your neighbor on your *right* (${rightPlayer})')],
-        BONUS_CARD_LARGER_RIGHT_GREEN => ['id' => BONUS_CARD_LARGER_RIGHT_GREEN, 'statName' => 'player_bonus_card_larger_right_green', 'tooltip_text' => _('5 bonus points for having the *larger group of green cubes* compared to your neighbor on your *right* (${rightPlayer})')],
-        BONUS_CARD_LARGER_RIGHT_YELLOW => ['id' => BONUS_CARD_LARGER_RIGHT_YELLOW, 'statName' => 'player_bonus_card_larger_right_yellow', 'tooltip_text' => _('5 bonus points for having the *larger group of yellow cubes* compared to your neighbor on your *right* (${rightPlayer})')],
-        BONUS_CARD_LARGER_RIGHT_WHITE => ['id' => BONUS_CARD_LARGER_RIGHT_WHITE, 'statName' => 'player_bonus_card_larger_right_white', 'tooltip_text' => _('5 bonus points for having the *larger group of white cubes* compared to your neighbor on your *right* (${rightPlayer})')],
+        BONUS_CARD_LARGER_RIGHT_ORANGE => ['id' => BONUS_CARD_LARGER_RIGHT_ORANGE, 'statName' => 'player_bonus_card_larger_right_orange', 'tooltip_text' => _('5 bonus points for having the *larger group of orange cubes* compared to your neighbor on your *right* ${rightPlayer}')],
+        BONUS_CARD_LARGER_RIGHT_BLUE => ['id' => BONUS_CARD_LARGER_RIGHT_BLUE, 'statName' => 'player_bonus_card_larger_right_blue', 'tooltip_text' => _('5 bonus points for having the *larger group of blue cubes* compared to your neighbor on your *right* ${rightPlayer}')],
+        BONUS_CARD_LARGER_RIGHT_GREEN => ['id' => BONUS_CARD_LARGER_RIGHT_GREEN, 'statName' => 'player_bonus_card_larger_right_green', 'tooltip_text' => _('5 bonus points for having the *larger group of green cubes* compared to your neighbor on your *right* ${rightPlayer}')],
+        BONUS_CARD_LARGER_RIGHT_YELLOW => ['id' => BONUS_CARD_LARGER_RIGHT_YELLOW, 'statName' => 'player_bonus_card_larger_right_yellow', 'tooltip_text' => _('5 bonus points for having the *larger group of yellow cubes* compared to your neighbor on your *right* ${rightPlayer}')],
+        BONUS_CARD_LARGER_RIGHT_WHITE => ['id' => BONUS_CARD_LARGER_RIGHT_WHITE, 'statName' => 'player_bonus_card_larger_right_white', 'tooltip_text' => _('5 bonus points for having the *larger group of white cubes* compared to your neighbor on your *right* ${rightPlayer}')],
         BONUS_CARD_LARGEST_GROUP_ANY_COLOR => ['id' => BONUS_CARD_LARGEST_GROUP_ANY_COLOR, 'statName' => 'player_bonus_card_largest_group_any_color', 'tooltip_text' => _('5 bonus points for the *largest group of cubes of a single color*, regardless of the color')],
         BONUS_CARD_LARGEST_GROUP_ANY_COLOR_LEVEL_1 => ['id' => BONUS_CARD_LARGEST_GROUP_ANY_COLOR_LEVEL_1, 'statName' => 'player_bonus_card_largest_group_any_color_level_1', 'tooltip_text' => _('5 bonus points for the *largest group of cubes of a single color* at least partially on level 1. (Only the cubes on level 1 are counted)')],
         BONUS_CARD_GROUP_WITH_MOST_LEVELS => ['id' => BONUS_CARD_GROUP_WITH_MOST_LEVELS, 'statName' => 'player_bonus_card_group_with_most_levels', 'tooltip_text' => _('5 bonus points for the *group of cubes of a single color* across the most levels (maximum 4 levels)')],

@@ -153,13 +153,13 @@ var EndGameScoringHandler = /** @class */ (function () {
                         this.scoreContainer = document.createElement('div');
                         this.scoreContainer.classList.add('end-game-score-container');
                         this.scoreContainer.style.opacity = '0';
-                        this.scoreContainer.innerHTML = "\n            <div class=\"show-table-button\" style=\"display: none;\">\n                <i class=\"fa6 fa6-ranking-star\"></i>\n            </div> \n            <div class=\"maximized-content\"> \n                <i class=\"fa6 fa6-minimize close-table-button\"></i>\n                <table>\n                    <thead></thead>\n                    <tbody></tbody>\n                </table>\n                <div class=\"fast-forward-text\"></div> \n            </div>\n        ";
-                        (_b = document.getElementById('game_play_area_wrap')) === null || _b === void 0 ? void 0 : _b.appendChild(this.scoreContainer);
+                        this.scoreContainer.innerHTML = "\n            <div class=\"show-table-button\" style=\"display: none;\">\n                <i class=\"fa6 fa6-ranking-star\"></i>\n            </div> \n            <div class=\"maximized-content\"> \n                <i class=\"fa6 fa6-chevron-circle-left collapse-table-button\" title=\"".concat(_('Collapse Scoreboard'), "\"></i>\n                <table>\n                    <thead></thead>\n                    <tbody></tbody>\n                </table>\n                <div class=\"fast-forward-text\"></div> \n            </div>\n        ");
+                        (_b = document.getElementById('player-tables')) === null || _b === void 0 ? void 0 : _b.appendChild(this.scoreContainer);
                         this.table = this.scoreContainer.querySelector('table');
                         this.thead = this.scoreContainer.querySelector('thead');
                         this.tbody = this.scoreContainer.querySelector('tbody');
                         this.showButton = this.scoreContainer.querySelector('.show-table-button');
-                        this.hideButton = this.scoreContainer.querySelector('.close-table-button');
+                        this.hideButton = this.scoreContainer.querySelector('.collapse-table-button');
                         this.fastForwardButton = this.scoreContainer.querySelector('.fast-forward-text');
                         this.fillTable();
                         this.bindShowHideButtons();
@@ -205,30 +205,36 @@ var EndGameScoringHandler = /** @class */ (function () {
         for (var colorIndex in this.gameui.CUBE_COLORS)
             scoreTypes.push({ index: colorIndex, type: 'color' });
         var firstPlayerScore = this.endGameScoring.player_scores[Object.keys(this.endGameScoring.player_scores)[0]];
-        for (var bonusCardID in firstPlayerScore.bonus_card_points)
-            scoreTypes.push({ index: bonusCardID, type: 'bonus' });
+        for (var _b = 0, _c = firstPlayerScore.bonus_card_points; _b < _c.length; _b++) {
+            var bonusCard = _c[_b];
+            scoreTypes.push({ index: bonusCard.bonus_card_id, type: 'bonus' });
+        }
         scoreTypes.push({ index: 0, type: 'total' });
-        // Add score rows
-        for (var i = 0; i < scoreTypes.length; i++) {
+        var _loop_1 = function (i) {
             var row = document.createElement('tr');
             var scoreType = scoreTypes[i];
             var scoreTypeIconHTML = void 0;
             if (scoreType.type === 'color')
-                scoreTypeIconHTML = this.gameui.createCubeDiv({ color: scoreType.index, cube_id: 'score-sheet-cube' }).outerHTML;
+                scoreTypeIconHTML = this_1.gameui.createCubeDiv({ color: scoreType.index, cube_id: 'score-sheet-cube' }).outerHTML;
             else if (scoreType.type === 'bonus')
                 scoreTypeIconHTML = "<div class=\"a-bonus-card-icon-wrapper\"><div class=\"a-bonus-card-icon\" bonus-card-id=\"".concat(scoreType.index, "\" id=\"score-sheet-bonus-card-").concat(scoreType.index, "\"></div></div>");
             else
                 scoreTypeIconHTML = "<i class=\"fa fa-star total-icon\"></i>";
             row.innerHTML = "<td class=\"score-type-icon-cell\"><div class=\"score-type-icon ".concat(scoreType.type, "-").concat(scoreType.index, "\">").concat(scoreTypeIconHTML, "</div></td>");
-            for (var _b = 0, _c = this.gameui.playerSeatOrder; _b < _c.length; _b++) {
-                var player_id = _c[_b];
-                var playerScore = this.endGameScoring.player_scores[player_id];
+            for (var _d = 0, _e = this_1.gameui.playerSeatOrder; _d < _e.length; _d++) {
+                var player_id = _e[_d];
+                var playerScore = this_1.endGameScoring.player_scores[player_id];
                 var cellScore = scoreTypes[i].type === 'color' ?
                     playerScore.color_points[scoreType.index] :
-                    (scoreTypes[i].type === 'bonus' ? playerScore.bonus_card_points[scoreType.index] : playerScore.total);
+                    (scoreTypes[i].type === 'bonus' ? playerScore.bonus_card_points.find(function (item) { return item.bonus_card_id === scoreType.index; }).bonus_card_points : playerScore.total);
                 row.innerHTML += "<td><div class=\"cell-text cell-".concat(scoreType.type, "\" style=\"opacity: 0;\" row-index=\"").concat(i, "\" player-id=\"").concat(player_id, "\">").concat(cellScore, "</div></td>");
             }
-            this.tbody.appendChild(row);
+            this_1.tbody.appendChild(row);
+        };
+        var this_1 = this;
+        // Add score rows
+        for (var i = 0; i < scoreTypes.length; i++) {
+            _loop_1(i);
         }
         this.gameui.tooltipHandler.addTooltipToBonusCards('scoreSheet');
     };
@@ -292,13 +298,16 @@ var EndGameScoringHandler = /** @class */ (function () {
                         overallContent.removeEventListener('click', this.bodyClickHandler);
                         if (cells.length <= Object.keys(this.gameui.players).length * 2)
                             this.gameui.animationHandler.animateProperty({ node: this.fastForwardButton, duration: 400, properties: { opacity: 0 } }).start();
-                        if (cells.length <= 0) {
-                            allCells = Array.from(this.tbody.querySelectorAll('.cell-text'));
-                            allCells.forEach(function (cell) { cell.style.opacity = ''; });
-                            this.makeWinnersJump();
-                            this.setPlayerScores();
-                            return [2 /*return*/];
-                        }
+                        if (!(cells.length <= 0)) return [3 /*break*/, 2];
+                        allCells = Array.from(this.tbody.querySelectorAll('.cell-text'));
+                        allCells.forEach(function (cell) { cell.style.opacity = ''; });
+                        this.makeWinnersJump();
+                        this.setPlayerScores();
+                        return [4 /*yield*/, this.gameui.wait(15000)];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                    case 2:
                         cell = cells[0];
                         instantFadeIn = this.gameui.gamedatas.gamestate.name === 'gameEnd';
                         cell.classList.add('displayed');
@@ -318,10 +327,10 @@ var EndGameScoringHandler = /** @class */ (function () {
                         overallContent.addEventListener('click', this.bodyClickHandler);
                         this.addColumnTotal(cell.getAttribute('player-id'));
                         return [4 /*yield*/, fadeInAnim.start()];
-                    case 1:
+                    case 3:
                         _a.sent();
                         return [4 /*yield*/, this.fadeInNextCell()];
-                    case 2:
+                    case 4:
                         _a.sent();
                         return [2 /*return*/];
                 }
@@ -344,9 +353,17 @@ var EndGameScoringHandler = /** @class */ (function () {
         }
     };
     EndGameScoringHandler.prototype.makeWinnersJump = function () {
+        var _this = this;
+        var delay = 0;
+        var _loop_2 = function (winner_id) {
+            setTimeout(function () {
+                _this.thead.querySelector(".player-name-cell[player-id=\"".concat(winner_id, "\"]")).classList.add('jumping-text');
+            }, delay);
+            delay += 100 + Math.random() * 50;
+        };
         for (var _i = 0, _a = this.winner_ids; _i < _a.length; _i++) {
             var winner_id = _a[_i];
-            this.thead.querySelector(".player-name-cell[player-id=\"".concat(winner_id, "\"]")).classList.add('jumping-text');
+            _loop_2(winner_id);
         }
     };
     EndGameScoringHandler.prototype.setPlayerScores = function () {
@@ -357,7 +374,6 @@ var EndGameScoringHandler = /** @class */ (function () {
     };
     return EndGameScoringHandler;
 }());
-//ekmek skor tipini guzellestir
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
@@ -387,6 +403,7 @@ var GameBody = /** @class */ (function (_super) {
         return _this;
     }
     GameBody.prototype.setup = function (gamedatas) {
+        var _a;
         console.log("Starting game setup");
         this.CUBE_COLORS = gamedatas.CUBE_COLORS;
         this.BONUS_CARDS_DATA = gamedatas.BONUS_CARDS_DATA;
@@ -394,13 +411,17 @@ var GameBody = /** @class */ (function (_super) {
         this.PYRAMID_MAX_SIZE = gamedatas.PYRAMID_MAX_SIZE;
         this.CUBES_PER_MARKET_TILE = gamedatas.CUBES_PER_MARKET_TILE;
         this.nextPlayerTable = gamedatas.nextPlayerTable;
-        this.rightPlayerID = gamedatas.nextPlayerTable[this.player_id];
-        this.playerSeatOrder = [parseInt(this.player_id)];
-        var nextPlayerID = this.rightPlayerID;
-        while (nextPlayerID != parseInt(this.player_id)) {
-            this.playerSeatOrder.push(nextPlayerID);
-            nextPlayerID = this.nextPlayerTable[nextPlayerID];
+        this.rightPlayerID = (_a = gamedatas.nextPlayerTable[this.player_id]) !== null && _a !== void 0 ? _a : null;
+        if (this.rightPlayerID) {
+            this.playerSeatOrder = [parseInt(this.player_id)];
+            var nextPlayerID = this.rightPlayerID;
+            while (nextPlayerID != parseInt(this.player_id)) {
+                this.playerSeatOrder.push(nextPlayerID);
+                nextPlayerID = this.nextPlayerTable[nextPlayerID];
+            }
         }
+        else
+            this.playerSeatOrder = Object.keys(gamedatas.players).map(Number); //spectator
         var cubeColorCSS = '';
         for (var colorIndex in this.CUBE_COLORS) {
             cubeColorCSS += ".a-cube[color=\"".concat(colorIndex, "\"] { --cube-color: #").concat(this.CUBE_COLORS[colorIndex].colorCode, "; }\n            ");
@@ -414,13 +435,13 @@ var GameBody = /** @class */ (function (_super) {
                 pyramidCSS += "\n                    .pyramids-container .a-pyramid-container .cubes-container *[pos-z=\"".concat(posZ, "\"][pos-x=\"").concat(posXY, "\"] {\n                    left: calc(var(--pyramid-cube-size) * ").concat(posXY + 0.42 * posZ, ");\n                    }\n                    .pyramids-container .a-pyramid-container .cubes-container *[pos-z=\"").concat(posZ, "\"][pos-y=\"").concat(posXY, "\"] {\n                    bottom: calc(var(--pyramid-cube-size) * ").concat(posXY + 0.7 * posZ, ");\n                    }\n                    ");
             });
         });
-        document.getElementById('game_play_area').insertAdjacentHTML('beforeend', "\n            <style>\n                ".concat(cubeColorCSS, "\n                ").concat(pyramidCSS, "\n            </style>\n            <div id=\"player-tables\">\n            <div class=\"market-container\">\n                <div class=\"market-tiles-container\"></div>\n                <div class=\"waiting-players-container\"></div>\n                <div class=\"bonus-cards-container\"></div>\n            </div>\n            <div class=\"pyramids-container\"></div>\n        </div>"));
+        document.getElementById('game_play_area').insertAdjacentHTML('beforeend', "\n            <style>\n                ".concat(cubeColorCSS, "\n                ").concat(pyramidCSS, "\n            </style>\n            <div id=\"player-tables\">\n            <div class=\"market-container\">\n                <div class=\"market-tiles-container\">\n                    <div class=\"waiting-players-container\"></div>\n                </div>\n                <div class=\"bonus-cards-container\"></div>\n            </div>\n            <div class=\"pyramids-container\"></div>\n        </div>"));
         this.imageLoader = new ImageLoadHandler(this, ['market-tiles', 'player-order-tiles', 'bonus-cards', 'bonus-card-icons']);
         this.animationHandler = new AnimationHandlerPromiseBased(this);
-        for (var _i = 0, _a = this.playerSeatOrder; _i < _a.length; _i++) {
-            var player_id = _a[_i];
-            var _b = this.gamedatas.players[player_id], name_1 = _b.name, color = _b.color, player_no = _b.player_no, turn_order = _b.turn_order, are_cubes_built = _b.are_cubes_built;
-            this.players[player_id] = new PlayerHandler(this, player_id, name_1, color, parseInt(player_no), turn_order, gamedatas.pyramidData[player_id], are_cubes_built == '1');
+        for (var _i = 0, _b = this.playerSeatOrder; _i < _b.length; _i++) {
+            var player_id = _b[_i];
+            var _c = this.gamedatas.players[player_id], name_1 = _c.name, color = _c.color, player_no = _c.player_no, turn_order = _c.turn_order, are_cubes_built = _c.are_cubes_built, zombie = _c.zombie;
+            this.players[player_id] = new PlayerHandler(this, player_id, name_1, color, parseInt(player_no), parseInt(zombie) == 1, turn_order, gamedatas.pyramidData[player_id], are_cubes_built == '1');
             if (player_id == parseInt(this.player_id))
                 this.myself = this.players[player_id];
         }
@@ -443,10 +464,12 @@ var GameBody = /** @class */ (function (_super) {
                 console.log('Entering state: ' + stateName, args);
                 switch (stateName) {
                     case 'allSelectMarketTile':
-                        if (args.args._private.selected_market_index === null)
-                            this.marketHandler.addSelectableClassToMarketTiles('all');
-                        else
-                            this.marketHandler.addSelectableClassToMarketTiles('none');
+                        if (!this.myself)
+                            return [2 /*return*/];
+                        this.marketHandler.addSelectableClassToMarketTiles();
+                        break;
+                    case 'buildPyramid':
+                        this.marketHandler.closeWaitingPlayersContainer();
                         break;
                 }
                 return [2 /*return*/];
@@ -461,6 +484,9 @@ var GameBody = /** @class */ (function (_super) {
                 if (this.myself)
                     this.myself.pyramid.disableBuildPyramid();
                 break;
+            case 'allPyramidsBuilt':
+                this.marketHandler.resetCollectedMarketTilesData();
+                break;
         }
     };
     GameBody.prototype.onUpdateActionButtons = function (stateName, args) {
@@ -468,10 +494,9 @@ var GameBody = /** @class */ (function (_super) {
         switch (stateName) {
             case 'allSelectMarketTile':
                 this.marketHandler.updateStatusTextUponMarketTileSelection();
-                this.marketHandler.setCollectedMarketTilesData(args.collectedMarketTilesData);
                 break;
             case 'individualPlayerSelectMarketTile':
-                this.marketHandler.setCollectedMarketTilesData(args.collectedMarketTilesData);
+                this.marketHandler.clearZombiePendingAvatars(this.getActivePlayerId());
                 if (this.myself) {
                     var playerCollectedMarketTile = this.myself.getCollectedMarketTileData();
                     if (this.isCurrentPlayerActive())
@@ -572,7 +597,7 @@ var GameBody = /** @class */ (function (_super) {
         return this.isDesktop() ? 'click' : 'tap';
     };
     GameBody.prototype.capitalizeFirstLetter = function (str) { return "".concat(str[0].toUpperCase()).concat(str.slice(1)); };
-    GameBody.prototype.updateStatusText = function (statusText) { $('gameaction_status').innerHTML = statusText; $('pagemaintitletext').innerHTML = statusText; }; //ekmek sil?
+    GameBody.prototype.updateStatusText = function (statusText) { $('gameaction_status').innerHTML = statusText; $('pagemaintitletext').innerHTML = statusText; };
     GameBody.prototype.ajaxAction = function (action, args, lock, checkAction) {
         if (args === void 0) { args = {}; }
         if (lock === void 0) { lock = true; }
@@ -614,7 +639,7 @@ var GameBody = /** @class */ (function (_super) {
     GameBody.prototype.rgbToHex = function (rgb) {
         var match = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
         if (!match) {
-            this.printDebug('-- rgb --', rgb);
+            console.error('-- rgb --', rgb);
             throw new Error("Invalid RGB format");
         }
         // Convert each component to a two-character hexadecimal
@@ -661,14 +686,6 @@ var GameBody = /** @class */ (function (_super) {
             maxY = Math.max(maxY, rect.bottom);
         }
         return { minX: minX, minY: minY, maxX: maxX, maxY: maxY, width: maxX - minX, height: maxY - minY };
-    };
-    GameBody.prototype.printDebug = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i] = arguments[_i];
-        }
-        args[0] = typeof args[0] == 'string' ? '*** ' + args[0] : args[0];
-        console.log.apply(console, args);
     };
     //game specific utility functions
     GameBody.prototype.createCubeDiv = function (cube) {
@@ -812,6 +829,21 @@ var GameBody = /** @class */ (function (_super) {
             });
         });
     };
+    GameBody.prototype.notif_zombieIndividualPlayerCollection = function (args) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        console.log('notif_zombieIndividualPlayerCollection');
+                        this.players[args.player_id].setZombie(true);
+                        return [4 /*yield*/, this.marketHandler.zombieIndividualPlayerCollection(args.player_id)];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
     return GameBody;
 }(GameGui));
 var ImageLoadHandler = /** @class */ (function () {
@@ -936,8 +968,12 @@ var LogMutationObserver = /** @class */ (function () {
     };
     LogMutationObserver.prototype.createLogDisplayBuiltCubes = function (built_cubes) {
         var logHTML = '';
-        var _loop_1 = function (playerID) {
+        var _loop_3 = function (playerID) {
             var cubesHTML = '';
+            if (!built_cubes[playerID]) {
+                console.error("No built cubes data found for player ".concat(playerID, " (likely a zombie player)"), this_2.gameui.players[playerID]);
+                return "continue";
+            }
             // Sort cubes by counting and ordering colors
             var colorCounts = built_cubes[playerID].reduce(function (counts, cube) {
                 counts[cube.color] = (counts[cube.color] || 0) + 1;
@@ -953,13 +989,13 @@ var LogMutationObserver = /** @class */ (function () {
             });
             for (var _i = 0, _a = built_cubes[playerID]; _i < _a.length; _i++) {
                 var cube = _a[_i];
-                cubesHTML += this_1.gameui.createCubeDiv(cube).outerHTML;
+                cubesHTML += this_2.gameui.createCubeDiv(cube).outerHTML;
             }
-            logHTML += "<div class=\"player-built-cubes-row\">\n            ".concat(this_1.gameui.divColoredPlayer(playerID, { class: 'playername' }, false), "\n            <i class=\"log-arrow log-place-cube-icon fa6 fa-download\"></i>\n            <div class=\"log-cubes-wrapper\">").concat(cubesHTML, "</div>\n            </div>");
+            logHTML += "<div class=\"player-built-cubes-row\">\n            ".concat(this_2.gameui.divColoredPlayer(playerID, { class: 'playername' }, false), "\n            <i class=\"log-arrow log-place-cube-icon fa6 fa-download\"></i>\n            <div class=\"log-cubes-wrapper\">").concat(cubesHTML, "</div>\n            </div>");
         };
-        var this_1 = this;
+        var this_2 = this;
         for (var playerID in this.gameui.players) {
-            _loop_1(playerID);
+            _loop_3(playerID);
         }
         logHTML = "<div class=\"built-cubes-rows-wrapper\">".concat(logHTML, "</div>");
         return logHTML;
@@ -1026,6 +1062,7 @@ var MarketHandler = /** @class */ (function () {
                 if (playerAvatar && playerCollects.type == 'pending')
                     _this.waitingPlayersContainer.style.opacity = '1';
             });
+            this.highlightCollectedMarketTile();
         }
     };
     MarketHandler.prototype.fillMarketTilesWithCubes = function () {
@@ -1045,10 +1082,6 @@ var MarketHandler = /** @class */ (function () {
                 if (playerCollectedMarketIndex !== null && _this.gameui.myself && marketIndex == playerCollectedMarketIndex) {
                     var unplacedCube = _this.gameui.myself.pyramid.getUnplacedCube();
                     var cubesInConstruction = _this.gameui.myself.pyramid.getCubesInConstruction();
-                    // if (cube.cube_id === unplacedCube?.cube_id) //ekmek borek sil
-                    //     cubeDiv.classList.add('selected-for-pyramid');
-                    // else if (parseInt(cube.cube_id) in cubesInConstruction)
-                    //     cubeDiv.classList.add('built-in-pyramid');
                     if (cube.cube_id === (unplacedCube === null || unplacedCube === void 0 ? void 0 : unplacedCube.cube_id))
                         cubeDiv.setAttribute('built-status', 'selected-cube');
                     else if (parseInt(cube.cube_id) in cubesInConstruction)
@@ -1062,21 +1095,30 @@ var MarketHandler = /** @class */ (function () {
     };
     MarketHandler.prototype.addSelectableClassToMarketTiles = function (possibleMarketIndexes) {
         var _this = this;
+        if (possibleMarketIndexes === void 0) { possibleMarketIndexes = null; }
         this.marketTiles.forEach(function (tile) { return tile.classList.remove('selectable-market-tile'); });
-        if (possibleMarketIndexes === 'none')
+        if (this.gameui.myself && this.gameui.myself.isZombie()) {
+            this.marketTiles.forEach(function (tile) { return tile.classList.add('zombie-market-tile'); });
             return;
+        }
         var selectableMarketTiles = [];
-        if (possibleMarketIndexes === 'all')
-            selectableMarketTiles = this.marketTiles;
-        else
+        if (possibleMarketIndexes) {
             possibleMarketIndexes.forEach(function (i) { return selectableMarketTiles.push(_this.marketTiles[i]); });
+        }
+        else {
+            var selectedMarketIndex = this.getMySelectedMarketIndex();
+            if (selectedMarketIndex !== null)
+                return;
+            else
+                selectableMarketTiles = this.marketTiles;
+        }
         selectableMarketTiles.forEach(function (tile) { return tile.classList.add('selectable-market-tile'); });
     };
     MarketHandler.prototype.marketTileClicked = function (event) {
         if (!['allSelectMarketTile', 'individualPlayerSelectMarketTile'].includes(this.gameui.gamedatas.gamestate.name) || this.gameui.isInterfaceLocked())
             return;
         var marketTile = event.target;
-        if (!marketTile.classList.contains('a-market-tile'))
+        if (!marketTile.classList.contains('a-market-tile') || marketTile.classList.contains('zombie-market-tile'))
             return;
         if (this.gameui.gamedatas.gamestate.name === 'individualPlayerSelectMarketTile' && !marketTile.classList.contains('selectable-market-tile'))
             return;
@@ -1101,12 +1143,10 @@ var MarketHandler = /** @class */ (function () {
                 if (selectedTile) {
                     this.setPlayerSelectedMarketIndex(marketIndex);
                     selectedTile.classList.add('selected-market-tile');
-                    this.addSelectableClassToMarketTiles('none');
                 }
-                else {
+                else
                     this.setPlayerSelectedMarketIndex(null);
-                    this.addSelectableClassToMarketTiles('all');
-                }
+                this.addSelectableClassToMarketTiles();
                 this.updateStatusTextUponMarketTileSelection();
                 return [2 /*return*/];
             });
@@ -1151,6 +1191,7 @@ var MarketHandler = /** @class */ (function () {
                         this.collectedMarketTilesData.forEach(function (playerCollects, animationOrder) {
                             var avatarClone = _this.gameui.players[playerCollects.player_id].createAvatarClone();
                             avatarClone.style.transform = 'none';
+                            avatarClone.style.zIndex = '1000';
                             var srcAvatar = _this.gameui.players[playerCollects.player_id].overallPlayerBoard.querySelector('img.avatar');
                             document.body.appendChild(avatarClone);
                             _this.gameui.placeOnObject(avatarClone, srcAvatar);
@@ -1191,6 +1232,7 @@ var MarketHandler = /** @class */ (function () {
                         return [4 /*yield*/, moveCollectingAvatarsCombinedAnimation.start()];
                     case 2:
                         _a.sent();
+                        this.highlightCollectedMarketTile();
                         if (!(movePendingAvatarAnimations.length > 0)) return [3 /*break*/, 4];
                         this.waitingPlayersContainer.style.opacity = '1';
                         return [4 /*yield*/, movePendingAvatarsCombinedAnimation.start()];
@@ -1205,6 +1247,7 @@ var MarketHandler = /** @class */ (function () {
     MarketHandler.prototype.animateIndividualPlayerCollected = function (playerID, collectedMarketIndex) {
         return __awaiter(this, void 0, void 0, function () {
             var playerIndex, destAvatar, pendingAvatar, pendingAvatarClone, shrinkPendingAvatar, movePendingAvatarClone;
+            var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -1218,6 +1261,7 @@ var MarketHandler = /** @class */ (function () {
                         destAvatar = this.addPlayerAvatar({ player_id: playerID, collected_market_index: collectedMarketIndex, type: 'collecting' }, false);
                         pendingAvatar = this.waitingPlayersContainer.querySelector(".yaxha-player-avatar.pending-player-avatar[player-id=\"".concat(playerID, "\"]"));
                         pendingAvatarClone = this.gameui.players[playerID].createAvatarClone(pendingAvatar.querySelector('img'));
+                        pendingAvatarClone.style.zIndex = '1000';
                         this.marketContainer.appendChild(pendingAvatarClone);
                         this.gameui.placeOnObject(pendingAvatarClone, pendingAvatar);
                         pendingAvatar.style.opacity = '0';
@@ -1234,45 +1278,75 @@ var MarketHandler = /** @class */ (function () {
                             goTo: destAvatar,
                             duration: 500,
                             easing: "cubic-bezier(".concat(0.1 + Math.random() * 0.2, ", ").concat(0.3 + Math.random() * 0.3, ", ").concat(0.5 + Math.random() * 0.3, ", ").concat(0.7 + Math.random() * 0.2, ")"),
-                            onEnd: function () { destAvatar.style.opacity = null; pendingAvatarClone.remove(); }
+                            onEnd: function () { destAvatar.style.opacity = null; pendingAvatarClone.remove(); _this.highlightCollectedMarketTile(); }
                         });
                         return [4 /*yield*/, this.gameui.animationHandler.combine([shrinkPendingAvatar, movePendingAvatarClone]).start()];
                     case 1:
                         _a.sent();
                         if (this.waitingPlayersContainer.querySelectorAll('.pending-player-avatar').length === 0)
-                            this.waitingPlayersContainer.style.opacity = null;
+                            this.closeWaitingPlayersContainer();
                         return [2 /*return*/];
                 }
             });
         });
     };
+    MarketHandler.prototype.closeWaitingPlayersContainer = function () {
+        var _this = this;
+        this.waitingPlayersContainer.style.opacity = null;
+        this.waitingPlayersContainer.querySelectorAll('.pending-player-avatar').forEach(function (avatar) { return _this.gameui.animationHandler.fadeOutAndDestroy(avatar); });
+    };
+    MarketHandler.prototype.clearZombiePendingAvatars = function (nextCollectingPlayerID) {
+        var _this = this;
+        var allPendingAvatars = Array.from(this.waitingPlayersContainer.querySelectorAll('.pending-player-avatar'));
+        var zombieAvatars = [];
+        for (var _i = 0, allPendingAvatars_1 = allPendingAvatars; _i < allPendingAvatars_1.length; _i++) {
+            var avatar = allPendingAvatars_1[_i];
+            if (Number(avatar.getAttribute('player-id')) == nextCollectingPlayerID)
+                break;
+            zombieAvatars.push(avatar);
+        }
+        zombieAvatars.forEach(function (avatar) { return _this.gameui.animationHandler.fadeOutAndDestroy(avatar); });
+    };
+    MarketHandler.prototype.highlightCollectedMarketTile = function () {
+        if (!this.gameui.myself)
+            return;
+        var collectedMarketIndex = this.getMyCollectedMarketIndex();
+        if (collectedMarketIndex === null)
+            return;
+        var collectedMarketTile = this.marketTiles[collectedMarketIndex];
+        collectedMarketTile.style.setProperty('--collecting-player-color', '#' + this.gameui.players[this.gameui.myself.playerID].playerColor);
+        collectedMarketTile.classList.add('collected-market-tile');
+    };
     MarketHandler.prototype.animateBuiltCubes = function (built_cubes) {
         return __awaiter(this, void 0, void 0, function () {
-            var cubeAnimArray, delay, myAvatar, _loop_2, this_2, marketIndex, cubeAnim, playerID;
+            var cubeAnimArray, delay, myAvatar, _loop_4, this_3, marketIndex, cubeAnim, playerID;
             var _a;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
                         cubeAnimArray = [];
                         delay = 0;
-                        myAvatar = this.marketContainer.querySelector(".yaxha-player-avatar.collecting-player-avatar[player-id=\"".concat(this.gameui.myself.playerID, "\"]"));
-                        this.gameui.animationHandler.fadeOutAndDestroy(myAvatar, 100);
-                        _loop_2 = function (marketIndex) {
-                            var playerID = (_a = this_2.collectedMarketTilesData.find(function (data) { return Number(data.collected_market_index) === Number(marketIndex); })) === null || _a === void 0 ? void 0 : _a.player_id;
+                        if (this.gameui.myself) {
+                            myAvatar = this.marketContainer.querySelector(".yaxha-player-avatar.collecting-player-avatar[player-id=\"".concat(this.gameui.myself.playerID, "\"]"));
+                            if (myAvatar)
+                                this.gameui.animationHandler.fadeOutAndDestroy(myAvatar, 100);
+                        }
+                        _loop_4 = function (marketIndex) {
+                            var playerID = (_a = this_3.collectedMarketTilesData.find(function (data) { return Number(data.collected_market_index) === Number(marketIndex); })) === null || _a === void 0 ? void 0 : _a.player_id;
                             if (!playerID || !built_cubes[playerID])
                                 return "continue";
-                            if (this_2.gameui.myself && this_2.gameui.myself.playerID == Number(playerID))
+                            if (this_3.gameui.myself && this_3.gameui.myself.playerID == Number(playerID))
                                 return "continue";
-                            var player = this_2.gameui.players[playerID];
+                            var player = this_3.gameui.players[playerID];
                             var playerCubes = built_cubes[playerID].sort(function (a, b) { return a.pos_z - b.pos_z; });
                             var playerCubesAnimation = player.pyramid.animateOtherPlayerCubesToPyramid(playerCubes);
                             playerCubesAnimation = playerCubesAnimation.addDelay(delay);
                             delay += 400;
                             cubeAnimArray.push(playerCubesAnimation);
                         };
-                        this_2 = this;
+                        this_3 = this;
                         for (marketIndex in this.marketTiles) {
-                            _loop_2(marketIndex);
+                            _loop_4(marketIndex);
                         }
                         cubeAnim = this.gameui.animationHandler.combine(cubeAnimArray);
                         return [4 /*yield*/, cubeAnim.start()];
@@ -1296,7 +1370,10 @@ var MarketHandler = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         this.removePlayerAvatarsFromMarketTiles();
-                        this.marketTiles.forEach(function (marketTile) { marketTile.querySelector('.cubes-container').innerHTML = ''; });
+                        this.marketTiles.forEach(function (marketTile) {
+                            marketTile.querySelector('.cubes-container').innerHTML = '';
+                            marketTile.classList.remove('collected-market-tile');
+                        });
                         this.marketData = marketData;
                         this.fillMarketTilesWithCubes();
                         cubeAnimArray = [];
@@ -1358,8 +1435,6 @@ var MarketHandler = /** @class */ (function () {
                             turnOrderContainer.style.transform = 'none'; //temporarily remove transform to get correct bounding client rect without rotation
                             var cardRect = turnOrderContainer.getBoundingClientRect();
                             turnOrderContainer.style.transform = null;
-                            // const cardRect = this.gameui.getPos(turnOrderContainer);
-                            // const cardStyle = window.getComputedStyle(turnOrderContainer); //ekmek sil
                             var cardWidth = cardRect.width;
                             var expandedCardWidth = cardWidth * 2;
                             turnOrderClone.style.width = cardWidth + 'px';
@@ -1407,15 +1482,36 @@ var MarketHandler = /** @class */ (function () {
             });
         });
     };
+    MarketHandler.prototype.zombieIndividualPlayerCollection = function (player_id) {
+        return __awaiter(this, void 0, void 0, function () {
+            var waitingPlayersContainer, playerAvatar;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        waitingPlayersContainer = this.marketContainer.querySelector('.waiting-players-container');
+                        playerAvatar = waitingPlayersContainer.querySelector(".yaxha-player-avatar[player-id=\"".concat(player_id, "\"]"));
+                        if (!playerAvatar) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.gameui.animationHandler.fadeOutAndDestroy(playerAvatar, 500)];
+                    case 1:
+                        _a.sent();
+                        _a.label = 2;
+                    case 2: return [2 /*return*/];
+                }
+            });
+        });
+    };
     MarketHandler.prototype.addPlayerAvatar = function (playerCollects, isVisible) {
-        if (!['pending', 'collecting'].includes(playerCollects.type))
+        if (playerCollects.type == 'zombie')
             return null;
         var avatarClone = this.gameui.players[playerCollects.player_id].createAvatarClone();
-        var newAvatarContainer = playerCollects.type === 'collecting'
-            ? this.marketTiles[playerCollects.collected_market_index]
-            : this.marketContainer.querySelector('.waiting-players-container');
+        if (playerCollects.type != 'pending' && playerCollects.collected_market_index == null)
+            return null;
+        var newAvatarContainer = playerCollects.type === 'pending'
+            ? this.marketContainer.querySelector('.waiting-players-container')
+            : this.marketTiles[playerCollects.collected_market_index];
+        var avatarClass = playerCollects.type === 'pending' ? 'pending-player-avatar' : 'collecting-player-avatar';
         avatarClone.removeAttribute("style");
-        avatarClone.classList.add("".concat(playerCollects.type, "-player-avatar"));
+        avatarClone.classList.add(avatarClass);
         avatarClone.classList.remove('avatar-clone');
         avatarClone.style.setProperty('--player-color', '#' + this.gameui.players[playerCollects.player_id].playerColor);
         if (!isVisible)
@@ -1443,6 +1539,12 @@ var MarketHandler = /** @class */ (function () {
         var marketTile = this.getPlayerCollectedMarketTile(this.gameui.myself.playerID);
         return marketTile ? (type == 'collected' ? marketTile.collected_market_index : marketTile.selected_market_index) : null;
     };
+    MarketHandler.prototype.resetCollectedMarketTilesData = function () {
+        for (var i = 0; i < this.collectedMarketTilesData.length; i++) {
+            this.collectedMarketTilesData[i].selected_market_index = null;
+            this.collectedMarketTilesData[i].collected_market_index = null;
+        }
+    };
     MarketHandler.prototype.getMyCollectedMarketIndex = function () { return this.getMyMarketIndex('collected'); };
     MarketHandler.prototype.getMySelectedMarketIndex = function () { return this.getMyMarketIndex('selected'); };
     MarketHandler.prototype.setPlayerSelectedMarketIndex = function (marketIndex) {
@@ -1459,13 +1561,13 @@ var MarketHandler = /** @class */ (function () {
     return MarketHandler;
 }());
 var PlayerHandler = /** @class */ (function () {
-    // public collectedMarketTileIndex: number; //ekmek sil
-    function PlayerHandler(gameui, playerID, playerName, playerColor, playerNo, turnOrder, pyramidData, are_cubes_built) {
+    function PlayerHandler(gameui, playerID, playerName, playerColor, playerNo, isZombiePlayer, turnOrder, pyramidData, are_cubes_built) {
         this.gameui = gameui;
         this.playerID = playerID;
         this.playerName = playerName;
         this.playerColor = playerColor;
         this.playerNo = playerNo;
+        this.isZombiePlayer = isZombiePlayer;
         this.turnOrder = turnOrder;
         this.are_cubes_built = are_cubes_built;
         this.overallPlayerBoard = $('overall_player_board_' + this.playerID);
@@ -1479,7 +1581,6 @@ var PlayerHandler = /** @class */ (function () {
         if (srcAvatar) {
             // Get dimensions and source from original avatar
             var withinPageContent = document.getElementById('page-content').contains(srcAvatar);
-            // withinPageContent = true; //ekmek sil
             var avatarRect = withinPageContent ? this.gameui.getPos(srcAvatar) : srcAvatar.getBoundingClientRect();
             var avatarSrc_1 = srcAvatar.getAttribute('src');
             var avatarSrc32_1 = avatarSrc_1;
@@ -1512,10 +1613,12 @@ var PlayerHandler = /** @class */ (function () {
     PlayerHandler.prototype.setPlayerScore = function (newScore) { this.overallPlayerBoard.querySelector('.player_score_value').innerHTML = newScore.toString(); };
     PlayerHandler.prototype.getPlayerName = function () { return this.playerName; };
     PlayerHandler.prototype.getTurnOrder = function () { return this.turnOrder; };
+    PlayerHandler.prototype.isZombie = function () { return this.isZombiePlayer; };
     PlayerHandler.prototype.getCollectedMarketTileData = function () {
         return this.gameui.marketHandler.getPlayerCollectedMarketTile(this.playerID);
     };
     PlayerHandler.prototype.setTurnOrder = function (turnOrder) { this.turnOrder = turnOrder; };
+    PlayerHandler.prototype.setZombie = function (isZombieIn) { this.isZombiePlayer = isZombieIn; };
     return PlayerHandler;
 }());
 var PyramidHandler = /** @class */ (function () {
@@ -1566,7 +1669,7 @@ var PyramidHandler = /** @class */ (function () {
         this.centerCubesContainer(false);
     };
     PyramidHandler.prototype.enableBuildPyramid = function () {
-        if (this.owner.are_cubes_built) {
+        if (this.owner.are_cubes_built || this.owner.isZombie()) {
             this.updatePyramidStatusText();
             return;
         }
@@ -1603,9 +1706,8 @@ var PyramidHandler = /** @class */ (function () {
         var posZ = Number(args.target.getAttribute('pos-z'));
         var marketCubeData = this.getNextUnplacedMarketCube(args.target.getAttribute('possible-colors'));
         var moveType = marketCubeData ? 'from_market' : 'from_last_built';
-        var cubeData;
-        if (moveType == 'from_market') {
-            cubeData = {
+        var cubeData = (moveType == 'from_market') ?
+            {
                 pos_x: posX,
                 pos_y: posY,
                 pos_z: posZ,
@@ -1613,15 +1715,17 @@ var PyramidHandler = /** @class */ (function () {
                 cube_id: marketCubeData.cube_id,
                 order_in_construction: Object.keys(this.cubesInConstruction).length + 1,
                 div: null
+            } :
+            {
+                pos_x: posX,
+                pos_y: posY,
+                pos_z: posZ,
+                color: lastBuiltCube.color,
+                cube_id: lastBuiltCube.cube_id,
+                order_in_construction: lastBuiltCube.order_in_construction,
+                div: lastBuiltCube.div
             };
-        }
-        else {
-            cubeData = lastBuiltCube;
-            cubeData.pos_x = posX;
-            cubeData.pos_y = posY;
-            cubeData.pos_z = posZ;
-        }
-        this.cubesInConstruction[cubeData.cube_id] = cubeData; //ekmek buildleme bitince resetle
+        this.cubesInConstruction[cubeData.cube_id] = cubeData;
         this.animateUnplacedCubeToPyramid(cubeData, moveType);
     };
     PyramidHandler.prototype.drawSnapPoints = function () {
@@ -1630,6 +1734,10 @@ var PyramidHandler = /** @class */ (function () {
         if (!myPyramid)
             return;
         var possibleMoves = this.getPossibleMoves();
+        if (!possibleMoves) {
+            console.error("No possible moves for player ".concat(this.owner.playerID, " (likely a zombie player coming back to game)"), this.owner);
+            return;
+        }
         this.cubesContainer.querySelectorAll('.pyramid-cube-snap-point').forEach(function (el) { return el.classList.add('to-remove'); });
         possibleMoves.forEach(function (pos) {
             var existingSnapPoint = _this.cubesContainer.querySelector(".pyramid-cube-snap-point[pos-x=\"".concat(pos.pos_x, "\"][pos-y=\"").concat(pos.pos_y, "\"][pos-z=\"").concat(pos.pos_z, "\"]"));
@@ -1654,8 +1762,14 @@ var PyramidHandler = /** @class */ (function () {
         var _this = this;
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         var _m, _o, _p;
+        if (this.owner.isZombie())
+            return null;
         var cubesInPyramid = this.getPyramidCubesExceptFinalBuilt();
         var colorsOnMarketTile = this.getAvailableColorsOnMarketTile();
+        if (colorsOnMarketTile == null) {
+            console.error("No available colors on market tile for player ".concat(this.owner.playerID, " (likely a zombie player coming back to game)"), this.owner);
+            return null;
+        }
         if (colorsOnMarketTile.length == 0 && this.unplacedCube) //if no colors on market tile, the unplaced cube will be moving around
             colorsOnMarketTile = [this.unplacedCube.color];
         if (cubesInPyramid.length === 0)
@@ -1767,9 +1881,8 @@ var PyramidHandler = /** @class */ (function () {
         }
         return cubes;
     };
-    PyramidHandler.prototype.getCubeNeighborColors = function (cube, cubeCoordsZXY_Color, yazdir) {
+    PyramidHandler.prototype.getCubeNeighborColors = function (cube, cubeCoordsZXY_Color) {
         if (cubeCoordsZXY_Color === void 0) { cubeCoordsZXY_Color = null; }
-        if (yazdir === void 0) { yazdir = false; }
         var posX = Number(cube.pos_x);
         var posY = Number(cube.pos_y);
         var posZ = Number(cube.pos_z);
@@ -1806,6 +1919,10 @@ var PyramidHandler = /** @class */ (function () {
     };
     PyramidHandler.prototype.getAvailableColorsOnMarketTile = function () {
         var marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
+        if (!marketTile) {
+            console.error("No collected market tile for player ".concat(this.owner.playerID, " (likely a zombie player coming back to game)"), this.owner);
+            return null;
+        }
         var availableCubes = Array.from(marketTile.querySelectorAll('.a-cube:not([built-status])'));
         var availableColorsDict = {};
         availableCubes.forEach(function (cube) {
@@ -1934,7 +2051,7 @@ var PyramidHandler = /** @class */ (function () {
         });
         var delay = 0;
         var animatingCubes = {};
-        var _loop_3 = function (move) {
+        var _loop_5 = function (move) {
             var marketCubeDiv = marketTile.querySelector(".a-cube[cube-id=\"".concat(move.cube_id, "\"]"));
             if (!marketCubeDiv)
                 return "continue";
@@ -1946,12 +2063,12 @@ var PyramidHandler = /** @class */ (function () {
             pyramidCubeDiv.style.opacity = '0';
             pyramidCubeDiv.style.top = null;
             pyramidCubeDiv.style.left = null;
-            this_3.cubesContainer.appendChild(pyramidCubeDiv);
+            this_4.cubesContainer.appendChild(pyramidCubeDiv);
             marketCubeDiv.style.width = marketCubeSize + 'px';
             marketCubeDiv.style.height = marketCubeSize + 'px';
             marketCubeDiv.style.maxWidth = pyramidCubeSize + 'px';
             marketCubeDiv.style.maxHeight = pyramidCubeSize + 'px';
-            marketCubeDiv = this_3.gameui.attachToNewParent(marketCubeDiv, this_3.cubesContainer);
+            marketCubeDiv = this_4.gameui.attachToNewParent(marketCubeDiv, this_4.cubesContainer);
             var cubeData = {
                 cube_id: move.cube_id,
                 pos_x: move.pos_x,
@@ -1961,9 +2078,9 @@ var PyramidHandler = /** @class */ (function () {
                 order_in_construction: null,
                 div: pyramidCubeDiv
             };
-            this_3.pyramidData.push(cubeData);
+            this_4.pyramidData.push(cubeData);
             animatingCubes[move.cube_id] = true;
-            var builtCubeAnim = this_3.gameui.animationHandler.animateProperty({
+            var builtCubeAnim = this_4.gameui.animationHandler.animateProperty({
                 node: marketCubeDiv,
                 properties: { top: pyramidCubeDiv.offsetTop, left: pyramidCubeDiv.offsetLeft, width: pyramidCubeSize * 2, height: pyramidCubeSize * 2 },
                 duration: animSpeed + Math.floor(Math.random() * 101) - 50,
@@ -1987,10 +2104,10 @@ var PyramidHandler = /** @class */ (function () {
             cubeAnimArray.push(builtCubeAnim);
             delay += 50;
         };
-        var this_3 = this;
+        var this_4 = this;
         for (var _i = 0, cubeMoves_1 = cubeMoves; _i < cubeMoves_1.length; _i++) {
             var move = cubeMoves_1[_i];
-            _loop_3(move);
+            _loop_5(move);
         }
         this.arrangeCubesZIndex();
         this.moveCubeAnim = this.gameui.animationHandler.combine(cubeAnimArray);
@@ -2083,7 +2200,7 @@ var PyramidHandler = /** @class */ (function () {
         this.unplacedCube = null;
         this.owner.are_cubes_built = false;
         this.gameui.ajaxAction('actUndoBuildPyramid', {}, true, false);
-        var fadeInDiscardedCubesAnimArray = []; //ekmek sil
+        var fadeInDiscardedCubesAnimArray = [];
         marketTile.querySelectorAll('.a-cube[built-status="discarded-cube"]').forEach(function (cube) {
             fadeInDiscardedCubesAnimArray.push(_this.gameui.animationHandler.animateProperty({
                 node: cube,
@@ -2094,7 +2211,7 @@ var PyramidHandler = /** @class */ (function () {
         });
         var undoAnim = this.gameui.animationHandler.combine(undoAnimArray);
         var fadeInDiscardedCubesAnim = this.gameui.animationHandler.combine(fadeInDiscardedCubesAnimArray);
-        if (fadeInDiscardedCubesAnimArray.length > 0) //ekmek uncomment
+        if (fadeInDiscardedCubesAnimArray.length > 0)
             undoAnim = this.gameui.animationHandler.combine([undoAnim, fadeInDiscardedCubesAnim]);
         undoAnim.start();
     };
@@ -2169,7 +2286,7 @@ var PyramidHandler = /** @class */ (function () {
         availableColors.forEach(function (color) { availableColorsDict[color] = 1; });
         availableColorsDict[this.unplacedCube.color] = 1;
         if (this.unplacedCube.pos_z > 0) {
-            var neighborColors = this.getCubeNeighborColors(this.unplacedCube, null, true); //ekmek null ve true sil
+            var neighborColors = this.getCubeNeighborColors(this.unplacedCube);
             var filteredColors_1 = {};
             neighborColors.forEach(function (color) {
                 if (color in availableColorsDict)
@@ -2242,9 +2359,8 @@ var TooltipHandler = /** @class */ (function () {
             var cardIconID = cardIcon.getAttribute('id');
             var cardID = cardIcon.getAttribute('bonus-card-id');
             var tooltipHTML = bga_format(_this.gameui.BONUS_CARDS_DATA[cardID].tooltip_text, { '*': function (t) { return '<b>' + t + '</b>'; } });
-            var rightPlayerDiv = _this.gameui.divColoredPlayer(_this.gameui.rightPlayerID, { 'class': 'tooltip-bold' }, false);
+            var rightPlayerDiv = _this.gameui.rightPlayerID ? '(' + _this.gameui.divColoredPlayer(_this.gameui.rightPlayerID, { 'class': 'tooltip-bold' }, false) + ')' : '';
             tooltipHTML = tooltipHTML.replace('${rightPlayer}', rightPlayerDiv);
-            //ekmek tooltip background guzellestir
             _this.gameui.addTooltipHtml(cardIconID, "<div class=\"bonus-card-tooltip tooltip-wrapper\" bonus-card-id=\"".concat(cardID, "\">\n                        <div class=\"tooltip-text\">").concat(tooltipHTML, "</div>\n                        <div class=\"tooltip-card tooltip-bonus-card\"></div>\n                        <div class=\"tooltip-card tooltip-cubes-card\"></div>\n                    </div>"), 400);
         });
     };

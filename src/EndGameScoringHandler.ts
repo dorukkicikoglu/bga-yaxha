@@ -14,7 +14,7 @@ class EndGameScoringHandler{
 
     public async displayEndGameScore(endGameScoring: EndGameScoreData) {
         this.endGameScoring = endGameScoring;
-
+        
         if(this.scoreContainer){
             console.error('end-game-score-container already exists');
             return;
@@ -33,7 +33,7 @@ class EndGameScoringHandler{
                 <i class="fa6 fa6-ranking-star"></i>
             </div> 
             <div class="maximized-content"> 
-                <i class="fa6 fa6-minimize close-table-button"></i>
+                <i class="fa6 fa6-chevron-circle-left collapse-table-button" title="${_('Collapse Scoreboard')}"></i>
                 <table>
                     <thead></thead>
                     <tbody></tbody>
@@ -41,13 +41,13 @@ class EndGameScoringHandler{
                 <div class="fast-forward-text"></div> 
             </div>
         `;
-        document.getElementById('game_play_area_wrap')?.appendChild(this.scoreContainer);
+        document.getElementById('player-tables')?.appendChild(this.scoreContainer);
 
         this.table = this.scoreContainer.querySelector('table');
         this.thead = this.scoreContainer.querySelector('thead');
         this.tbody = this.scoreContainer.querySelector('tbody');
         this.showButton = this.scoreContainer.querySelector('.show-table-button');
-        this.hideButton = this.scoreContainer.querySelector('.close-table-button');
+        this.hideButton = this.scoreContainer.querySelector('.collapse-table-button');
         this.fastForwardButton = this.scoreContainer.querySelector('.fast-forward-text');
 
         this.fillTable();
@@ -88,9 +88,9 @@ class EndGameScoringHandler{
         for (let colorIndex in this.gameui.CUBE_COLORS)
             scoreTypes.push({ index: colorIndex, type: 'color' });
 
-        const firstPlayerScore = this.endGameScoring.player_scores[Object.keys(this.endGameScoring.player_scores)[0]];
-        for (let bonusCardID in firstPlayerScore.bonus_card_points)
-            scoreTypes.push({ index: bonusCardID, type: 'bonus' });
+        const firstPlayerScore: PlayerScore = this.endGameScoring.player_scores[Object.keys(this.endGameScoring.player_scores)[0]];
+        for (let bonusCard of firstPlayerScore.bonus_card_points)
+            scoreTypes.push({ index: bonusCard.bonus_card_id, type: 'bonus' });
 
         scoreTypes.push({ index: 0, type: 'total' });
 
@@ -110,9 +110,10 @@ class EndGameScoringHandler{
 
             for(let player_id of this.gameui.playerSeatOrder) {
                 const playerScore = this.endGameScoring.player_scores[player_id];
+
                 const cellScore = scoreTypes[i].type === 'color' ?
                     playerScore.color_points[scoreType.index] :
-                    (scoreTypes[i].type === 'bonus' ? playerScore.bonus_card_points[scoreType.index] : playerScore.total);
+                    (scoreTypes[i].type === 'bonus' ? playerScore.bonus_card_points.find(item => item.bonus_card_id === scoreType.index).bonus_card_points : playerScore.total);
 
                 row.innerHTML += `<td><div class="cell-text cell-${scoreType.type}" style="opacity: 0;" row-index="${i}" player-id="${player_id}">${cellScore}</div></td>`;
             }
@@ -194,6 +195,7 @@ class EndGameScoringHandler{
             this.makeWinnersJump();
             this.setPlayerScores();
 
+            await this.gameui.wait(15000);
             return;
         }
 
@@ -216,7 +218,6 @@ class EndGameScoringHandler{
 
         this.addColumnTotal(cell.getAttribute('player-id'));
         
-
         await fadeInAnim.start();
         await this.fadeInNextCell();
     }
@@ -239,8 +240,13 @@ class EndGameScoringHandler{
     }
 
     private makeWinnersJump() {
-        for(let winner_id of this.winner_ids)
-            this.thead.querySelector(`.player-name-cell[player-id="${winner_id}"]`).classList.add('jumping-text');
+        let delay = 0;
+        for(let winner_id of this.winner_ids){
+            setTimeout(() => {
+                this.thead.querySelector(`.player-name-cell[player-id="${winner_id}"]`).classList.add('jumping-text');
+            }, delay);
+            delay += 100 + Math.random() * 50;
+        }
     }
 
     private setPlayerScores() {
@@ -248,5 +254,3 @@ class EndGameScoringHandler{
             this.gameui.players[player_id].setPlayerScore(this.endGameScoring.player_scores[player_id].total);
     }
 }
-
-//ekmek skor tipini guzellestir

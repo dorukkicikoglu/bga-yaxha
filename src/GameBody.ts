@@ -40,14 +40,16 @@ class GameBody extends GameGui {
         this.CUBES_PER_MARKET_TILE = gamedatas.CUBES_PER_MARKET_TILE;
         
         this.nextPlayerTable = gamedatas.nextPlayerTable;
-        this.rightPlayerID = gamedatas.nextPlayerTable[this.player_id];
+        this.rightPlayerID = gamedatas.nextPlayerTable[this.player_id] ?? null;
 
-        this.playerSeatOrder = [parseInt(this.player_id)];
-        let nextPlayerID = this.rightPlayerID;
-        while(nextPlayerID != parseInt(this.player_id)) {
-            this.playerSeatOrder.push(nextPlayerID);
-            nextPlayerID = this.nextPlayerTable[nextPlayerID];
-        }
+        if(this.rightPlayerID){
+            this.playerSeatOrder = [parseInt(this.player_id)];
+            let nextPlayerID = this.rightPlayerID;
+            while(nextPlayerID != parseInt(this.player_id)) {
+                this.playerSeatOrder.push(nextPlayerID);
+                nextPlayerID = this.nextPlayerTable[nextPlayerID];
+            }
+        } else this.playerSeatOrder = Object.keys(gamedatas.players).map(Number); //spectator
 
         let cubeColorCSS = '';
         for(let colorIndex in this.CUBE_COLORS){
@@ -80,8 +82,9 @@ class GameBody extends GameGui {
             </style>
             <div id="player-tables">
             <div class="market-container">
-                <div class="market-tiles-container"></div>
-                <div class="waiting-players-container"></div>
+                <div class="market-tiles-container">
+                    <div class="waiting-players-container"></div>
+                </div>
                 <div class="bonus-cards-container"></div>
             </div>
             <div class="pyramids-container"></div>
@@ -91,8 +94,8 @@ class GameBody extends GameGui {
         this.animationHandler = new AnimationHandlerPromiseBased(this);
 
         for(let player_id of this.playerSeatOrder) {
-            const {name, color, player_no, turn_order, are_cubes_built} = this.gamedatas.players[player_id];
-            this.players[player_id] = new PlayerHandler(this, player_id, name, color, parseInt(player_no), turn_order, gamedatas.pyramidData[player_id], are_cubes_built == '1');
+            const {name, color, player_no, turn_order, are_cubes_built, zombie} = this.gamedatas.players[player_id];
+            this.players[player_id] = new PlayerHandler(this, player_id, name, color, parseInt(player_no), parseInt(zombie) == 1, turn_order, gamedatas.pyramidData[player_id], are_cubes_built == '1');
 
             if(player_id == parseInt(this.player_id))
                 this.myself = this.players[player_id];
@@ -109,7 +112,7 @@ class GameBody extends GameGui {
         this.endGameScoringHandler = new EndGameScoringHandler(this);
 
         if(gamedatas.hasOwnProperty('endGameScoring'))
-            this.endGameScoringHandler.displayEndGameScore(gamedatas.endGameScoring);
+             this.endGameScoringHandler.displayEndGameScore(gamedatas.endGameScoring);
 
         // Setup game notifications to handle (see "setupNotifications" method below)
         this.setupNotifications();
@@ -123,9 +126,13 @@ class GameBody extends GameGui {
         switch( stateName )
         {
             case 'allSelectMarketTile':
-                if(args.args._private.selected_market_index === null)
-                    this.marketHandler.addSelectableClassToMarketTiles('all');
-                else this.marketHandler.addSelectableClassToMarketTiles('none');
+                if(!this.myself)
+                    return;
+
+                this.marketHandler.addSelectableClassToMarketTiles();
+            break;
+            case 'buildPyramid':
+                this.marketHandler.closeWaitingPlayersContainer();
             break;
         }
     }
@@ -140,6 +147,9 @@ class GameBody extends GameGui {
                 if(this.myself)
                     this.myself.pyramid.disableBuildPyramid();
             break;
+            case 'allPyramidsBuilt':
+                this.marketHandler.resetCollectedMarketTilesData();
+            break;
         }
     }
 
@@ -150,10 +160,9 @@ class GameBody extends GameGui {
         {
             case 'allSelectMarketTile':
                 this.marketHandler.updateStatusTextUponMarketTileSelection();
-                this.marketHandler.setCollectedMarketTilesData(args.collectedMarketTilesData);
             break;
             case 'individualPlayerSelectMarketTile':
-                this.marketHandler.setCollectedMarketTilesData(args.collectedMarketTilesData);
+                this.marketHandler.clearZombiePendingAvatars(this.getActivePlayerId());
                 if(this.myself) {
                     const playerCollectedMarketTile = this.myself.getCollectedMarketTileData();
                     if(this.isCurrentPlayerActive())
@@ -178,7 +187,7 @@ class GameBody extends GameGui {
                 args.processed = true;
 
                 // list of special keys we want to replace with images
-                let keys = ['textPlayerID', 'REVEALED_MARKET_TILES_DATA_STR', 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR', 'SWAP_TURN_ORDERS_DATA_STR', 'DISPLAY_BUILT_CUBES_STR', 'LOG_CLASS'];
+                const keys = ['textPlayerID', 'REVEALED_MARKET_TILES_DATA_STR', 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR', 'SWAP_TURN_ORDERS_DATA_STR', 'DISPLAY_BUILT_CUBES_STR', 'LOG_CLASS'];
                 for(let key of keys) {
                     if(key in args) {
                         if(key == 'textPlayerID')
@@ -243,7 +252,7 @@ class GameBody extends GameGui {
     public clickOrTap(capitalized: boolean = false): string { if(capitalized) { return this.capitalizeFirstLetter(this.clickOrTap()); } return this.isDesktop() ? 'click' : 'tap'; }
     public capitalizeFirstLetter(str: string): string { return `${str[0].toUpperCase()}${str.slice(1)}`; }
 
-    public updateStatusText(statusText): void{ $('gameaction_status').innerHTML = statusText; $('pagemaintitletext').innerHTML = statusText; } //ekmek sil?
+    public updateStatusText(statusText): void{ $('gameaction_status').innerHTML = statusText; $('pagemaintitletext').innerHTML = statusText; }
     public ajaxAction(action: string, args: Record<string, any> = {}, lock: boolean = true, checkAction: boolean = true): void{
         args.version = this.gamedatas.version;
         this.bgaPerformAction(action, args, { lock: lock, checkAction: checkAction });
@@ -287,7 +296,7 @@ class GameBody extends GameGui {
     public rgbToHex(rgb: string): string { // Extract the numeric values using a regex
         const match = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
         if (!match){
-            this.printDebug('-- rgb --', rgb);
+            console.error('-- rgb --', rgb);
             throw new Error("Invalid RGB format");
         }
 
@@ -344,7 +353,6 @@ class GameBody extends GameGui {
 
         return { minX: minX, minY: minY, maxX: maxX, maxY: maxY, width: maxX - minX, height: maxY - minY };
     }
-    public printDebug(...args: any[]): void{ args[0] = typeof args[0] == 'string' ? '*** ' + args[0] : args[0]; console.log(...args); }
 
     //game specific utility functions
     public createCubeDiv(cube: BaseCube): HTMLDivElement {
@@ -419,6 +427,12 @@ class GameBody extends GameGui {
 
         await this.endGameScoringHandler.displayEndGameScore(args.endGameScoring);
     }
+
+    public async notif_zombieIndividualPlayerCollection(args) {
+        console.log('notif_zombieIndividualPlayerCollection');
+        this.players[args.player_id].setZombie(true);
+        await this.marketHandler.zombieIndividualPlayerCollection(args.player_id);
+    }
 }
 
 interface BaseCube {
@@ -461,7 +475,7 @@ interface CollectedMarketTilesData {
     selected_market_index: number;
     collected_market_index: number;
     turn_order: number;
-    type: 'collecting' | 'pending' | 'market_inactive';
+    type: 'collecting' | 'pending' | 'market_inactive' | 'zombie';
 }
 
 interface SwapTurnOrdersData {
@@ -488,7 +502,7 @@ interface PossibleMove {
 interface PlayerScore {
     player_id: number;
     color_points: { [color_index: number]: number };
-    bonus_card_points: { [bonus_card_id: number]: number };
+    bonus_card_points: {bonus_card_id: number, bonus_card_points: number} [];
     total: number;
 }
 

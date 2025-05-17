@@ -43,6 +43,7 @@ class MarketHandler{
                 if(playerAvatar && playerCollects.type == 'pending')
                     this.waitingPlayersContainer.style.opacity = '1';
             });
+            this.highlightCollectedMarketTile();
         }
     }
 
@@ -66,11 +67,6 @@ class MarketHandler{
                     const unplacedCube = this.gameui.myself.pyramid.getUnplacedCube();
                     const cubesInConstruction = this.gameui.myself.pyramid.getCubesInConstruction();
 
-                    // if (cube.cube_id === unplacedCube?.cube_id) //ekmek borek sil
-                    //     cubeDiv.classList.add('selected-for-pyramid');
-                    // else if (parseInt(cube.cube_id) in cubesInConstruction)
-                    //     cubeDiv.classList.add('built-in-pyramid');
-
                     if (cube.cube_id === unplacedCube?.cube_id)
                         cubeDiv.setAttribute('built-status', 'selected-cube');
                     else if (parseInt(cube.cube_id) in cubesInConstruction)
@@ -84,17 +80,24 @@ class MarketHandler{
         });
     }
 
-    public addSelectableClassToMarketTiles(possibleMarketIndexes: number[] | 'all' | 'none') {
+    public addSelectableClassToMarketTiles(possibleMarketIndexes: number[] = null) {
         this.marketTiles.forEach(tile => tile.classList.remove('selectable-market-tile'));
 
-        if (possibleMarketIndexes === 'none')
+        if(this.gameui.myself && this.gameui.myself.isZombie()){
+            this.marketTiles.forEach(tile => tile.classList.add('zombie-market-tile'));
             return;
-        
+        }
+
         let selectableMarketTiles = [];
-        
-        if (possibleMarketIndexes === 'all')
-            selectableMarketTiles = this.marketTiles;
-        else possibleMarketIndexes.forEach((i) => selectableMarketTiles.push(this.marketTiles[i]));
+
+        if(possibleMarketIndexes){
+            possibleMarketIndexes.forEach((i) => selectableMarketTiles.push(this.marketTiles[i]));
+        } else {
+            const selectedMarketIndex = this.getMySelectedMarketIndex();
+            if(selectedMarketIndex !== null)
+                return;
+            else selectableMarketTiles = this.marketTiles;
+        }
 
         selectableMarketTiles.forEach(tile => tile.classList.add('selectable-market-tile'));
     }
@@ -104,9 +107,9 @@ class MarketHandler{
             return;
         
         const marketTile = event.target as HTMLDivElement;
-        if(!marketTile.classList.contains('a-market-tile'))
+        if(!marketTile.classList.contains('a-market-tile') || marketTile.classList.contains('zombie-market-tile'))
             return;
-        
+
         if(this.gameui.gamedatas.gamestate.name === 'individualPlayerSelectMarketTile' && !marketTile.classList.contains('selectable-market-tile'))
             return;
 
@@ -131,11 +134,9 @@ class MarketHandler{
         if (selectedTile) {
             this.setPlayerSelectedMarketIndex(marketIndex);
             selectedTile.classList.add('selected-market-tile');
-            this.addSelectableClassToMarketTiles('none');
-        } else {
-            this.setPlayerSelectedMarketIndex(null);
-            this.addSelectableClassToMarketTiles('all');
-        }
+        } else this.setPlayerSelectedMarketIndex(null);
+        
+        this.addSelectableClassToMarketTiles();
         this.updateStatusTextUponMarketTileSelection();
     }
 
@@ -183,6 +184,7 @@ class MarketHandler{
         this.collectedMarketTilesData.forEach((playerCollects, animationOrder) => {
             const avatarClone: HTMLDivElement = this.gameui.players[playerCollects.player_id].createAvatarClone();
             avatarClone.style.transform = 'none';
+            avatarClone.style.zIndex = '1000';
             const srcAvatar: HTMLImageElement = this.gameui.players[playerCollects.player_id].overallPlayerBoard.querySelector('img.avatar');
 
             document.body.appendChild(avatarClone);
@@ -228,6 +230,8 @@ class MarketHandler{
         await raiseAvatarsCombinedAnimation.start();
 
         await moveCollectingAvatarsCombinedAnimation.start();
+        this.highlightCollectedMarketTile();
+
         if(movePendingAvatarAnimations.length > 0){
             this.waitingPlayersContainer.style.opacity = '1';
             await movePendingAvatarsCombinedAnimation.start();
@@ -248,7 +252,7 @@ class MarketHandler{
         const pendingAvatar: HTMLDivElement = this.waitingPlayersContainer.querySelector(`.yaxha-player-avatar.pending-player-avatar[player-id="${playerID}"]`) as HTMLDivElement;
        
         const pendingAvatarClone = this.gameui.players[playerID].createAvatarClone(pendingAvatar.querySelector('img'));
-
+        pendingAvatarClone.style.zIndex = '1000';
         this.marketContainer.appendChild(pendingAvatarClone);
         this.gameui.placeOnObject(pendingAvatarClone, pendingAvatar);
 
@@ -268,21 +272,54 @@ class MarketHandler{
             goTo: destAvatar,
             duration: 500,
             easing: `cubic-bezier(${0.1 + Math.random() * 0.2}, ${0.3 + Math.random() * 0.3}, ${0.5 + Math.random() * 0.3}, ${0.7 + Math.random() * 0.2})`,
-            onEnd: () => { destAvatar.style.opacity = null; pendingAvatarClone.remove(); }
+            onEnd: () => { destAvatar.style.opacity = null; pendingAvatarClone.remove(); this.highlightCollectedMarketTile(); }
         });
 
         await this.gameui.animationHandler.combine([shrinkPendingAvatar, movePendingAvatarClone]).start();
 
         if(this.waitingPlayersContainer.querySelectorAll('.pending-player-avatar').length === 0)
-            this.waitingPlayersContainer.style.opacity = null;
+            this.closeWaitingPlayersContainer();
+    }
+
+    public closeWaitingPlayersContainer(){
+        this.waitingPlayersContainer.style.opacity = null;
+        this.waitingPlayersContainer.querySelectorAll('.pending-player-avatar').forEach((avatar: HTMLDivElement) => this.gameui.animationHandler.fadeOutAndDestroy(avatar));
+    }
+
+    public clearZombiePendingAvatars(nextCollectingPlayerID: number){ //any avatar to the left of the next collecting player is a zombie
+        const allPendingAvatars: HTMLDivElement[] = Array.from(this.waitingPlayersContainer.querySelectorAll('.pending-player-avatar'));
+        const zombieAvatars = [];
+        
+        for(const avatar of allPendingAvatars){
+            if(Number(avatar.getAttribute('player-id')) == nextCollectingPlayerID)
+                break;
+            zombieAvatars.push(avatar);
+        }
+        zombieAvatars.forEach(avatar => this.gameui.animationHandler.fadeOutAndDestroy(avatar));
+    }
+
+    private highlightCollectedMarketTile(){ 
+        if(!this.gameui.myself)
+            return;
+
+        const collectedMarketIndex = this.getMyCollectedMarketIndex();
+        if(collectedMarketIndex === null)
+            return;
+
+        const collectedMarketTile = this.marketTiles[collectedMarketIndex];
+        collectedMarketTile.style.setProperty('--collecting-player-color', '#' + this.gameui.players[this.gameui.myself.playerID].playerColor);
+        collectedMarketTile.classList.add('collected-market-tile');
     }
 
     public async animateBuiltCubes(built_cubes: { [key: number]: CubeToPyramidMoveData[] }) {
         const cubeAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
         let delay = 0;
 
-        const myAvatar: HTMLDivElement = this.marketContainer.querySelector(`.yaxha-player-avatar.collecting-player-avatar[player-id="${this.gameui.myself.playerID}"]`) as HTMLDivElement;
-        this.gameui.animationHandler.fadeOutAndDestroy(myAvatar, 100);
+        if(this.gameui.myself){
+            const myAvatar: HTMLDivElement = this.marketContainer.querySelector(`.yaxha-player-avatar.collecting-player-avatar[player-id="${this.gameui.myself.playerID}"]`) as HTMLDivElement;
+            if(myAvatar)
+            this.gameui.animationHandler.fadeOutAndDestroy(myAvatar, 100);
+        }
 
         for(const marketIndex in this.marketTiles) {
             const playerID = this.collectedMarketTilesData.find((data) => Number(data.collected_market_index) === Number(marketIndex))?.player_id;
@@ -310,7 +347,10 @@ class MarketHandler{
 
     public async animateNewCubesDrawn(marketData: { [key: number]: MarketCube[] }) {
         this.removePlayerAvatarsFromMarketTiles();
-        this.marketTiles.forEach(marketTile => { marketTile.querySelector('.cubes-container').innerHTML = ''; });
+        this.marketTiles.forEach(marketTile => { 
+            marketTile.querySelector('.cubes-container').innerHTML = '';  
+            marketTile.classList.remove('collected-market-tile');
+        });
 
         this.marketData = marketData;
         this.fillMarketTilesWithCubes();
@@ -373,8 +413,7 @@ class MarketHandler{
             turnOrderContainer.style.transform = 'none'; //temporarily remove transform to get correct bounding client rect without rotation
             const cardRect = turnOrderContainer.getBoundingClientRect();
             turnOrderContainer.style.transform = null;
-            // const cardRect = this.gameui.getPos(turnOrderContainer);
-            // const cardStyle = window.getComputedStyle(turnOrderContainer); //ekmek sil
+            
             const cardWidth = cardRect.width;
 
             const expandedCardWidth = cardWidth * 2;
@@ -428,17 +467,30 @@ class MarketHandler{
         await swapAnimation.start();
     }
 
+    public async zombieIndividualPlayerCollection(player_id: number){
+        const waitingPlayersContainer = this.marketContainer.querySelector('.waiting-players-container');
+        const playerAvatar: HTMLDivElement = waitingPlayersContainer.querySelector(`.yaxha-player-avatar[player-id="${player_id}"]`);
+        if (playerAvatar)
+            await this.gameui.animationHandler.fadeOutAndDestroy(playerAvatar, 500);
+    }
+
     private addPlayerAvatar(playerCollects: CollectedMarketTilesData, isVisible: boolean): HTMLDivElement {
-        if(!['pending', 'collecting'].includes(playerCollects.type))
+        if(playerCollects.type == 'zombie')
             return null;
 
         const avatarClone: HTMLDivElement = this.gameui.players[playerCollects.player_id].createAvatarClone();
-        const newAvatarContainer: HTMLDivElement = playerCollects.type === 'collecting' 
-            ? this.marketTiles[playerCollects.collected_market_index] 
-            : this.marketContainer.querySelector('.waiting-players-container');
 
+        if(playerCollects.type != 'pending' && playerCollects.collected_market_index == null)
+            return null;
+
+        const newAvatarContainer: HTMLDivElement = playerCollects.type === 'pending' 
+            ? this.marketContainer.querySelector('.waiting-players-container')
+            : this.marketTiles[playerCollects.collected_market_index];
+
+        const avatarClass = playerCollects.type === 'pending' ? 'pending-player-avatar' : 'collecting-player-avatar';
+            
         avatarClone.removeAttribute("style");
-        avatarClone.classList.add(`${playerCollects.type}-player-avatar`);
+        avatarClone.classList.add(avatarClass);
         avatarClone.classList.remove('avatar-clone');
         avatarClone.style.setProperty('--player-color', '#' + this.gameui.players[playerCollects.player_id].playerColor);
         
@@ -471,6 +523,13 @@ class MarketHandler{
 
         const marketTile: CollectedMarketTilesData = this.getPlayerCollectedMarketTile(this.gameui.myself.playerID);
         return marketTile ? (type == 'collected' ? marketTile.collected_market_index : marketTile.selected_market_index) : null;
+    }
+
+    public resetCollectedMarketTilesData(){
+        for(let i = 0; i < this.collectedMarketTilesData.length; i++){
+            this.collectedMarketTilesData[i].selected_market_index = null;
+            this.collectedMarketTilesData[i].collected_market_index = null;
+        }
     }
 
     private getMyCollectedMarketIndex(): number { return this.getMyMarketIndex('collected'); }
