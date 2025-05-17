@@ -11,6 +11,7 @@ class YXHMarketManager extends APP_DbObject
 
     public function drawNewCubes($notify = true)
     {
+        $this->DbQuery("UPDATE cubes SET card_location = 'discarded' WHERE card_location = 'market'"); //some cubes might be left in the market if there were zombie players
         $playerCount = $this->parent->getPlayersNumber();
         for ($i = 0; $i < $playerCount; $i++)
             $this->DbQuery( "UPDATE cubes SET card_location = 'market', card_location_arg = $i WHERE card_location = 'bag' ORDER BY card_location_arg LIMIT ".CUBES_PER_MARKET_TILE );
@@ -43,21 +44,26 @@ class YXHMarketManager extends APP_DbObject
         return $marketCubes;
     }
 
-    public function getCollectedMarketTiles()
+    public function getCollectedMarketTiles($viewingPlayerID = false)
     {
-        $players = $this->getObjectListFromDB("SELECT player_id, selected_market_index, collected_market_index, turn_order FROM player ORDER BY turn_order");
+        $players = $this->getObjectListFromDB("SELECT player_id, selected_market_index, collected_market_index, turn_order, player_zombie FROM player ORDER BY turn_order");
 
         $selectionsMade = true;
         foreach($players as $player)
             if($player['selected_market_index'] === null)
                 $selectionsMade = false;
-
+            
         foreach($players as $playerIndex => $player){
-            if(!$selectionsMade)
+            if($player['player_zombie'])
+                $players[$playerIndex]['type'] = 'zombie';
+            else if(!$selectionsMade)
                 $players[$playerIndex]['type'] = 'market_inactive';
             else if($player['collected_market_index'] !== null)
                 $players[$playerIndex]['type'] = 'collecting';
             else $players[$playerIndex]['type'] = 'pending';
+
+            if($viewingPlayerID && $player['player_id'] != $viewingPlayerID)
+                $players[$playerIndex]['selected_market_index'] = null;
         }
 
         return $players;
@@ -135,7 +141,7 @@ class YXHMarketManager extends APP_DbObject
 
     public function swapTurnOrders(){
         // Get all players who played the same card
-        $players = $this->getCollectionFromDb("SELECT player_id, selected_market_index, turn_order FROM player");
+        $players = $this->getCollectionFromDb("SELECT player_id, selected_market_index, turn_order FROM player WHERE collected_market_index IS NOT NULL");
         
         // Group players by their selected market index
         $playersBySelectedMarketIndex = array();

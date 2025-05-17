@@ -41,7 +41,7 @@ class YXHBonusCardsManager extends APP_DbObject
             else if($bonusCardID == BONUS_CARD_LARGEST_GROUP_ANY_COLOR)
                 $scores = $this->getCardBonusForLargestGroupAnyColor($scores);
             else if($bonusCardID == BONUS_CARD_LARGEST_GROUP_ANY_COLOR_LEVEL_1)
-                $scores = $this->getCardBonusForLargestGroupAnyColorLevel1($scores, $pyramidDataByPlayerId);
+                $scores = $this->getCardBonusForLargestGroupAnyColorLevel1($scores);
             else if($bonusCardID == BONUS_CARD_GROUP_WITH_MOST_LEVELS)
                 $scores = $this->getCardBonusForGroupWithMostLevels($scores);
             else if($bonusCardID == BONUS_CARD_SECOND_LARGEST_GROUP)
@@ -55,7 +55,6 @@ class YXHBonusCardsManager extends APP_DbObject
             else if($bonusCardID == BONUS_CARD_5_COLORS_LEVEL_2)
                 $scores = $this->getCardBonusFor5ColorsLevel($scores, $pyramidDataByPlayerId, 1);
             else throw new \BgaUserException(sprintf(clienttranslate('Invalid bonus card ID: %d'), $bonusCardID));
-
         }
 
         foreach($scores as $playerID => $playerScore)
@@ -122,7 +121,7 @@ class YXHBonusCardsManager extends APP_DbObject
             $rightPlayerSize = $scores[$rightPlayerID]['color_size'][$color];
             $leftPlayerSize = $scores[$leftPlayerID]['color_size'][$color];
 
-            $cardBonus = $leftPlayerSize > $rightPlayerSize ? BONUS_CARD_POINTS : 0;
+            $cardBonus = $leftPlayerSize >= $rightPlayerSize ? BONUS_CARD_POINTS : 0;
             $scores[$leftPlayerID]['bonus_card_points'][$bonusCardID] = $cardBonus;
         }
 
@@ -156,17 +155,24 @@ class YXHBonusCardsManager extends APP_DbObject
         return $scores;
     }
 
-    private function getCardBonusForLargestGroupAnyColorLevel1(array $scores, array $pyramidDataByPlayerId): array {
+    private function getCardBonusForLargestGroupAnyColorLevel1(array $scores): array {
         $bonusCardID = BONUS_CARD_LARGEST_GROUP_ANY_COLOR_LEVEL_1;
 
-        $playerToLevel1CubeColorCounts = [];
-        foreach($pyramidDataByPlayerId as $playerId => $pyramidData) {
-            foreach($pyramidData as $cube) {
-                if((int) $cube['pos_z'] == 0){
-                    if (!isset($playerToLevel1CubeColorCounts[$playerId][$cube['color']]))
-                        $playerToLevel1CubeColorCounts[$playerId][$cube['color']] = 0;
-                    
-                    $playerToLevel1CubeColorCounts[$playerId][$cube['color']]++;
+        $playerToLevel1MaxCubeCountsInAGroup = [];
+        foreach($scores as $playerId => $playerScore) {
+            $playerToLevel1MaxCubeCountsInAGroup[$playerId] = 0;
+
+            foreach ($playerScore['groups_by_color'] as $colorGroups) {
+                foreach ($colorGroups as $group) {
+                    $level1Count = 0;
+                    foreach ($group as $cube) {
+                        if ((int)$cube['pos_z'] === 0) {
+                            $level1Count++;
+                        }
+                    }
+
+                    if ($level1Count > 0)
+                        $playerToLevel1MaxCubeCountsInAGroup[$playerId] = max($playerToLevel1MaxCubeCountsInAGroup[$playerId], $level1Count);
                 }
             }
         }
@@ -174,15 +180,13 @@ class YXHBonusCardsManager extends APP_DbObject
         $maxSize = 0;
         $highestPlayerIDs = [];
 
-        foreach($playerToLevel1CubeColorCounts as $playerId => $colorCounts) {
-            foreach($colorCounts as $colorIndex => $count) {
-                if($count > $maxSize) {
-                    $maxSize = $count;
-                    $highestPlayerIDs = [$playerId => 1];
-                }
-                else if($count == $maxSize) {
-                    $highestPlayerIDs[$playerId] = 1;
-                }
+        foreach($playerToLevel1MaxCubeCountsInAGroup as $playerId => $count) {
+            if($count > $maxSize) {
+                $maxSize = $count;
+                $highestPlayerIDs = [$playerId => 1];
+            }
+            else if($count == $maxSize) {
+                $highestPlayerIDs[$playerId] = 1;
             }
         }
 

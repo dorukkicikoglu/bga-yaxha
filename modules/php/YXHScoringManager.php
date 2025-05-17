@@ -33,7 +33,18 @@ class YXHScoringManager extends APP_DbObject
             unset($scores[$playerID]['bonus_card_total']);
             unset($scores[$playerID]['groups_by_color']);
             unset($scores[$playerID]['color_size']);
+            
+            
+            $bonusCardIDsByPositions = $this->getObjectListFromDB("SELECT bonus_card_id FROM bonus_cards ORDER BY bonus_card_position ASC", true);
+            $playerBonusCardPoints = [];
+            foreach($bonusCardIDsByPositions as $bonusCardID){
+                $bonusCardPoints = $playerScore['bonus_card_points'][$bonusCardID];
+                $playerBonusCardPoints[] = ['bonus_card_id' => $bonusCardID, 'bonus_card_points' => $bonusCardPoints];
+            }
+
+            $scores[$playerID]['bonus_card_points'] = $playerBonusCardPoints;
         }
+        
         $winnerIDs = [];
         $maxScore = 0;
         foreach ($scores as $playerId => $playerScore) {
