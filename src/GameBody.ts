@@ -12,6 +12,7 @@ class GameBody extends GameGui {
     public logMutationObserver: LogMutationObserver;
     public myself: PlayerHandler;
     public endGameScoringHandler: EndGameScoringHandler;
+    public backgroundHandler: BackgroundHandler;
 
     public players: Record<number, PlayerHandler> = {};
     public CUBE_COLORS: CubeColor[];
@@ -110,6 +111,7 @@ class GameBody extends GameGui {
         this.tooltipHandler = new TooltipHandler(this);
         this.logMutationObserver = new LogMutationObserver(this);
         this.endGameScoringHandler = new EndGameScoringHandler(this);
+        this.backgroundHandler = new BackgroundHandler(this);
 
         if(gamedatas.hasOwnProperty('endGameScoring'))
              this.endGameScoringHandler.displayEndGameScore(gamedatas.endGameScoring);
@@ -133,6 +135,9 @@ class GameBody extends GameGui {
             break;
             case 'buildPyramid':
                 this.marketHandler.closeWaitingPlayersContainer();
+            break;
+            case 'gameEnd':
+                this.backgroundHandler.stopEyesRainbow();
             break;
         }
     }
