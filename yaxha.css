@@ -719,36 +719,6 @@
   top: 59%;
 }
 
-body {
-  background: url("img/yaxha_box_cover.webp") no-repeat, linear-gradient(to bottom right, #1e4b39 32%, #f8da5f 110%);
-  background-position: 42% bottom, center bottom;
-  background-attachment: fixed;
-  background-size: 24%, cover;
-}
-body::before {
-  content: "";
-  position: fixed;
-  top: calc(60px + 50%);
-  transform: translateY(-50%);
-  height: 36vh;
-  width: 100%;
-  pointer-events: none;
-  background-repeat: repeat-y;
-  background-position: 0% top, 99% top;
-  background-size: 4vh 3vh;
-  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='180'%20height='100'%20viewBox='0%200%20180%20100'%3E%3Cpolygon%20points='50,-46%2095,40%205,40'%20fill='%2384b578'%20transform='rotate(90,%2050,%2050)'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='180'%20height='100'%20viewBox='0%200%20180%20100'%3E%3Cpolygon%20points='94,34%20139,120%2049,120'%20fill='%2384b578'%20transform='rotate(-90,%2090,%2050)'/%3E%3C/svg%3E");
-}
-
-body.mobile_version {
-  background-size: 48%, cover;
-  background-position: center bottom, center bottom;
-}
-body.mobile_version::before {
-  background-size: 3vh 2.2vh;
-  height: 22.2vh;
-  top: calc(100px + 50%);
-}
-
 :root {
   --market-cube-size: 28px;
   --bg-gradient-tooltip: linear-gradient(130deg, #a8c686f2, #e1eec8db);
@@ -770,6 +740,116 @@ body {
 body.mobile_version {
   --pyramid-cube-size: 60px;
   --gamearea-avatar-size: 46px;
+}
+
+.background-container {
+  position: fixed;
+  z-index: -1;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  --pyramid-width: calc(min(42vw, 51vh));
+  --shaman-width: calc(var(--pyramid-width) * 0.64);
+  pointer-events: none;
+  background: linear-gradient(to bottom right, #1e4b39 32%, #f8da5f 110%);
+  background-position: center bottom;
+  background-attachment: fixed;
+  background-size: cover;
+}
+.background-container::before {
+  content: "";
+  position: fixed;
+  top: calc(60px + 50%);
+  transform: translateY(-50%);
+  height: 36vh;
+  width: 100%;
+  pointer-events: none;
+  background-repeat: repeat-y;
+  background-position: 0% top, 99% top;
+  background-size: 4vh 3vh;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='180'%20height='100'%20viewBox='0%200%20180%20100'%3E%3Cpolygon%20points='50,-46%2095,40%205,40'%20fill='%2384b578'%20transform='rotate(90,%2050,%2050)'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='180'%20height='100'%20viewBox='0%200%20180%20100'%3E%3Cpolygon%20points='94,34%20139,120%2049,120'%20fill='%2384b578'%20transform='rotate(-90,%2090,%2050)'/%3E%3C/svg%3E");
+}
+.background-container .bg-pyramid {
+  position: absolute;
+  opacity: 0.8;
+  bottom: 0px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: var(--pyramid-width);
+  height: calc(var(--pyramid-width) * 0.945);
+  background-image: url("img/bg_pyramid.webp");
+  background-size: 100%;
+}
+.background-container .bg-pyramid .bg-shaman {
+  position: absolute;
+  width: var(--shaman-width);
+  height: calc(var(--shaman-width) * 0.929);
+}
+.background-container .bg-pyramid .bg-shaman.is-shaking {
+  animation: shake-shaman 0.35s ease-in-out infinite;
+}
+.background-container .bg-pyramid .bg-shaman.final-shake {
+  animation: shake-shaman 0.35s ease-in-out;
+}
+.background-container .bg-pyramid .bg-shaman::before {
+  content: "";
+  opacity: 0.9;
+  position: absolute;
+  width: 37%;
+  height: 30%;
+  top: 45%;
+  left: 31%;
+  background-color: #fff1b4;
+  transition: background-color 0.3s ease;
+}
+.background-container .bg-pyramid .bg-shaman .eye-lid {
+  position: absolute;
+  transition: top 0.25s cubic-bezier(0.75, 0, 0.5, 1);
+  width: 14%;
+  height: 3%;
+  background-color: #1d5358;
+}
+.background-container .bg-pyramid .bg-shaman .eye-lid.lid-top {
+  top: 47.5%;
+}
+.background-container .bg-pyramid .bg-shaman .eye-lid.lid-bottom {
+  top: 56%;
+}
+.background-container .bg-pyramid .bg-shaman .eye-lid.lid-left {
+  left: 33%;
+}
+.background-container .bg-pyramid .bg-shaman .eye-lid.lid-right {
+  left: 54%;
+}
+.background-container .bg-pyramid .bg-shaman .eye-lid.lid-top.eyes-closed {
+  top: 50.5%;
+}
+.background-container .bg-pyramid .bg-shaman .eye-lid.lid-bottom.eyes-closed {
+  top: 53%;
+}
+.background-container .bg-pyramid .bg-shaman::after {
+  content: "";
+  position: absolute;
+  background-image: url("img/bg_shaman.webp");
+  background-size: 100%;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+}
+.background-container .bg-pyramid .bg-shaman.rainbow-eyes::before {
+  background-color: var(--rainbow-eyes-color, #ff511e);
+}
+
+body.mobile_version .background-container {
+  background-position: center bottom;
+  --pyramid-width: calc(min(86vw, 48vh));
+}
+body.mobile_version .background-container::before {
+  background-size: 3vh 2.2vh;
+  height: 22.2vh;
+  top: calc(100px + 50%);
 }
 
 .player-board {
@@ -1163,10 +1243,12 @@ body.mobile_version .market-container .waiting-players-container {
 
 #player-tables {
   text-align: center;
+  min-height: 100vh;
+  margin-bottom: 240px;
 }
 #player-tables .pyramids-container {
   margin-top: 40px;
-  margin-bottom: 400px;
+  margin-bottom: 40px;
 }
 #player-tables .pyramids-container .a-pyramid-container {
   position: relative;
@@ -1294,6 +1376,10 @@ body.mobile_version .market-container .waiting-players-container {
 }
 #player-tables .pyramids-container .a-pyramid-container[build-pyramid-enabled=true] .switch-color-button {
   cursor: pointer;
+}
+
+body.mobile_version #player-tables {
+  min-height: 150vh;
 }
 
 .turn-order-container {
@@ -1845,6 +1931,20 @@ body.mobile_version .dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip .
   }
   75% {
     transform: translateY(-10px) rotate(5deg);
+  }
+}
+@keyframes shake-shaman {
+  0% {
+    transform: translateX(0px);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+  100% {
+    transform: translateX(0px);
   }
 }
 

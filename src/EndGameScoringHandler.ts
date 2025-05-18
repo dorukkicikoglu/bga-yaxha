@@ -195,6 +195,9 @@ class EndGameScoringHandler{
             this.makeWinnersJump();
             this.setPlayerScores();
 
+            if(this.gameui.gamedatas.gamestate.name != 'gameEnd')
+                this.gameui.backgroundHandler.startEyesRainbow();
+
             await this.gameui.wait(15000);
             return;
         }

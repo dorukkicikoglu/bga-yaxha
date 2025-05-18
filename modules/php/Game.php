@@ -361,7 +361,7 @@ class Game extends \Table
             'built_cubes' => $builtCubesByPlayer,
             'DISPLAY_BUILT_CUBES_STR' => $builtCubesDataStr
         ]);
-
+        
         if((int) $this->globalsManager->get('rounds_remaining') == 0)
             $this->gamestate->nextState('endGameScoring');
         else $this->gamestate->nextState('newCubesDrawn');

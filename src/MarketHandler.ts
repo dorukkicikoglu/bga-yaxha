@@ -216,7 +216,7 @@ class MarketHandler{
                 duration: 500,
                 easing: `cubic-bezier(${0.1 + Math.random() * 0.2}, ${0.3 + Math.random() * 0.3}, ${0.5 + Math.random() * 0.3}, ${0.7 + Math.random() * 0.2})`,
                 onEnd: () => { destAvatar.style.opacity = null; avatarClone.remove(); destAvatarClone.remove(); }
-            })
+            });
 
             if(playerCollects.type == 'collecting')
                 moveCollectingAvatarAnimations.push(moveAvatarClone);

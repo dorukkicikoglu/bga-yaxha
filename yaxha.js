@@ -129,6 +129,103 @@ var AnimationHandlerPromiseBased = /** @class */ (function () {
     };
     return AnimationHandlerPromiseBased;
 }());
+var BackgroundHandler = /** @class */ (function () {
+    function BackgroundHandler(gameui) {
+        this.gameui = gameui;
+        this.shamanTop = 0.14;
+        this.shamanLeft = 0.18;
+        this.displayBackground();
+    }
+    BackgroundHandler.prototype.displayBackground = function () {
+        this.backgroundContainer = document.createElement('div');
+        this.backgroundContainer.classList.add('background-container');
+        this.backgroundContainer.innerHTML = "\n            <div class=\"bg-pyramid\">\n                <div class=\"bg-shaman\">\n                    <div class=\"eye-lid lid-top lid-left\"></div>\n                    <div class=\"eye-lid lid-top lid-right\"></div>\n                    <div class=\"eye-lid lid-bottom lid-left\"></div>\n                    <div class=\"eye-lid lid-bottom lid-right\"></div>\n                </div>\n            </div>\n        ";
+        document.body.appendChild(this.backgroundContainer);
+        this.shaman = this.backgroundContainer.querySelector('.bg-shaman');
+        this.pyramid = this.backgroundContainer.querySelector('.bg-pyramid');
+        this.shaman.style.top = "".concat(this.pyramid.offsetHeight * this.shamanTop, "px");
+        this.shaman.style.left = "".concat(this.pyramid.offsetWidth * this.shamanLeft, "px");
+        this.moveShamanAlongAxis(Math.random() < 0.5 ? 'up' : 'down');
+        this.closeEyes();
+    };
+    BackgroundHandler.prototype.moveShamanAlongAxis = function () {
+        return __awaiter(this, arguments, void 0, function (direction) {
+            var distance, destinationTop, destinationLeft, moveTime, delay, moveShamanAnim;
+            var _this = this;
+            if (direction === void 0) { direction = 'up'; }
+            return __generator(this, function (_a) {
+                distance = 0.006 + Math.random() * 0.01;
+                destinationTop = direction === 'up'
+                    ? this.shamanTop + distance
+                    : this.shamanTop - distance;
+                destinationLeft = this.shamanLeft + (Math.random() * 0.02 + 0.01);
+                moveTime = 800 + Math.random() * 200;
+                delay = 40000 + Math.random() * 30000;
+                moveShamanAnim = this.gameui.animationHandler.animateProperty({
+                    node: this.shaman,
+                    properties: { top: this.pyramid.offsetHeight * destinationTop, left: this.pyramid.offsetWidth * destinationLeft },
+                    duration: moveTime,
+                    delay: delay,
+                    easing: 'ease-in-out',
+                    onBegin: function () { _this.shaman.classList.add('is-shaking'); },
+                    onEnd: function () {
+                        _this.shaman.classList.add('final-shake');
+                        _this.shaman.classList.remove('is-shaking');
+                        setTimeout(function () { _this.shaman.classList.remove('final-shake'); }, 500);
+                        _this.moveShamanAlongAxis(direction === 'up' ? 'down' : 'up');
+                    }
+                });
+                moveShamanAnim.start();
+                return [2 /*return*/];
+            });
+        });
+    };
+    BackgroundHandler.prototype.closeEyes = function () {
+        var _this = this;
+        var arr = [
+            '.eye-lid', //both eyes
+            '.eye-lid', //both eyes
+            '.eye-lid', //both eyes
+            '.eye-lid.lid-left', //left eye
+            '.eye-lid.lid-left', //left eye
+            '.eye-lid.lid-right', //right eye
+        ];
+        var whichEyes = arr[Math.floor(Math.random() * arr.length)];
+        var delay = 28000 + Math.random() * 14000;
+        var eyelids = this.shaman.querySelectorAll(whichEyes);
+        setTimeout(function () {
+            eyelids.forEach(function (lid) { lid.classList.add('eyes-closed'); });
+            setTimeout(function () {
+                eyelids.forEach(function (lid) { lid.classList.remove('eyes-closed'); });
+                _this.closeEyes();
+            }, 250 + Math.random() * 40);
+        }, delay);
+    };
+    BackgroundHandler.prototype.startEyesRainbow = function () {
+        var _this = this;
+        var rainbowColors = [
+            '#fbe985',
+            '#9ec8b2',
+            '#d06b63',
+            '#c5e0f3',
+            '#69ba61',
+        ];
+        this.shaman.classList.add('rainbow-eyes');
+        var colorIndex = 0;
+        var setNextColor = function () {
+            if (!_this.shaman.classList.contains('rainbow-eyes'))
+                return;
+            _this.shaman.style.setProperty('--rainbow-eyes-color', rainbowColors[colorIndex]);
+            colorIndex = (colorIndex + (2 + Math.floor(Math.random() * (rainbowColors.length - 3)))) % rainbowColors.length;
+            setTimeout(function () { setNextColor(); }, 400);
+        };
+        setNextColor();
+    };
+    BackgroundHandler.prototype.stopEyesRainbow = function () {
+        this.shaman.classList.remove('rainbow-eyes');
+    };
+    return BackgroundHandler;
+}());
 var EndGameScoringHandler = /** @class */ (function () {
     function EndGameScoringHandler(gameui) {
         this.gameui = gameui;
@@ -303,6 +400,8 @@ var EndGameScoringHandler = /** @class */ (function () {
                         allCells.forEach(function (cell) { cell.style.opacity = ''; });
                         this.makeWinnersJump();
                         this.setPlayerScores();
+                        if (this.gameui.gamedatas.gamestate.name != 'gameEnd')
+                            this.gameui.backgroundHandler.startEyesRainbow();
                         return [4 /*yield*/, this.gameui.wait(15000)];
                     case 1:
                         _a.sent();
@@ -452,6 +551,7 @@ var GameBody = /** @class */ (function (_super) {
         this.tooltipHandler = new TooltipHandler(this);
         this.logMutationObserver = new LogMutationObserver(this);
         this.endGameScoringHandler = new EndGameScoringHandler(this);
+        this.backgroundHandler = new BackgroundHandler(this);
         if (gamedatas.hasOwnProperty('endGameScoring'))
             this.endGameScoringHandler.displayEndGameScore(gamedatas.endGameScoring);
         // Setup game notifications to handle (see "setupNotifications" method below)
@@ -470,6 +570,9 @@ var GameBody = /** @class */ (function (_super) {
                         break;
                     case 'buildPyramid':
                         this.marketHandler.closeWaitingPlayersContainer();
+                        break;
+                    case 'gameEnd':
+                        this.backgroundHandler.stopEyesRainbow();
                         break;
                 }
                 return [2 /*return*/];
