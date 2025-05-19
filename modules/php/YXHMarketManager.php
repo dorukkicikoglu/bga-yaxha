@@ -183,7 +183,7 @@ class YXHMarketManager extends APP_DbObject
             $this->DbQuery("UPDATE player SET turn_order = {$swap[1]['turn_order']} WHERE player_id = {$swap[0]['player_id']}");
             $this->DbQuery("UPDATE player SET turn_order = {$swap[0]['turn_order']} WHERE player_id = {$swap[1]['player_id']}");
 
-            $swapTurnOrdersDataStr = $this->parent->getPlayerNameById($swap[0]['player_id']).'&nbsp;'.makeInlineTurnOrderCardHTML($swap[0]['turn_order']).' ↔ '.makeInlineTurnOrderCardHTML($swap[1]['turn_order']).'&nbsp;'.$this->parent->getPlayerNameById($swap[1]['player_id']);
+            $swapTurnOrdersDataStr = $this->parent->getPlayerNameById($swap[0]['player_id']).'&nbsp;'.makeInlineTurnOrderCardHTML($swap[1]['turn_order']).' ↔ '.makeInlineTurnOrderCardHTML($swap[0]['turn_order']).'&nbsp;'.$this->parent->getPlayerNameById($swap[1]['player_id']);
 
             $this->parent->notify->all('swapTurnOrders', '${SWAP_TURN_ORDERS_DATA_STR}', [
                 'LOG_CLASS' => 'swap-turn-orders-log',

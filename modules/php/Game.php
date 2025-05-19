@@ -481,6 +481,7 @@ class Game extends \Table
         $result['MARKET_TILE_COLORS'] = MARKET_TILE_COLORS;
         $result['PYRAMID_MAX_SIZE'] = PYRAMID_MAX_SIZE;
         $result['CUBES_PER_MARKET_TILE'] = CUBES_PER_MARKET_TILE;
+        $result['CUBE_COUNT_IN_GAME'] = CUBES_PER_COLOR * count(CUBE_COLORS);
         $result['pyramidData'] = $this->pyramidManager->getPyramidsData();
 
         $current_player_id = (int) $this->getCurrentPlayerId();

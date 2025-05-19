@@ -27,6 +27,8 @@ SET time_zone = "+00:00";
 -- Table structure for table `cubes`
 --
 
+DROP TABLE IF EXISTS cubes;
+
 CREATE TABLE `cubes` (
   `card_id` int(10) UNSIGNED NOT NULL,
   `card_type` varchar(16) NOT NULL,
@@ -185,7 +187,6 @@ ALTER TABLE `cubes`
 --
 ALTER TABLE `cubes`
   MODIFY `card_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=121;
-COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
