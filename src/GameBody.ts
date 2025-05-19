@@ -408,7 +408,7 @@ class GameBody extends GameGui {
     
     public async notif_confirmedBuildPyramid(args) {
         console.log('notif_confirmedBuildPyramid');
-        this.myself.pyramid.confirmedBuildPyramid();
+        await this.myself.pyramid.confirmedBuildPyramid();
     }
 
     public async notif_displayBuiltCubes(args) {

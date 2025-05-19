@@ -463,7 +463,16 @@ class MarketHandler{
             this.gameui.animationHandler.combine(lowerAnimArray)
         ]);
 
-
+        let statusText = _('Swapping Turn Orders: {$swapIcons}');
+        let swapIconsHTML = '<div class="swap-icons">' + this.gameui.divColoredPlayer(swapperLeft.player_id);
+        swapIconsHTML += '<div class="turn-order-container-wrapper"><div class="turn-order-container" turn-order="' + swapperLeft.turn_order + '"></div></div>';
+        swapIconsHTML += '<i class="log-arrow log-arrow-exchange fa6 fa-exchange"></i>';
+        swapIconsHTML += '<div class="turn-order-container-wrapper"><div class="turn-order-container" turn-order="' + swapperRight.turn_order + '"></div></div>';
+        swapIconsHTML += this.gameui.divColoredPlayer(swapperRight.player_id);
+        swapIconsHTML += '</div>';
+        statusText = statusText.replace('{$swapIcons}', swapIconsHTML);
+        this.gameui.updateStatusText(statusText);
+        
         await swapAnimation.start();
     }
 

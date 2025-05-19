@@ -870,9 +870,14 @@ var GameBody = /** @class */ (function (_super) {
     GameBody.prototype.notif_confirmedBuildPyramid = function (args) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                console.log('notif_confirmedBuildPyramid');
-                this.myself.pyramid.confirmedBuildPyramid();
-                return [2 /*return*/];
+                switch (_a.label) {
+                    case 0:
+                        console.log('notif_confirmedBuildPyramid');
+                        return [4 /*yield*/, this.myself.pyramid.confirmedBuildPyramid()];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
             });
         });
     };
@@ -1091,8 +1096,8 @@ var LogMutationObserver = /** @class */ (function () {
                 return Number(b.color) - Number(a.color);
             });
             for (var _i = 0, _a = built_cubes[playerID]; _i < _a.length; _i++) {
-                var cube = _a[_i];
-                cubesHTML += this_2.gameui.createCubeDiv(cube).outerHTML;
+                var cube_1 = _a[_i];
+                cubesHTML += this_2.gameui.createCubeDiv(cube_1).outerHTML;
             }
             logHTML += "<div class=\"player-built-cubes-row\">\n            ".concat(this_2.gameui.divColoredPlayer(playerID, { class: 'playername' }, false), "\n            <i class=\"log-arrow log-place-cube-icon fa6 fa-download\"></i>\n            <div class=\"log-cubes-wrapper\">").concat(cubesHTML, "</div>\n            </div>");
         };
@@ -1104,7 +1109,7 @@ var LogMutationObserver = /** @class */ (function () {
         return logHTML;
     };
     LogMutationObserver.prototype.createLogSwapTurnOrders = function (swapData) {
-        var logHTML = "".concat(this.gameui.divColoredPlayer(swapData[0].player_id, { class: 'playername swapper-name' }, false), " \n        <div class=\"turn-order-container-wrapper\"><div class=\"turn-order-container\" turn-order=\"").concat(swapData[0].turn_order, "\"></div></div>\n        <i class=\"log-arrow log-arrow-exchange fa6 fa-exchange\"></i> \n        <div class=\"turn-order-container-wrapper\"><div class=\"turn-order-container\" turn-order=\"").concat(swapData[1].turn_order, "\"></div></div>\n        ").concat(this.gameui.divColoredPlayer(swapData[1].player_id, { class: 'playername swapper-name' }, false));
+        var logHTML = "".concat(this.gameui.divColoredPlayer(swapData[0].player_id, { class: 'playername swapper-name' }, false), " \n        <div class=\"turn-order-container-wrapper\"><div class=\"turn-order-container\" turn-order=\"").concat(swapData[1].turn_order, "\"></div></div>\n        <i class=\"log-arrow log-arrow-exchange fa6 fa-exchange\"></i> \n        <div class=\"turn-order-container-wrapper\"><div class=\"turn-order-container\" turn-order=\"").concat(swapData[0].turn_order, "\"></div></div>\n        ").concat(this.gameui.divColoredPlayer(swapData[1].player_id, { class: 'playername swapper-name' }, false));
         return logHTML;
     };
     return LogMutationObserver;
@@ -1180,16 +1185,16 @@ var MarketHandler = /** @class */ (function () {
             var tilesData = _this.marketData[marketIndex] || [];
             var cubesContainer = _this.marketTiles[marketIndex].querySelector('.cubes-container');
             for (var _i = 0, tilesData_1 = tilesData; _i < tilesData_1.length; _i++) {
-                var cube = tilesData_1[_i];
-                var cubeDiv = _this.gameui.createCubeDiv(cube);
+                var cube_2 = tilesData_1[_i];
+                var cubeDiv = _this.gameui.createCubeDiv(cube_2);
                 if (playerCollectedMarketIndex !== null && _this.gameui.myself && marketIndex == playerCollectedMarketIndex) {
                     var unplacedCube = _this.gameui.myself.pyramid.getUnplacedCube();
                     var cubesInConstruction = _this.gameui.myself.pyramid.getCubesInConstruction();
-                    if (cube.cube_id === (unplacedCube === null || unplacedCube === void 0 ? void 0 : unplacedCube.cube_id))
+                    if (cube_2.cube_id === (unplacedCube === null || unplacedCube === void 0 ? void 0 : unplacedCube.cube_id))
                         cubeDiv.setAttribute('built-status', 'selected-cube');
-                    else if (parseInt(cube.cube_id) in cubesInConstruction)
+                    else if (parseInt(cube_2.cube_id) in cubesInConstruction)
                         cubeDiv.setAttribute('built-status', 'built-cube');
-                    else if (cube.location == 'to_discard')
+                    else if (cube_2.location == 'to_discard')
                         cubeDiv.setAttribute('built-status', 'discarded-cube');
                 }
                 cubesContainer.appendChild(cubeDiv);
@@ -1512,7 +1517,7 @@ var MarketHandler = /** @class */ (function () {
     };
     MarketHandler.prototype.animateSwapTurnOrders = function (swapData) {
         return __awaiter(this, void 0, void 0, function () {
-            var swapperLeft, swapperRight, rect1, rect2, raiseAnimArray, lowerAnimArray, swapAnimation;
+            var swapperLeft, swapperRight, rect1, rect2, raiseAnimArray, lowerAnimArray, swapAnimation, statusText, swapIconsHTML;
             var _a;
             var _this = this;
             return __generator(this, function (_b) {
@@ -1577,6 +1582,15 @@ var MarketHandler = /** @class */ (function () {
                             this.gameui.animationHandler.combine(raiseAnimArray),
                             this.gameui.animationHandler.combine(lowerAnimArray)
                         ]);
+                        statusText = _('Swapping Turn Orders: {$swapIcons}');
+                        swapIconsHTML = '<div class="swap-icons">' + this.gameui.divColoredPlayer(swapperLeft.player_id);
+                        swapIconsHTML += '<div class="turn-order-container-wrapper"><div class="turn-order-container" turn-order="' + swapperLeft.turn_order + '"></div></div>';
+                        swapIconsHTML += '<i class="log-arrow log-arrow-exchange fa6 fa-exchange"></i>';
+                        swapIconsHTML += '<div class="turn-order-container-wrapper"><div class="turn-order-container" turn-order="' + swapperRight.turn_order + '"></div></div>';
+                        swapIconsHTML += this.gameui.divColoredPlayer(swapperRight.player_id);
+                        swapIconsHTML += '</div>';
+                        statusText = statusText.replace('{$swapIcons}', swapIconsHTML);
+                        this.gameui.updateStatusText(statusText);
                         return [4 /*yield*/, swapAnimation.start()];
                     case 1:
                         _b.sent();
@@ -1732,6 +1746,7 @@ var PyramidHandler = /** @class */ (function () {
         this.pyramidData = pyramidData;
         this.cubesInConstruction = {};
         this.moveCubeAnim = null;
+        this.expandToBuildDuration = 300;
         this.initPyramidContainer();
     }
     PyramidHandler.prototype.initPyramidContainer = function () {
@@ -1740,9 +1755,13 @@ var PyramidHandler = /** @class */ (function () {
         this.pyramidContainer.id = 'pyramid-container-' + this.owner.playerID;
         this.pyramidContainer.className = 'a-pyramid-container';
         this.pyramidContainer.setAttribute('player-id', this.owner.playerID.toString());
+        if (this.owner.playerID.toString() == this.gameui.player_id)
+            this.pyramidContainer.classList.add('my-pyramid');
         // Set the custom property for player color
         this.pyramidContainer.style.setProperty('--player-color', '#' + this.owner.playerColor);
         this.pyramidContainer.style.setProperty('--player-color-hex', this.gameui.hexToRgb(this.owner.playerColor));
+        this.pyramidContainer.style.setProperty('--expand-to-build-duration', "".concat(this.expandToBuildDuration / 1000, "s"));
+        this.pyramidContainer.setAttribute('enlarge-animation-disabled', 'true');
         var turnOrderContainerId = "turn-order-".concat(this.owner.playerID);
         this.pyramidContainer.innerHTML = "\n\t\t\t<div class=\"player-name-text\">\n\t\t\t\t<div class=\"text-container\">".concat(this.owner.getPlayerName(), "</div>\n\t\t\t</div>\n\t\t\t<div class=\"turn-order-container\" id=\"").concat(turnOrderContainerId, "\" turn-order=\"").concat(this.owner.getTurnOrder(), "\"></div>\n            <div class=\"cubes-container\"></div>\n        ");
         document.getElementById('player-tables').querySelector('.pyramids-container').insertAdjacentElement(Number(this.owner.playerID) === Number(this.gameui.player_id) ? 'afterbegin' : 'beforeend', this.pyramidContainer);
@@ -1770,6 +1789,9 @@ var PyramidHandler = /** @class */ (function () {
             this.unplacedCube = maxOrderCubeInConstruction;
         this.arrangeCubesZIndex();
         this.centerCubesContainer(false);
+        setTimeout(function () {
+            _this.pyramidContainer.removeAttribute('enlarge-animation-disabled');
+        }, 200);
     };
     PyramidHandler.prototype.enableBuildPyramid = function () {
         if (this.owner.are_cubes_built || this.owner.isZombie()) {
@@ -1783,12 +1805,14 @@ var PyramidHandler = /** @class */ (function () {
         this.displaySwitchColorButton();
         this.arrangeCubesZIndex();
         this.updatePyramidStatusText();
+        this.expandToBuild();
     };
     PyramidHandler.prototype.disableBuildPyramid = function () {
         this.pyramidContainer.removeAttribute('build-pyramid-enabled');
         this.cubesContainer.querySelectorAll('.pyramid-cube-snap-point').forEach(function (el) { return el.remove(); });
         this.cubesContainer.querySelectorAll('.switch-color-button').forEach(function (el) { return el.remove(); });
-        this.centerCubesContainer();
+        if (!this.gameui.isMobile()) //this is handled in the shrinking animation in the mobile version
+            this.centerCubesContainer();
         this.updatePyramidStatusText();
     };
     PyramidHandler.prototype.onSnapPointClicked = function (args) {
@@ -1841,12 +1865,19 @@ var PyramidHandler = /** @class */ (function () {
             console.error("No possible moves for player ".concat(this.owner.playerID, " (likely a zombie player coming back to game)"), this.owner);
             return;
         }
+        var placeIcon = 'fa-download';
+        var moveIcon = 'fa-angle-double-right';
+        var snapPointIcon = Object.keys(this.cubesInConstruction).length < this.gameui.CUBES_PER_MARKET_TILE ? placeIcon : moveIcon;
         this.cubesContainer.querySelectorAll('.pyramid-cube-snap-point').forEach(function (el) { return el.classList.add('to-remove'); });
         possibleMoves.forEach(function (pos) {
             var existingSnapPoint = _this.cubesContainer.querySelector(".pyramid-cube-snap-point[pos-x=\"".concat(pos.pos_x, "\"][pos-y=\"").concat(pos.pos_y, "\"][pos-z=\"").concat(pos.pos_z, "\"]"));
+            var interactableMarketCube = _this.getNextUnplacedMarketCube(pos.possible_colors.join('_'));
+            // const icon = interactableMarketCube != null ? placeIcon : moveIcon;
             if (existingSnapPoint) {
                 existingSnapPoint.classList.remove('to-remove');
                 existingSnapPoint.setAttribute('possible-colors', pos.possible_colors.join('_'));
+                if (!existingSnapPoint.querySelector('.snap-point-icon.' + snapPointIcon))
+                    existingSnapPoint.innerHTML = "<i class=\"snap-point-icon fa6 ".concat(snapPointIcon, "\" style=\"opacity: 0;\"></i>");
                 return;
             }
             var snapPoint = document.createElement('div');
@@ -1855,11 +1886,15 @@ var PyramidHandler = /** @class */ (function () {
             snapPoint.setAttribute('pos-y', pos.pos_y.toString());
             snapPoint.setAttribute('pos-z', pos.pos_z.toString());
             snapPoint.setAttribute('possible-colors', pos.possible_colors.join('_'));
+            snapPoint.innerHTML = "<i class=\"snap-point-icon fa6 ".concat(snapPointIcon, "\" style=\"opacity: 0;\"></i>");
             _this.cubesContainer.appendChild(snapPoint);
             snapPoint.addEventListener('click', function (args) { return _this.onSnapPointClicked(args); });
             _this.gameui.animationHandler.animateProperty({ node: snapPoint, properties: { opacity: 1 }, duration: 300 }).play();
         });
         this.cubesContainer.querySelectorAll('.pyramid-cube-snap-point.to-remove').forEach(function (el) { return el.remove(); });
+        setTimeout(function () {
+            _this.cubesContainer.querySelectorAll('.snap-point-icon').forEach(function (el) { el.style.opacity = null; });
+        }, 200);
     };
     PyramidHandler.prototype.getPossibleMoves = function () {
         var _this = this;
@@ -1884,13 +1919,13 @@ var PyramidHandler = /** @class */ (function () {
         var maxX = -Infinity, maxY = -Infinity;
         // calculate possible moves for the bottom layer
         for (var _i = 0, cubesInPyramid_1 = cubesInPyramid; _i < cubesInPyramid_1.length; _i++) {
-            var cube = cubesInPyramid_1[_i];
-            var posX = Number(cube.pos_x);
-            var posY = Number(cube.pos_y);
-            var posZ_1 = Number(cube.pos_z);
+            var cube_3 = cubesInPyramid_1[_i];
+            var posX = Number(cube_3.pos_x);
+            var posY = Number(cube_3.pos_y);
+            var posZ_1 = Number(cube_3.pos_z);
             (_a = cubeCoordsZXY_Color[posZ_1]) !== null && _a !== void 0 ? _a : (cubeCoordsZXY_Color[posZ_1] = {});
             (_b = (_m = cubeCoordsZXY_Color[posZ_1])[posX]) !== null && _b !== void 0 ? _b : (_m[posX] = {});
-            cubeCoordsZXY_Color[posZ_1][posX][posY] = cube.color;
+            cubeCoordsZXY_Color[posZ_1][posX][posY] = cube_3.color;
             cubeCountByLayer[posZ_1] = ((_c = cubeCountByLayer[posZ_1]) !== null && _c !== void 0 ? _c : 0) + 1;
             (_d = possibleMovesDict[posX]) !== null && _d !== void 0 ? _d : (possibleMovesDict[posX] = {});
             possibleMovesDict[posX][posY + 1] = 1;
@@ -1978,9 +2013,9 @@ var PyramidHandler = /** @class */ (function () {
         var cubes = [];
         var allCubes = __spreadArray(__spreadArray([], Object.values(this.pyramidData), true), Object.values(this.cubesInConstruction), true);
         for (var _i = 0, allCubes_1 = allCubes; _i < allCubes_1.length; _i++) {
-            var cube = allCubes_1[_i];
-            if (Number(cube.order_in_construction) !== Number(this.gameui.CUBES_PER_MARKET_TILE))
-                cubes.push(cube);
+            var cube_4 = allCubes_1[_i];
+            if (Number(cube_4.order_in_construction) !== Number(this.gameui.CUBES_PER_MARKET_TILE))
+                cubes.push(cube_4);
         }
         return cubes;
     };
@@ -2065,8 +2100,8 @@ var PyramidHandler = /** @class */ (function () {
                 var cubeIconsHTML = '';
                 var sortedCubes = Object.values(this.cubesInConstruction).sort(function (a, b) { return a.order_in_construction - b.order_in_construction; });
                 for (var _i = 0, sortedCubes_1 = sortedCubes; _i < sortedCubes_1.length; _i++) {
-                    var cube = sortedCubes_1[_i];
-                    cubeIconsHTML += this.gameui.createCubeDiv(cube).outerHTML;
+                    var cube_5 = sortedCubes_1[_i];
+                    cubeIconsHTML += this.gameui.createCubeDiv(cube_5).outerHTML;
                 }
                 cubeIconsHTML = '<div class="cube-wrapper">' + cubeIconsHTML + '</div>';
                 statusText = dojo.string.substitute(_('Place${cubeIcons}'), { cubeIcons: cubeIconsHTML });
@@ -2086,8 +2121,12 @@ var PyramidHandler = /** @class */ (function () {
             return;
         this.cubesContainer.querySelectorAll('.switch-color-button').forEach(function (el) { return el.remove(); });
         this.unplacedCube = cubeData;
+        var goTo = this.cubesContainer.querySelector(".pyramid-cube-snap-point[pos-x=\"".concat(this.unplacedCube.pos_x, "\"][pos-y=\"").concat(this.unplacedCube.pos_y, "\"][pos-z=\"").concat(this.unplacedCube.pos_z, "\"]"));
         var marketCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--market-cube-size'));
-        var pyramidCubeSize = parseInt(getComputedStyle(document.body).getPropertyValue('--pyramid-cube-size'));
+        var pyramidCubeSize = goTo.offsetWidth;
+        var computedStyle = getComputedStyle(this.pyramidContainer);
+        var cubeSize = computedStyle.getPropertyValue('--pyramid-cube-size').trim();
+        var goToWidth = goTo.offsetWidth;
         var animSpeed = 400;
         if (!this.unplacedCube.div) { //search Market Tiles
             var marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
@@ -2102,7 +2141,6 @@ var PyramidHandler = /** @class */ (function () {
             this.gameui.placeOnObject(this.unplacedCube.div, marketCubeDiv);
             animSpeed = 600;
         }
-        var goTo = this.cubesContainer.querySelector(".pyramid-cube-snap-point[pos-x=\"".concat(this.unplacedCube.pos_x, "\"][pos-y=\"").concat(this.unplacedCube.pos_y, "\"][pos-z=\"").concat(this.unplacedCube.pos_z, "\"]"));
         this.moveCubeAnim = this.gameui.animationHandler.animateProperty({
             node: this.unplacedCube.div,
             properties: { top: goTo.offsetTop, left: goTo.offsetLeft, width: pyramidCubeSize * 2, height: pyramidCubeSize * 2 },
@@ -2118,6 +2156,8 @@ var PyramidHandler = /** @class */ (function () {
                 _this.unplacedCube.div.style.height = null;
                 _this.unplacedCube.div.style.maxWidth = null;
                 _this.unplacedCube.div.style.maxHeight = null;
+                _this.unplacedCube.div.style.left = null;
+                _this.unplacedCube.div.style.top = null;
                 _this.gameui.ajaxAction(moveType == 'from_market' ? 'actAddCubeToPyramid' : 'actMoveCubeInPyramid', { cube_id: _this.unplacedCube.cube_id, pos_x: _this.unplacedCube.pos_x, pos_y: _this.unplacedCube.pos_y, pos_z: _this.unplacedCube.pos_z }, false, false);
                 _this.moveCubeAnim = null;
                 _this.enableBuildPyramid();
@@ -2196,7 +2236,14 @@ var PyramidHandler = /** @class */ (function () {
                     marketCubeDiv.style.height = null;
                     marketCubeDiv.style.maxWidth = null;
                     marketCubeDiv.style.maxHeight = null;
+                    marketCubeDiv.style.top = null;
+                    marketCubeDiv.style.left = null;
                     delete animatingCubes[move.cube_id];
+                    var shineAnimationDuration = 2500;
+                    marketCubeDiv.querySelector('.top-side').style.animation = "shine-cube ".concat(shineAnimationDuration, "ms ease-in-out");
+                    setTimeout(function () {
+                        marketCubeDiv.querySelector('.top-side').style.animation = '';
+                    }, shineAnimationDuration);
                     if (Object.keys(animatingCubes).length == 0) {
                         _this.arrangeCubesZIndex();
                         _this.centerCubesContainer();
@@ -2227,22 +2274,37 @@ var PyramidHandler = /** @class */ (function () {
         this.gameui.ajaxAction('actConfirmBuildPyramid', {}, true, false);
     };
     PyramidHandler.prototype.confirmedBuildPyramid = function () {
-        var _this = this;
-        this.owner.are_cubes_built = true;
-        // Save all cubes in construction to pyramid data
-        Object.values(this.cubesInConstruction).forEach(function (cube) {
-            if (!_this.pyramidData.some(function (existingCube) { return existingCube.cube_id === cube.cube_id; })) {
-                _this.pyramidData.push(cube);
-            }
+        return __awaiter(this, void 0, void 0, function () {
+            var marketTile;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        this.owner.are_cubes_built = true;
+                        // Save all cubes in construction to pyramid data
+                        Object.values(this.cubesInConstruction).forEach(function (cube) {
+                            if (!_this.pyramidData.some(function (existingCube) { return existingCube.cube_id === cube.cube_id; })) {
+                                _this.pyramidData.push(cube);
+                            }
+                        });
+                        marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
+                        marketTile.querySelectorAll('.a-cube').forEach(function (cube) {
+                            if (!cube.hasAttribute('built-status'))
+                                cube.setAttribute('built-status', 'discarded-cube');
+                            else
+                                cube.setAttribute('built-status', 'built-cube');
+                        });
+                        if (!!this.gameui.isMobile()) return [3 /*break*/, 1];
+                        this.disableBuildPyramid();
+                        return [3 /*break*/, 3];
+                    case 1: return [4 /*yield*/, this.shrinkFromBuild()];
+                    case 2:
+                        _a.sent();
+                        _a.label = 3;
+                    case 3: return [2 /*return*/];
+                }
+            });
         });
-        var marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
-        marketTile.querySelectorAll('.a-cube').forEach(function (cube) {
-            if (!cube.hasAttribute('built-status'))
-                cube.setAttribute('built-status', 'discarded-cube');
-            else
-                cube.setAttribute('built-status', 'built-cube');
-        });
-        this.disableBuildPyramid();
     };
     PyramidHandler.prototype.undoPlaceCubeButtonClicked = function () {
         var _this = this;
@@ -2252,7 +2314,7 @@ var PyramidHandler = /** @class */ (function () {
         });
         var marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
         var marketCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--market-cube-size'));
-        var pyramidCubeSize = parseInt(getComputedStyle(document.body).getPropertyValue('--pyramid-cube-size'));
+        var pyramidCubeSize = this.cubesContainer.querySelector('.a-cube').offsetWidth;
         var undoAnimArray = [];
         var animatingCubes = {};
         // Get all cubes in construction and animate them back to their market positions
@@ -2267,8 +2329,7 @@ var PyramidHandler = /** @class */ (function () {
             goTo.style.width = marketCubeSize + 'px';
             goTo.style.height = marketCubeSize + 'px';
             goTo.style.opacity = '0';
-            goTo.classList.add('animating-cube');
-            _this.cubesContainer.appendChild(goTo);
+            document.getElementById('player-tables').appendChild(goTo);
             _this.gameui.placeOnObject(goTo, marketCube);
             animatingCubes[cube.cube_id] = true;
             cube.div.style.width = pyramidCubeSize + 'px';
@@ -2276,15 +2337,23 @@ var PyramidHandler = /** @class */ (function () {
             cube.div.style.minWidth = marketCubeSize + 'px'; //so that the shrinking animation happens half way
             cube.div.style.minHeight = marketCubeSize + 'px';
             cube.div.classList.add('animating-cube');
+            var cubeDivClone = cube.div.cloneNode(true);
+            cubeDivClone.style.width = pyramidCubeSize + 'px';
+            cubeDivClone.style.height = pyramidCubeSize + 'px';
+            document.getElementById('player-tables').appendChild(cubeDivClone);
+            _this.gameui.placeOnObject(cubeDivClone, cube.div);
+            cube.div.remove();
+            var goToLeft = _this.gameui.remove_px(goTo.style.left);
+            var goToTop = _this.gameui.remove_px(goTo.style.top);
             undoAnimArray.push(_this.gameui.animationHandler.animateProperty({
-                node: cube.div,
-                properties: { width: marketCubeSize / 2, height: marketCubeSize / 2, left: goTo.offsetLeft, top: goTo.offsetTop },
+                node: cubeDivClone,
+                properties: { width: marketCubeSize / 2, height: marketCubeSize / 2, left: goToLeft, top: goToTop },
                 duration: 450 + Math.floor(Math.random() * 50),
                 delay: Math.floor(Math.random() * 50),
                 easing: 'circleOut',
                 onEnd: function () {
+                    cubeDivClone.remove();
                     goTo.remove();
-                    cube.div.remove();
                     marketCube.removeAttribute('built-status');
                     delete animatingCubes[cube.cube_id];
                     if (Object.keys(animatingCubes).length == 0) {
@@ -2377,6 +2446,98 @@ var PyramidHandler = /** @class */ (function () {
             zIndex++;
         });
     };
+    PyramidHandler.prototype.expandToBuild = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var shrunkPyramidCubeSize, originalMarginLeft, originalMarginTop, cubesContainerClone, enlargedPyramidCubeSize, goToMarginLeft, goToMarginTop, waitTime;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        shrunkPyramidCubeSize = parseInt(getComputedStyle(this.pyramidContainer).getPropertyValue('--shrunk-pyramid-cube-size'));
+                        if (this.cubesContainer.querySelector('.resizing-cubes-container-clone'))
+                            return [2 /*return*/];
+                        if (this.pyramidContainer.getAttribute('expanded-to-build') === 'true')
+                            return [2 /*return*/];
+                        originalMarginLeft = this.cubesContainer.style.marginLeft;
+                        originalMarginTop = this.cubesContainer.style.marginTop;
+                        cubesContainerClone = this.cubesContainer.cloneNode(true);
+                        cubesContainerClone.classList.add('expanding-cubes-container-clone', 'resizing-cubes-container-clone');
+                        cubesContainerClone.style.setProperty('--pyramid-cube-size', shrunkPyramidCubeSize + 'px');
+                        this.pyramidContainer.appendChild(cubesContainerClone);
+                        cubesContainerClone.style.marginLeft = originalMarginLeft;
+                        cubesContainerClone.style.marginTop = originalMarginTop;
+                        this.pyramidContainer.style.transition = 'none';
+                        this.pyramidContainer.setAttribute('expanded-to-build', 'true');
+                        this.drawSnapPoints();
+                        this.centerCubesContainer(false);
+                        enlargedPyramidCubeSize = this.cubesContainer.querySelector('.a-cube:not(.animating-cube)').offsetWidth;
+                        goToMarginLeft = this.cubesContainer.style.marginLeft;
+                        goToMarginTop = this.cubesContainer.style.marginTop;
+                        this.cubesContainer.style.display = 'none';
+                        this.pyramidContainer.removeAttribute('expanded-to-build');
+                        waitTime = 20;
+                        return [4 /*yield*/, this.gameui.wait(waitTime)];
+                    case 1:
+                        _a.sent();
+                        this.pyramidContainer.style.transition = null;
+                        this.pyramidContainer.setAttribute('expanded-to-build', 'true');
+                        cubesContainerClone.style.marginLeft = goToMarginLeft;
+                        cubesContainerClone.style.marginTop = goToMarginTop;
+                        cubesContainerClone.style.transform = 'scale(1)'; //trigger amimation as soon as it starts
+                        void cubesContainerClone.offsetWidth;
+                        requestAnimationFrame(function () {
+                            cubesContainerClone.style.transform = "scale(".concat(enlargedPyramidCubeSize / shrunkPyramidCubeSize, ")");
+                        });
+                        return [4 /*yield*/, this.gameui.wait(this.expandToBuildDuration - waitTime)];
+                    case 2:
+                        _a.sent();
+                        this.cubesContainer.style.display = null;
+                        this.centerCubesContainer(false);
+                        cubesContainerClone.remove();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    PyramidHandler.prototype.shrinkFromBuild = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var enlargedPyramidCubeSize, shrunkPyramidCubeSize, cubesContainerClone;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        enlargedPyramidCubeSize = this.cubesContainer.querySelector('.a-cube').offsetWidth;
+                        // const enlargedPyramidCubeSize = Number( getComputedStyle(document.querySelector('.pyramids-container')).getPropertyValue('--expanded-pyramid-cube-size'));
+                        this.pyramidContainer.removeAttribute('enlarge-animation-disabled');
+                        shrunkPyramidCubeSize = parseInt(getComputedStyle(this.pyramidContainer).getPropertyValue('--shrunk-pyramid-cube-size'));
+                        cubesContainerClone = this.cubesContainer.cloneNode(true);
+                        this.disableBuildPyramid();
+                        this.pyramidContainer.removeAttribute('expanded-to-build');
+                        this.centerCubesContainer(false);
+                        this.cubesContainer.style.display = 'none';
+                        Array.from(cubesContainerClone.children).forEach(function (nonCubeElement) {
+                            if (!nonCubeElement.classList.contains('a-cube'))
+                                _this.gameui.animationHandler.fadeOutAndDestroy(nonCubeElement, _this.expandToBuildDuration);
+                        });
+                        cubesContainerClone.classList.add('shrinking-cubes-container-clone', 'resizing-cubes-container-clone');
+                        cubesContainerClone.style.setProperty('--pyramid-cube-size', enlargedPyramidCubeSize + 'px');
+                        this.pyramidContainer.appendChild(cubesContainerClone);
+                        cubesContainerClone.style.marginLeft = this.cubesContainer.style.marginLeft;
+                        cubesContainerClone.style.marginTop = this.cubesContainer.style.marginTop;
+                        cubesContainerClone.style.transform = 'scale(1)'; //trigger amimation as soon as it starts
+                        void cubesContainerClone.offsetWidth;
+                        requestAnimationFrame(function () {
+                            cubesContainerClone.style.transform = "scale(".concat(shrunkPyramidCubeSize / enlargedPyramidCubeSize, ")");
+                        });
+                        return [4 /*yield*/, this.gameui.wait(this.expandToBuildDuration)];
+                    case 1:
+                        _a.sent();
+                        this.cubesContainer.style.display = null;
+                        cubesContainerClone.remove();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
     PyramidHandler.prototype.displaySwitchColorButton = function () {
         var _this = this;
         this.cubesContainer.querySelectorAll('.switch-color-button').forEach(function (el) { return el.remove(); });
@@ -2441,6 +2602,8 @@ var PyramidHandler = /** @class */ (function () {
         var cubeData = this.gameui.marketHandler.getCubesOfMarketTile(collectedMarketTileIndex).find(function (cube) { return cube.cube_id === cubeID; });
         return cubeData;
     };
+    PyramidHandler.prototype.shrinkFromConstruction = function () {
+    };
     PyramidHandler.prototype.getUnplacedCube = function () { return this.unplacedCube; };
     PyramidHandler.prototype.getCubesInConstruction = function () { return this.cubesInConstruction; };
     PyramidHandler.prototype.getPyramidContainerRect = function () { return this.gameui.getPos(this.pyramidContainer); };
@@ -2448,6 +2611,9 @@ var PyramidHandler = /** @class */ (function () {
     PyramidHandler.prototype.getPyramidContainer = function () { return this.pyramidContainer; };
     return PyramidHandler;
 }());
+function cube(value, key, parent) {
+    throw new Error("Function not implemented.");
+}
 var TooltipHandler = /** @class */ (function () {
     function TooltipHandler(gameui) {
         this.gameui = gameui;

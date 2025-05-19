@@ -742,6 +742,13 @@ body.mobile_version {
   --gamearea-avatar-size: 46px;
 }
 
+html {
+  background: linear-gradient(to bottom right, #1e4b39 32%, #f8da5f 110%);
+  background-position: center bottom;
+  background-attachment: fixed;
+  background-size: cover;
+}
+
 .background-container {
   position: fixed;
   z-index: -1;
@@ -752,10 +759,6 @@ body.mobile_version {
   --pyramid-width: calc(min(42vw, 51vh));
   --shaman-width: calc(var(--pyramid-width) * 0.64);
   pointer-events: none;
-  background: linear-gradient(to bottom right, #1e4b39 32%, #f8da5f 110%);
-  background-position: center bottom;
-  background-attachment: fixed;
-  background-size: cover;
 }
 .background-container::before {
   content: "";
@@ -774,7 +777,7 @@ body.mobile_version {
   position: absolute;
   opacity: 0.8;
   bottom: 0px;
-  left: 50%;
+  left: 42%;
   transform: translateX(-50%);
   width: var(--pyramid-width);
   height: calc(var(--pyramid-width) * 0.945);
@@ -843,13 +846,15 @@ body.mobile_version {
 }
 
 body.mobile_version .background-container {
-  background-position: center bottom;
   --pyramid-width: calc(min(86vw, 48vh));
 }
 body.mobile_version .background-container::before {
   background-size: 3vh 2.2vh;
   height: 22.2vh;
   top: calc(100px + 50%);
+}
+body.mobile_version .background-container .bg-pyramid {
+  left: 50%;
 }
 
 .player-board {
@@ -866,6 +871,7 @@ body.mobile_version .background-container::before {
   z-index: 1;
   background-blend-mode: overlay;
   background-color: var(--cube-color);
+  background-size: 610%, 100% 100%, 300% 300%;
 }
 .a-cube .top-side {
   z-index: 2;
@@ -874,7 +880,6 @@ body.mobile_version .background-container::before {
   height: 100%;
   background-image: url("img/wood_texture_overlay.png"), linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1)), linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
   background-position: var(--top-bg-x) var(--top-bg-y), 0 0, 150% 150%;
-  background-size: auto, 100% 100%, 300% 300%;
   background-repeat: no-repeat, no-repeat, no-repeat;
 }
 .a-cube .right-side {
@@ -985,6 +990,9 @@ body.mobile_version .background-container::before {
 }
 .market-container .market-tiles-container .a-market-tile .cubes-container .a-cube {
   pointer-events: none;
+}
+.market-container .market-tiles-container .a-market-tile .cubes-container .a-cube .top-side, .market-container .market-tiles-container .a-market-tile .cubes-container .a-cube .right-side, .market-container .market-tiles-container .a-market-tile .cubes-container .a-cube .bottom-side {
+  background-size: 1220%, 100% 100%, 300% 300%;
 }
 .market-container .market-tiles-container .a-market-tile .collecting-player-avatar {
   position: absolute;
@@ -1169,6 +1177,7 @@ body.mobile_version .market-container .waiting-players-container {
 }
 .mobile_version .market-container .bonus-cards-container {
   width: 100%;
+  text-align: center;
   margin: 0 auto;
 }
 .mobile_version .market-container .bonus-cards-container .a-bonus-card-icon {
@@ -1242,15 +1251,20 @@ body.mobile_version .market-container .waiting-players-container {
 }
 
 #player-tables {
-  text-align: center;
   min-height: 100vh;
   margin-bottom: 240px;
 }
-#player-tables .pyramids-container {
+
+body.mobile_version #player-tables {
+  min-height: 150vh;
+}
+
+.pyramids-container {
+  text-align: center;
   margin-top: 40px;
   margin-bottom: 40px;
 }
-#player-tables .pyramids-container .a-pyramid-container {
+.pyramids-container .a-pyramid-container {
   position: relative;
   margin-top: 30px;
   width: 48%;
@@ -1261,7 +1275,7 @@ body.mobile_version .market-container .waiting-players-container {
   display: inline-block;
   max-width: 400px;
 }
-#player-tables .pyramids-container .a-pyramid-container .player-name-text {
+.pyramids-container .a-pyramid-container .player-name-text {
   display: flex;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -1277,7 +1291,7 @@ body.mobile_version .market-container .waiting-players-container {
   top: 1px;
   left: -2px;
 }
-#player-tables .pyramids-container .a-pyramid-container .player-name-text:before {
+.pyramids-container .a-pyramid-container .player-name-text:before {
   content: "";
   width: 20px;
   box-shadow: 0px -2px 0 0px var(--player-color, #000000);
@@ -1286,7 +1300,7 @@ body.mobile_version .market-container .waiting-players-container {
   top: 2px;
   position: relative;
 }
-#player-tables .pyramids-container .a-pyramid-container .player-name-text:after {
+.pyramids-container .a-pyramid-container .player-name-text:after {
   flex-grow: 1;
   content: "";
   box-shadow: 0px -2px 0 0px var(--player-color, #000000);
@@ -1295,7 +1309,7 @@ body.mobile_version .market-container .waiting-players-container {
   top: 2px;
   position: relative;
 }
-#player-tables .pyramids-container .a-pyramid-container .player-name-text .text-container {
+.pyramids-container .a-pyramid-container .player-name-text .text-container {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1303,7 +1317,7 @@ body.mobile_version .market-container .waiting-players-container {
   color: var(--player-color, #000000);
   text-shadow: 2px 0 #FFFFFF, -2px 0 #FFFFFF, 0 2px #FFFFFF, 0 -2px #FFFFFF, 1px 1px #FFFFFF, -1px -1px #FFFFFF, 1px -1px #FFFFFF, -1px 1px #FFFFFF;
 }
-#player-tables .pyramids-container .a-pyramid-container .turn-order-container {
+.pyramids-container .a-pyramid-container .turn-order-container {
   position: absolute;
   top: -6%;
   left: 84%;
@@ -1312,34 +1326,52 @@ body.mobile_version .market-container .waiting-players-container {
   cursor: help;
   width: 14%;
 }
-#player-tables .pyramids-container .a-pyramid-container .turn-order-container:hover {
+.pyramids-container .a-pyramid-container .turn-order-container:hover {
   animation: wiggle-turn-order-container 0.25s ease-in-out 2;
 }
-#player-tables .pyramids-container .a-pyramid-container .cubes-container {
+.pyramids-container .a-pyramid-container .cubes-container {
   position: absolute;
   top: 50%;
   left: 50%;
 }
-#player-tables .pyramids-container .a-pyramid-container .cubes-container .a-cube, #player-tables .pyramids-container .a-pyramid-container .cubes-container .pyramid-cube-snap-point, #player-tables .pyramids-container .a-pyramid-container .cubes-container .switch-color-button {
+.pyramids-container .a-pyramid-container .cubes-container .a-cube, .pyramids-container .a-pyramid-container .cubes-container .pyramid-cube-snap-point, .pyramids-container .a-pyramid-container .cubes-container .switch-color-button {
   position: absolute;
   width: var(--pyramid-cube-size, 0px);
   height: var(--pyramid-cube-size, 0px);
   max-width: var(--pyramid-cube-size, 0px);
   max-height: var(--pyramid-cube-size, 0px);
 }
-#player-tables .pyramids-container .a-pyramid-container .cubes-container .pyramid-cube-snap-point {
+.pyramids-container .a-pyramid-container .cubes-container .pyramid-cube-snap-point {
   z-index: 0;
   opacity: 0;
-  background-color: rgba(0, 0, 0, 0.24);
-  outline: 1px solid;
-  outline-color: rgba(var(--player-color-hex), 0.5);
+  --snap-point-bg-color: 40, 40, 40;
+  background-color: rgba(var(--snap-point-bg-color), 0.5);
+  outline: 1px solid var(--player-color);
   outline-offset: -1px;
 }
-#player-tables .pyramids-container .a-pyramid-container .cubes-container .a-cube {
+.pyramids-container .a-pyramid-container .cubes-container .pyramid-cube-snap-point .snap-point-icon {
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+  position: absolute;
+  pointer-events: none;
+  top: 90%;
+  left: 90%;
+  transform: translate(-100%, -100%);
+  font-size: calc(var(--pyramid-cube-size) * 0.24);
+  text-shadow: 0.5px 0 rgba(255, 255, 255, 0.6), -0.5px 0 rgba(255, 255, 255, 0.6), 0 0.5px rgba(255, 255, 255, 0.6), 0 -0.5px rgba(255, 255, 255, 0.6), 0.25px 0.25px rgba(255, 255, 255, 0.6), -0.25px -0.25px rgba(255, 255, 255, 0.6), 0.25px -0.25px rgba(255, 255, 255, 0.6), -0.25px 0.25px rgba(255, 255, 255, 0.6);
+}
+.pyramids-container .a-pyramid-container .cubes-container .pyramid-cube-snap-point[pos-z="0"] {
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.pyramids-container .a-pyramid-container .cubes-container .pyramid-cube-snap-point:not([pos-z="0"]) {
+  background-color: rgba(var(--snap-point-bg-color), 0.2);
+}
+.pyramids-container .a-pyramid-container .cubes-container .a-cube {
   z-index: 1;
   pointer-events: none;
 }
-#player-tables .pyramids-container .a-pyramid-container .cubes-container .a-cube .cube-background {
+.pyramids-container .a-pyramid-container .cubes-container .a-cube .cube-background {
   top: 13%;
   left: 9%;
   width: 96%;
@@ -1347,18 +1379,18 @@ body.mobile_version .market-container .waiting-players-container {
   background-image: url(img/cube_backgrounds.png);
   background-position: 100% 0;
 }
-#player-tables .pyramids-container .a-pyramid-container .cubes-container .a-cube.animating-cube {
+.pyramids-container .a-pyramid-container .cubes-container .a-cube.animating-cube {
   z-index: 100 !important;
 }
-#player-tables .pyramids-container .a-pyramid-container .cubes-container .a-cube .top-side {
+.pyramids-container .a-pyramid-container .cubes-container .a-cube .top-side {
   box-shadow: 0px 0px 3px #000000;
 }
-#player-tables .pyramids-container .a-pyramid-container .cubes-container .switch-color-button {
+.pyramids-container .a-pyramid-container .cubes-container .switch-color-button {
   z-index: 100;
   opacity: 0;
   transition: opacity 0.2s ease;
 }
-#player-tables .pyramids-container .a-pyramid-container .cubes-container .switch-color-button .switch-color-icon {
+.pyramids-container .a-pyramid-container .cubes-container .switch-color-button .switch-color-icon {
   opacity: 0.82;
   position: absolute;
   color: #ffffff;
@@ -1368,18 +1400,36 @@ body.mobile_version .market-container .waiting-players-container {
   text-shadow: 1px 0 #000000, -1px 0 #000000, 0 1px #000000, 0 -1px #000000, 0.5px 0.5px #000000, -0.5px -0.5px #000000, 0.5px -0.5px #000000, -0.5px 0.5px #000000;
   font-size: calc(var(--pyramid-cube-size) * 0.7);
 }
-#player-tables .pyramids-container .a-pyramid-container:not([build-pyramid-enabled=true]):hover .a-cube .top-side {
-  animation: shine-cube 1.6s ease-in-out;
+@media (hover: hover) {
+  .pyramids-container .a-pyramid-container:not([build-pyramid-enabled=true]):hover .a-cube .top-side {
+    animation: shine-cube 1.6s ease-in-out;
+  }
 }
-#player-tables .pyramids-container .a-pyramid-container[build-pyramid-enabled=true] .pyramid-cube-snap-point {
+.pyramids-container .a-pyramid-container[build-pyramid-enabled=true] .pyramid-cube-snap-point {
   cursor: pointer;
 }
-#player-tables .pyramids-container .a-pyramid-container[build-pyramid-enabled=true] .switch-color-button {
+.pyramids-container .a-pyramid-container[build-pyramid-enabled=true] .switch-color-button {
   cursor: pointer;
 }
 
-body.mobile_version #player-tables {
-  min-height: 150vh;
+body.mobile_version .pyramids-container {
+  text-align: left;
+  --shrunk-pyramid-cube-size: var(--pyramid-cube-size);
+  --expanded-pyramid-cube-size: calc(var(--pyramid-cube-size) * 2);
+}
+body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid {
+  max-width: none;
+}
+body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid[expanded-to-build=true] {
+  width: 98%;
+  --pyramid-cube-size: var(--expanded-pyramid-cube-size);
+}
+body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .cubes-container.resizing-cubes-container-clone {
+  transition: transform var(--expand-to-build-duration) ease-out, margin-left var(--expand-to-build-duration) ease-out, margin-top var(--expand-to-build-duration) ease-out;
+  transform-origin: top left;
+}
+body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid:not([enlarge-animation-disabled]) {
+  transition: width var(--expand-to-build-duration) ease-out;
 }
 
 .turn-order-container {
@@ -1508,21 +1558,6 @@ body.mobile_version #player-tables {
 .log.swap-turn-orders-log {
   text-align: center;
 }
-.log.swap-turn-orders-log .turn-order-container-wrapper {
-  display: inline-block;
-  vertical-align: middle;
-  width: 24px;
-  height: 22px;
-  overflow: hidden;
-  box-shadow: 1px 1px 2px #000000;
-  border-radius: 30%;
-}
-.log.swap-turn-orders-log .turn-order-container-wrapper .turn-order-container {
-  vertical-align: middle;
-  width: 156%;
-  margin-top: -62%;
-  margin-left: -26%;
-}
 .log.all-selected-tiles-log .market-interaction-rows-wrapper {
   display: inline-block;
   width: 100%;
@@ -1590,6 +1625,33 @@ body.mobile_version #player-tables {
 .desktop_version .a-game-log .playername[player-color=ffa500] {
   text-shadow: 0.5px 0 #1e4b39, -0.5px 0 #1e4b39, 0 0.5px #1e4b39, 0 -0.5px #1e4b39, 0.25px 0.25px #1e4b39, -0.25px -0.25px #1e4b39, 0.25px -0.25px #1e4b39, -0.25px 0.25px #1e4b39;
 } /* ffa500 this color doesnt look good on the logs */
+.log.swap-turn-orders-log .turn-order-container-wrapper, #page-title .turn-order-container-wrapper {
+  display: inline-block;
+  vertical-align: middle;
+  width: 24px;
+  height: 22px;
+  overflow: hidden;
+  box-shadow: 1px 1px 2px #000000;
+  border-radius: 30%;
+}
+.log.swap-turn-orders-log .turn-order-container-wrapper .turn-order-container, #page-title .turn-order-container-wrapper .turn-order-container {
+  vertical-align: middle;
+  width: 156%;
+  margin-top: -62%;
+  margin-left: -26%;
+}
+
+#page-title .swap-icons {
+  display: inline-block;
+  margin-left: 4px;
+}
+#page-title .swap-icons .turn-order-container-wrapper {
+  margin: -2px 8px 0px 6px;
+}
+#page-title .swap-icons i {
+  margin: 2px 0px 2px 0px;
+}
+
 .end-game-score-container {
   position: fixed;
   z-index: 100;
