@@ -20,6 +20,7 @@ class GameBody extends GameGui {
     public MARKET_TILE_COLORS: string[];
     public PYRAMID_MAX_SIZE: number;
     public CUBES_PER_MARKET_TILE: number;
+    public CUBE_COUNT_IN_GAME: number;
 
     public playerSeatOrder: number[];
     public nextPlayerTable: Record<number, number>;
@@ -39,7 +40,7 @@ class GameBody extends GameGui {
         this.MARKET_TILE_COLORS = gamedatas.MARKET_TILE_COLORS;
         this.PYRAMID_MAX_SIZE = gamedatas.PYRAMID_MAX_SIZE;
         this.CUBES_PER_MARKET_TILE = gamedatas.CUBES_PER_MARKET_TILE;
-        
+        this.CUBE_COUNT_IN_GAME = gamedatas.CUBE_COUNT_IN_GAME;
         this.nextPlayerTable = gamedatas.nextPlayerTable;
         this.rightPlayerID = gamedatas.nextPlayerTable[this.player_id] ?? null;
 
@@ -76,10 +77,19 @@ class GameBody extends GameGui {
                 });
             });
 
+        let cubeTextureCSS = '';
+        for(let i = 0; i < this.CUBE_COUNT_IN_GAME; i++)
+            cubeTextureCSS += `
+                .a-cube[cube-id="${i}"] .top-side{ background-position: ${Math.random() * 100}% ${Math.random() * 100}%, 0 0; }
+                .a-cube[cube-id="${i}"] .right-side{ background-position: ${Math.random() * 100}% ${Math.random() * 100}%; }
+                .a-cube[cube-id="${i}"] .bottom-side{ background-position: ${Math.random() * 100}% ${Math.random() * 100}%; }
+            `;
+
         document.getElementById('game_play_area').insertAdjacentHTML('beforeend', `
             <style>
                 ${cubeColorCSS}
                 ${pyramidCSS}
+                ${cubeTextureCSS}
             </style>
             <div id="player-tables">
             <div class="market-container">
@@ -135,6 +145,12 @@ class GameBody extends GameGui {
             break;
             case 'buildPyramid':
                 this.marketHandler.closeWaitingPlayersContainer();
+                if(this.myself)
+                    this.myself.pyramid.enableBuildOnEnteringState();
+            break;
+            case 'individualPlayerSelectMarketTile':
+                if(this.myself)
+                    this.myself.pyramid.enableBuildOnEnteringState();
             break;
             case 'gameEnd':
                 this.backgroundHandler.stopEyesRainbow();
@@ -150,7 +166,7 @@ class GameBody extends GameGui {
         {
             case 'buildPyramid':
                 if(this.myself)
-                    this.myself.pyramid.disableBuildPyramid();
+                    this.myself.pyramid.disableAndShrinkIfMobile();
             break;
             case 'allPyramidsBuilt':
                 this.marketHandler.resetCollectedMarketTilesData();
@@ -168,17 +184,12 @@ class GameBody extends GameGui {
             break;
             case 'individualPlayerSelectMarketTile':
                 this.marketHandler.clearZombiePendingAvatars(this.getActivePlayerId());
-                if(this.myself) {
-                    const playerCollectedMarketTile = this.myself.getCollectedMarketTileData();
-                    if(this.isCurrentPlayerActive())
-                        this.marketHandler.addSelectableClassToMarketTiles(args.possible_market_indexes);
-                    else if(playerCollectedMarketTile.type === 'collecting')
-                        this.myself.pyramid.enableBuildPyramid();
-                }
+                if(this.myself && this.isCurrentPlayerActive())
+                    this.marketHandler.addSelectableClassToMarketTiles(args.possible_market_indexes);
             break;
             case 'buildPyramid':
                 if(this.myself)
-                    this.myself.pyramid.enableBuildPyramid();
+                    this.myself.pyramid.updatePyramidStatusText();
             break;
         }
     }
@@ -366,13 +377,6 @@ class GameBody extends GameGui {
         cubeDiv.innerHTML = '<div class="cube-background"></div><div class="top-side"></div><div class="right-side"></div><div class="bottom-side"></div>';
         cubeDiv.setAttribute('cube-id', cube.cube_id.toString());
         cubeDiv.setAttribute('color', cube.color.toString());
-
-        cubeDiv.style.setProperty('--top-bg-x', (Math.random() * 100) + '%');
-        cubeDiv.style.setProperty('--top-bg-y', (Math.random() * 100) + '%');
-        cubeDiv.style.setProperty('--side-bg-x', (Math.random() * 100) + '%');
-        cubeDiv.style.setProperty('--side-bg-y', (Math.random() * 100) + '%');
-        cubeDiv.style.setProperty('--bottom-bg-x', (Math.random() * 100) + '%');
-        cubeDiv.style.setProperty('--bottom-bg-y', (Math.random() * 100) + '%');
 
         return cubeDiv;
     }

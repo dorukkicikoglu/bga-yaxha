@@ -719,6 +719,967 @@
   top: 59%;
 }
 
+.a-cube[cube-id="0"] {
+  --wood-top-x: 6.456118226198704%;
+  --wood-top-y: 43.70916436499851%;
+  --wood-side-x: 61.91317891307079%;
+  --wood-side-y: 65.9450453377882%;
+  --wood-bottom-x: 93.32938009221844%;
+  --wood-bottom-y: 63.21412212742808%;
+}
+.a-cube[cube-id="1"] {
+  --wood-top-x: 99.93105758524099%;
+  --wood-top-y: 44.434990723327275%;
+  --wood-side-x: 93.52778650284314%;
+  --wood-side-y: 13.426563001440094%;
+  --wood-bottom-x: 74.39773619486218%;
+  --wood-bottom-y: 62.20468297038879%;
+}
+.a-cube[cube-id="2"] {
+  --wood-top-x: 9.428384593381667%;
+  --wood-top-y: 95.85218962701639%;
+  --wood-side-x: 24.94832065951561%;
+  --wood-side-y: 72.8509359411667%;
+  --wood-bottom-x: 76.12696025815154%;
+  --wood-bottom-y: 74.45475785199392%;
+}
+.a-cube[cube-id="3"] {
+  --wood-top-x: 23.89774626747507%;
+  --wood-top-y: 65.86988172916118%;
+  --wood-side-x: 81.21569577562194%;
+  --wood-side-y: 16.282287933979877%;
+  --wood-bottom-x: 88.78854536656252%;
+  --wood-bottom-y: 97.0548772528131%;
+}
+.a-cube[cube-id="4"] {
+  --wood-top-x: 24.374999356222926%;
+  --wood-top-y: 9.073910916284355%;
+  --wood-side-x: 73.89554476557151%;
+  --wood-side-y: 17.831820607640214%;
+  --wood-bottom-x: 80.7671710051571%;
+  --wood-bottom-y: 72.65584890739981%;
+}
+.a-cube[cube-id="5"] {
+  --wood-top-x: 45.1872231704241%;
+  --wood-top-y: 78.89145629677724%;
+  --wood-side-x: 93.93269169019015%;
+  --wood-side-y: 36.52912844014696%;
+  --wood-bottom-x: 91.47119856766483%;
+  --wood-bottom-y: 8.727438840819634%;
+}
+.a-cube[cube-id="6"] {
+  --wood-top-x: 32.84277508185244%;
+  --wood-top-y: 0.6291421057963653%;
+  --wood-side-x: 29.698158499616856%;
+  --wood-side-y: 65.29029508786816%;
+  --wood-bottom-x: 0.4765619572008939%;
+  --wood-bottom-y: 80.02355595828863%;
+}
+.a-cube[cube-id="7"] {
+  --wood-top-x: 84.4533572830769%;
+  --wood-top-y: 1.4684807125480592%;
+  --wood-side-x: 6.0241321383133535%;
+  --wood-side-y: 7.726217779948231%;
+  --wood-bottom-x: 79.64645434578472%;
+  --wood-bottom-y: 18.471133309364774%;
+}
+.a-cube[cube-id="8"] {
+  --wood-top-x: 59.49068651089454%;
+  --wood-top-y: 71.1488366663024%;
+  --wood-side-x: 41.105345232984845%;
+  --wood-side-y: 75.06018131200148%;
+  --wood-bottom-x: 84.88830857925088%;
+  --wood-bottom-y: 22.234191075492447%;
+}
+.a-cube[cube-id="9"] {
+  --wood-top-x: 61.82729601793152%;
+  --wood-top-y: 79.57295687392124%;
+  --wood-side-x: 84.37678282840434%;
+  --wood-side-y: 39.051192267898784%;
+  --wood-bottom-x: 65.68204256991679%;
+  --wood-bottom-y: 43.22875316574104%;
+}
+.a-cube[cube-id="10"] {
+  --wood-top-x: 60.80600457038836%;
+  --wood-top-y: 88.1776819354723%;
+  --wood-side-x: 39.837218817859544%;
+  --wood-side-y: 90.57691561313767%;
+  --wood-bottom-x: 52.97265078546457%;
+  --wood-bottom-y: 42.87775818815673%;
+}
+.a-cube[cube-id="11"] {
+  --wood-top-x: 99.31043481412092%;
+  --wood-top-y: 92.20324158419618%;
+  --wood-side-x: 2.921272315907586%;
+  --wood-side-y: 40.38457330647592%;
+  --wood-bottom-x: 21.919457242803432%;
+  --wood-bottom-y: 72.7973448642088%;
+}
+.a-cube[cube-id="12"] {
+  --wood-top-x: 42.47524659104418%;
+  --wood-top-y: 94.86093689786173%;
+  --wood-side-x: 94.73677188552489%;
+  --wood-side-y: 74.79356225341432%;
+  --wood-bottom-x: 58.634196030586416%;
+  --wood-bottom-y: 12.75682494932674%;
+}
+.a-cube[cube-id="13"] {
+  --wood-top-x: 17.308707302053783%;
+  --wood-top-y: 29.64529129739035%;
+  --wood-side-x: 66.10692509291303%;
+  --wood-side-y: 35.52463912321794%;
+  --wood-bottom-x: 10.991167273080826%;
+  --wood-bottom-y: 86.99038738275316%;
+}
+.a-cube[cube-id="14"] {
+  --wood-top-x: 26.014906169517758%;
+  --wood-top-y: 11.761933668304314%;
+  --wood-side-x: 34.24235634380489%;
+  --wood-side-y: 59.81193560494552%;
+  --wood-bottom-x: 49.88503088307799%;
+  --wood-bottom-y: 50.52463300478342%;
+}
+.a-cube[cube-id="15"] {
+  --wood-top-x: 37.01531440625681%;
+  --wood-top-y: 37.76812251786706%;
+  --wood-side-x: 58.20961796738563%;
+  --wood-side-y: 24.06855561823511%;
+  --wood-bottom-x: 84.13196205969801%;
+  --wood-bottom-y: 44.98884202162051%;
+}
+.a-cube[cube-id="16"] {
+  --wood-top-x: 47.288964561495774%;
+  --wood-top-y: 47.42332041568416%;
+  --wood-side-x: 40.955846416319474%;
+  --wood-side-y: 39.74810189080393%;
+  --wood-bottom-x: 5.7324768839540186%;
+  --wood-bottom-y: 63.30413564051922%;
+}
+.a-cube[cube-id="17"] {
+  --wood-top-x: 6.340440949357584%;
+  --wood-top-y: 56.584550576851946%;
+  --wood-side-x: 73.95123530603418%;
+  --wood-side-y: 44.93952237542687%;
+  --wood-bottom-x: 38.53848785871369%;
+  --wood-bottom-y: 3.2618534741666205%;
+}
+.a-cube[cube-id="18"] {
+  --wood-top-x: 65.80173682937384%;
+  --wood-top-y: 15.580493574252696%;
+  --wood-side-x: 54.2780640249342%;
+  --wood-side-y: 71.21807463706034%;
+  --wood-bottom-x: 77.06689806223585%;
+  --wood-bottom-y: 59.78823798161391%;
+}
+.a-cube[cube-id="19"] {
+  --wood-top-x: 18.6309391613639%;
+  --wood-top-y: 56.1272325176226%;
+  --wood-side-x: 75.32415764505771%;
+  --wood-side-y: 56.41378010923972%;
+  --wood-bottom-x: 84.76777718140373%;
+  --wood-bottom-y: 98.28807948871037%;
+}
+.a-cube[cube-id="20"] {
+  --wood-top-x: 94.16241438906114%;
+  --wood-top-y: 53.95023229293848%;
+  --wood-side-x: 48.15195800446691%;
+  --wood-side-y: 49.32131241571559%;
+  --wood-bottom-x: 22.80516919680905%;
+  --wood-bottom-y: 18.90688483915538%;
+}
+.a-cube[cube-id="21"] {
+  --wood-top-x: 76.11255389025618%;
+  --wood-top-y: 1.6958232461391054%;
+  --wood-side-x: 6.896577363953737%;
+  --wood-side-y: 83.16769306987854%;
+  --wood-bottom-x: 92.35476446966041%;
+  --wood-bottom-y: 84.48022458500219%;
+}
+.a-cube[cube-id="22"] {
+  --wood-top-x: 87.14669845958582%;
+  --wood-top-y: 33.78693243177592%;
+  --wood-side-x: 19.601163048988212%;
+  --wood-side-y: 45.04068005456209%;
+  --wood-bottom-x: 28.765798023205413%;
+  --wood-bottom-y: 57.27520773395158%;
+}
+.a-cube[cube-id="23"] {
+  --wood-top-x: 23.38747833333572%;
+  --wood-top-y: 62.842846364982684%;
+  --wood-side-x: 53.39350791476978%;
+  --wood-side-y: 72.32579669947872%;
+  --wood-bottom-x: 38.75785259021376%;
+  --wood-bottom-y: 18.224822949658993%;
+}
+.a-cube[cube-id="24"] {
+  --wood-top-x: 51.34417782233248%;
+  --wood-top-y: 2.0978052419635573%;
+  --wood-side-x: 83.99989982796502%;
+  --wood-side-y: 74.75625785097449%;
+  --wood-bottom-x: 53.528271679911384%;
+  --wood-bottom-y: 72.87768781990215%;
+}
+.a-cube[cube-id="25"] {
+  --wood-top-x: 13.919437687480563%;
+  --wood-top-y: 69.98137431611723%;
+  --wood-side-x: 31.435701297092745%;
+  --wood-side-y: 8.454477367108026%;
+  --wood-bottom-x: 41.696741403445145%;
+  --wood-bottom-y: 34.537400651703656%;
+}
+.a-cube[cube-id="26"] {
+  --wood-top-x: 74.77036182491933%;
+  --wood-top-y: 95.34881203804905%;
+  --wood-side-x: 43.59812908261414%;
+  --wood-side-y: 92.38983947132294%;
+  --wood-bottom-x: 39.16401748322532%;
+  --wood-bottom-y: 79.41565828141525%;
+}
+.a-cube[cube-id="27"] {
+  --wood-top-x: 27.447377578369846%;
+  --wood-top-y: 92.56645897224658%;
+  --wood-side-x: 86.37388309691303%;
+  --wood-side-y: 37.74307153561429%;
+  --wood-bottom-x: 78.68124791100718%;
+  --wood-bottom-y: 29.35517890539875%;
+}
+.a-cube[cube-id="28"] {
+  --wood-top-x: 21.78190599807084%;
+  --wood-top-y: 99.31483878063987%;
+  --wood-side-x: 74.80178431187045%;
+  --wood-side-y: 33.840824285503345%;
+  --wood-bottom-x: 65.53367740046286%;
+  --wood-bottom-y: 37.99318746432976%;
+}
+.a-cube[cube-id="29"] {
+  --wood-top-x: 88.74749120859397%;
+  --wood-top-y: 82.69030236935093%;
+  --wood-side-x: 50.59096445860969%;
+  --wood-side-y: 96.5949612387602%;
+  --wood-bottom-x: 40.91012619643756%;
+  --wood-bottom-y: 52.88652914589708%;
+}
+.a-cube[cube-id="30"] {
+  --wood-top-x: 41.007562773427864%;
+  --wood-top-y: 99.47179636158245%;
+  --wood-side-x: 42.743432298356964%;
+  --wood-side-y: 65.7227782317693%;
+  --wood-bottom-x: 30.9388105801504%;
+  --wood-bottom-y: 7.399236667925724%;
+}
+.a-cube[cube-id="31"] {
+  --wood-top-x: 42.15854658542529%;
+  --wood-top-y: 28.623535500568266%;
+  --wood-side-x: 93.11303854722213%;
+  --wood-side-y: 46.24622843612792%;
+  --wood-bottom-x: 76.19622178369421%;
+  --wood-bottom-y: 78.16969740397994%;
+}
+.a-cube[cube-id="32"] {
+  --wood-top-x: 34.181575317694026%;
+  --wood-top-y: 54.719866231800815%;
+  --wood-side-x: 60.523346131404274%;
+  --wood-side-y: 70.71072626300939%;
+  --wood-bottom-x: 49.072281379718206%;
+  --wood-bottom-y: 98.46056945016511%;
+}
+.a-cube[cube-id="33"] {
+  --wood-top-x: 40.31572223649669%;
+  --wood-top-y: 45.3307024759752%;
+  --wood-side-x: 17.609885249564115%;
+  --wood-side-y: 10.63618967993536%;
+  --wood-bottom-x: 32.595889519922935%;
+  --wood-bottom-y: 33.060313617680684%;
+}
+.a-cube[cube-id="34"] {
+  --wood-top-x: 49.86138904738054%;
+  --wood-top-y: 49.098793729757496%;
+  --wood-side-x: 58.59763119783592%;
+  --wood-side-y: 53.1767176264969%;
+  --wood-bottom-x: 77.05356904238229%;
+  --wood-bottom-y: 45.062807120175954%;
+}
+.a-cube[cube-id="35"] {
+  --wood-top-x: 49.53627329337229%;
+  --wood-top-y: 0.9522207074504907%;
+  --wood-side-x: 74.55645513208846%;
+  --wood-side-y: 67.06259357800363%;
+  --wood-bottom-x: 20.8067312925049%;
+  --wood-bottom-y: 58.12879847995234%;
+}
+.a-cube[cube-id="36"] {
+  --wood-top-x: 54.05906643297476%;
+  --wood-top-y: 52.58059018239295%;
+  --wood-side-x: 63.49631168193809%;
+  --wood-side-y: 87.16227985960339%;
+  --wood-bottom-x: 27.897992486644963%;
+  --wood-bottom-y: 99.16605230331149%;
+}
+.a-cube[cube-id="37"] {
+  --wood-top-x: 75.73545553458216%;
+  --wood-top-y: 64.3862318670906%;
+  --wood-side-x: 86.12966208166314%;
+  --wood-side-y: 9.99714588947489%;
+  --wood-bottom-x: 78.18083827418103%;
+  --wood-bottom-y: 86.70727071788644%;
+}
+.a-cube[cube-id="38"] {
+  --wood-top-x: 12.534418226714683%;
+  --wood-top-y: 59.60835690900998%;
+  --wood-side-x: 27.964138942604134%;
+  --wood-side-y: 29.574794542021387%;
+  --wood-bottom-x: 68.8226310563889%;
+  --wood-bottom-y: 59.10496026458632%;
+}
+.a-cube[cube-id="39"] {
+  --wood-top-x: 71.39977894985569%;
+  --wood-top-y: 96.17967418159219%;
+  --wood-side-x: 19.752591214261038%;
+  --wood-side-y: 59.915153579070804%;
+  --wood-bottom-x: 41.20450925755394%;
+  --wood-bottom-y: 8.348928637453579%;
+}
+.a-cube[cube-id="40"] {
+  --wood-top-x: 88.1236269016493%;
+  --wood-top-y: 8.148120348908638%;
+  --wood-side-x: 12.134443704297503%;
+  --wood-side-y: 69.43137686320387%;
+  --wood-bottom-x: 7.171565649676492%;
+  --wood-bottom-y: 18.400163063702692%;
+}
+.a-cube[cube-id="41"] {
+  --wood-top-x: 51.653858715610426%;
+  --wood-top-y: 99.12014410916858%;
+  --wood-side-x: 88.51619489095845%;
+  --wood-side-y: 22.229470676183272%;
+  --wood-bottom-x: 76.14117975358033%;
+  --wood-bottom-y: 50.40263510383036%;
+}
+.a-cube[cube-id="42"] {
+  --wood-top-x: 91.23051959919071%;
+  --wood-top-y: 54.625831700953206%;
+  --wood-side-x: 47.27863200604905%;
+  --wood-side-y: 20.49183578545598%;
+  --wood-bottom-x: 92.81472716941741%;
+  --wood-bottom-y: 61.956408967151724%;
+}
+.a-cube[cube-id="43"] {
+  --wood-top-x: 19.927743077857162%;
+  --wood-top-y: 68.99421351122538%;
+  --wood-side-x: 12.113816879261552%;
+  --wood-side-y: 65.13693376374957%;
+  --wood-bottom-x: 22.816127709363975%;
+  --wood-bottom-y: 69.31632970727938%;
+}
+.a-cube[cube-id="44"] {
+  --wood-top-x: 77.2813952899969%;
+  --wood-top-y: 11.427300139030516%;
+  --wood-side-x: 39.425143435455446%;
+  --wood-side-y: 29.794492848206065%;
+  --wood-bottom-x: 88.3264159183872%;
+  --wood-bottom-y: 87.35937410820472%;
+}
+.a-cube[cube-id="45"] {
+  --wood-top-x: 20.09687492625396%;
+  --wood-top-y: 13.384673678017844%;
+  --wood-side-x: 69.00437630680068%;
+  --wood-side-y: 73.0713863837393%;
+  --wood-bottom-x: 8.74363322884254%;
+  --wood-bottom-y: 49.55558570486818%;
+}
+.a-cube[cube-id="46"] {
+  --wood-top-x: 16.029027184135714%;
+  --wood-top-y: 12.523358681041085%;
+  --wood-side-x: 80.15209158038162%;
+  --wood-side-y: 33.11818511994369%;
+  --wood-bottom-x: 48.500453206567215%;
+  --wood-bottom-y: 9.20319852564877%;
+}
+.a-cube[cube-id="47"] {
+  --wood-top-x: 9.35192687156572%;
+  --wood-top-y: 75.74796385991309%;
+  --wood-side-x: 4.130051868571616%;
+  --wood-side-y: 30.89521547946997%;
+  --wood-bottom-x: 1.0472330809796815%;
+  --wood-bottom-y: 55.29431999687293%;
+}
+.a-cube[cube-id="48"] {
+  --wood-top-x: 63.854040779707255%;
+  --wood-top-y: 98.71814038145968%;
+  --wood-side-x: 48.20780924817314%;
+  --wood-side-y: 14.058824076215137%;
+  --wood-bottom-x: 38.956406488201765%;
+  --wood-bottom-y: 83.98779142988968%;
+}
+.a-cube[cube-id="49"] {
+  --wood-top-x: 32.341181042104225%;
+  --wood-top-y: 46.396958225494664%;
+  --wood-side-x: 83.1088416655915%;
+  --wood-side-y: 42.712423920751995%;
+  --wood-bottom-x: 26.311290019878697%;
+  --wood-bottom-y: 98.47541833797838%;
+}
+.a-cube[cube-id="50"] {
+  --wood-top-x: 90.67471434306027%;
+  --wood-top-y: 54.70543616457214%;
+  --wood-side-x: 12.355404884575705%;
+  --wood-side-y: 31.189416183587802%;
+  --wood-bottom-x: 21.750133104698698%;
+  --wood-bottom-y: 26.802459215672926%;
+}
+.a-cube[cube-id="51"] {
+  --wood-top-x: 36.953522901340385%;
+  --wood-top-y: 37.34844779858458%;
+  --wood-side-x: 14.886530030214583%;
+  --wood-side-y: 64.63340357708914%;
+  --wood-bottom-x: 49.31149470333662%;
+  --wood-bottom-y: 87.49922535897805%;
+}
+.a-cube[cube-id="52"] {
+  --wood-top-x: 85.86361976567632%;
+  --wood-top-y: 29.8868332382499%;
+  --wood-side-x: 51.48531293963854%;
+  --wood-side-y: 78.04155389439926%;
+  --wood-bottom-x: 33.31732830533849%;
+  --wood-bottom-y: 76.91305086018316%;
+}
+.a-cube[cube-id="53"] {
+  --wood-top-x: 50.623679916236796%;
+  --wood-top-y: 2.126863601187212%;
+  --wood-side-x: 98.49130477712161%;
+  --wood-side-y: 0.029265566592384662%;
+  --wood-bottom-x: 33.341391823077714%;
+  --wood-bottom-y: 12.298289416199648%;
+}
+.a-cube[cube-id="54"] {
+  --wood-top-x: 59.07537774670957%;
+  --wood-top-y: 62.666453801875456%;
+  --wood-side-x: 29.172116423537318%;
+  --wood-side-y: 15.742513656434454%;
+  --wood-bottom-x: 56.453525386757434%;
+  --wood-bottom-y: 33.4799400293093%;
+}
+.a-cube[cube-id="55"] {
+  --wood-top-x: 38.16883138028542%;
+  --wood-top-y: 1.6794584836183235%;
+  --wood-side-x: 86.35002043822527%;
+  --wood-side-y: 27.00482143035482%;
+  --wood-bottom-x: 32.039973613112124%;
+  --wood-bottom-y: 5.843068371368854%;
+}
+.a-cube[cube-id="56"] {
+  --wood-top-x: 33.23189066178699%;
+  --wood-top-y: 67.46227700854502%;
+  --wood-side-x: 8.009444789721599%;
+  --wood-side-y: 65.34866241267429%;
+  --wood-bottom-x: 71.749711241553%;
+  --wood-bottom-y: 45.70407149869071%;
+}
+.a-cube[cube-id="57"] {
+  --wood-top-x: 69.6425728918139%;
+  --wood-top-y: 93.39182564823285%;
+  --wood-side-x: 78.36588126379172%;
+  --wood-side-y: 40.01558134188347%;
+  --wood-bottom-x: 41.09784103219971%;
+  --wood-bottom-y: 47.22525438427307%;
+}
+.a-cube[cube-id="58"] {
+  --wood-top-x: 13.622953885274525%;
+  --wood-top-y: 87.47509149070153%;
+  --wood-side-x: 20.595643368446524%;
+  --wood-side-y: 22.463605685317557%;
+  --wood-bottom-x: 34.704856103071826%;
+  --wood-bottom-y: 66.67133327357115%;
+}
+.a-cube[cube-id="59"] {
+  --wood-top-x: 89.71719852870308%;
+  --wood-top-y: 45.16912981098675%;
+  --wood-side-x: 10.989350554639788%;
+  --wood-side-y: 89.74302458777554%;
+  --wood-bottom-x: 30.550631492556303%;
+  --wood-bottom-y: 42.46592257376713%;
+}
+.a-cube[cube-id="60"] {
+  --wood-top-x: 14.954817518268504%;
+  --wood-top-y: 48.53333489742696%;
+  --wood-side-x: 54.098436983596%;
+  --wood-side-y: 25.05001679010208%;
+  --wood-bottom-x: 66.6472360842357%;
+  --wood-bottom-y: 4.347477928323751%;
+}
+.a-cube[cube-id="61"] {
+  --wood-top-x: 0.426192612912224%;
+  --wood-top-y: 82.5363260456258%;
+  --wood-side-x: 28.923840464199802%;
+  --wood-side-y: 61.44707221778718%;
+  --wood-bottom-x: 14.1675466211036%;
+  --wood-bottom-y: 16.37609440820553%;
+}
+.a-cube[cube-id="62"] {
+  --wood-top-x: 23.84671463857294%;
+  --wood-top-y: 21.21606034637602%;
+  --wood-side-x: 30.21267978550506%;
+  --wood-side-y: 5.217295434533531%;
+  --wood-bottom-x: 46.097412240007465%;
+  --wood-bottom-y: 41.14568317533204%;
+}
+.a-cube[cube-id="63"] {
+  --wood-top-x: 56.50560334049067%;
+  --wood-top-y: 8.082293591368906%;
+  --wood-side-x: 3.364557612066088%;
+  --wood-side-y: 51.726396022303256%;
+  --wood-bottom-x: 31.93516569278343%;
+  --wood-bottom-y: 93.34939994504498%;
+}
+.a-cube[cube-id="64"] {
+  --wood-top-x: 48.33984098073776%;
+  --wood-top-y: 40.44732986027145%;
+  --wood-side-x: 61.81073794290868%;
+  --wood-side-y: 22.834870394346463%;
+  --wood-bottom-x: 25.07418265914323%;
+  --wood-bottom-y: 81.33258421215726%;
+}
+.a-cube[cube-id="65"] {
+  --wood-top-x: 98.24082159790385%;
+  --wood-top-y: 65.63122883908726%;
+  --wood-side-x: 43.05095958093704%;
+  --wood-side-y: 53.074970931380236%;
+  --wood-bottom-x: 29.339464145831617%;
+  --wood-bottom-y: 61.41740465504532%;
+}
+.a-cube[cube-id="66"] {
+  --wood-top-x: 56.392410699541784%;
+  --wood-top-y: 63.513156023722594%;
+  --wood-side-x: 78.74728419654346%;
+  --wood-side-y: 84.49163079720881%;
+  --wood-bottom-x: 21.092976822689025%;
+  --wood-bottom-y: 53.35511440164935%;
+}
+.a-cube[cube-id="67"] {
+  --wood-top-x: 34.498332684095956%;
+  --wood-top-y: 51.3250747524721%;
+  --wood-side-x: 17.425632088423427%;
+  --wood-side-y: 61.86802618211321%;
+  --wood-bottom-x: 79.43411439854496%;
+  --wood-bottom-y: 92.6348175906535%;
+}
+.a-cube[cube-id="68"] {
+  --wood-top-x: 42.611471349867756%;
+  --wood-top-y: 79.23093190847044%;
+  --wood-side-x: 34.233903157796554%;
+  --wood-side-y: 76.01998298986629%;
+  --wood-bottom-x: 50.528670307131904%;
+  --wood-bottom-y: 74.52356801403445%;
+}
+.a-cube[cube-id="69"] {
+  --wood-top-x: 84.32693371975964%;
+  --wood-top-y: 92.30204249844968%;
+  --wood-side-x: 7.37284614964252%;
+  --wood-side-y: 73.08613385776724%;
+  --wood-bottom-x: 44.95681351124121%;
+  --wood-bottom-y: 14.042579195991989%;
+}
+.a-cube[cube-id="70"] {
+  --wood-top-x: 99.65283498027536%;
+  --wood-top-y: 76.627100667374%;
+  --wood-side-x: 42.296211022959376%;
+  --wood-side-y: 4.180212452541776%;
+  --wood-bottom-x: 13.873926058462938%;
+  --wood-bottom-y: 31.394129684759996%;
+}
+.a-cube[cube-id="71"] {
+  --wood-top-x: 0.534277526460436%;
+  --wood-top-y: 78.03513513743192%;
+  --wood-side-x: 85.38352381723267%;
+  --wood-side-y: 9.426248326861852%;
+  --wood-bottom-x: 36.518402387757696%;
+  --wood-bottom-y: 80.27032055560042%;
+}
+.a-cube[cube-id="72"] {
+  --wood-top-x: 15.959855581329963%;
+  --wood-top-y: 38.07827852943979%;
+  --wood-side-x: 87.36522896324573%;
+  --wood-side-y: 27.01083347498673%;
+  --wood-bottom-x: 90.34644270304409%;
+  --wood-bottom-y: 91.45384172220592%;
+}
+.a-cube[cube-id="73"] {
+  --wood-top-x: 8.440662585402869%;
+  --wood-top-y: 39.48310141409359%;
+  --wood-side-x: 40.76498862478915%;
+  --wood-side-y: 98.69888955205421%;
+  --wood-bottom-x: 72.75301436017385%;
+  --wood-bottom-y: 11.081103737905396%;
+}
+.a-cube[cube-id="74"] {
+  --wood-top-x: 62.79999048670093%;
+  --wood-top-y: 10.957498876043992%;
+  --wood-side-x: 28.58588648520365%;
+  --wood-side-y: 45.957411849960586%;
+  --wood-bottom-x: 53.819772103429806%;
+  --wood-bottom-y: 4.256176507050801%;
+}
+.a-cube[cube-id="75"] {
+  --wood-top-x: 56.49694295199708%;
+  --wood-top-y: 89.77746365422247%;
+  --wood-side-x: 29.379966774119836%;
+  --wood-side-y: 8.029624560167703%;
+  --wood-bottom-x: 96.5028602957414%;
+  --wood-bottom-y: 48.632390796705415%;
+}
+.a-cube[cube-id="76"] {
+  --wood-top-x: 25.178477681599787%;
+  --wood-top-y: 80.93553722041615%;
+  --wood-side-x: 25.37681831521076%;
+  --wood-side-y: 69.33394962578629%;
+  --wood-bottom-x: 86.43746584704198%;
+  --wood-bottom-y: 34.87913857448489%;
+}
+.a-cube[cube-id="77"] {
+  --wood-top-x: 21.02062338337678%;
+  --wood-top-y: 30.385233523524157%;
+  --wood-side-x: 36.715056276625155%;
+  --wood-side-y: 90.03039553327447%;
+  --wood-bottom-x: 39.84215103435807%;
+  --wood-bottom-y: 8.310301171672052%;
+}
+.a-cube[cube-id="78"] {
+  --wood-top-x: 43.14912701061143%;
+  --wood-top-y: 4.460971819159765%;
+  --wood-side-x: 52.39233835643061%;
+  --wood-side-y: 47.93956241586579%;
+  --wood-bottom-x: 8.053635443506623%;
+  --wood-bottom-y: 33.20143496848641%;
+}
+.a-cube[cube-id="79"] {
+  --wood-top-x: 62.74036024647547%;
+  --wood-top-y: 29.784735681575725%;
+  --wood-side-x: 12.95226577388988%;
+  --wood-side-y: 84.56145177730932%;
+  --wood-bottom-x: 20.869455311760955%;
+  --wood-bottom-y: 24.689922581376187%;
+}
+.a-cube[cube-id="80"] {
+  --wood-top-x: 93.20405594843977%;
+  --wood-top-y: 41.94835102204163%;
+  --wood-side-x: 14.518578389077486%;
+  --wood-side-y: 84.19281960252374%;
+  --wood-bottom-x: 54.1410144527375%;
+  --wood-bottom-y: 61.00816434466261%;
+}
+.a-cube[cube-id="81"] {
+  --wood-top-x: 71.41099723384578%;
+  --wood-top-y: 37.25051236066111%;
+  --wood-side-x: 8.242487746276018%;
+  --wood-side-y: 68.36396331319888%;
+  --wood-bottom-x: 21.714467441117367%;
+  --wood-bottom-y: 29.936168539178166%;
+}
+.a-cube[cube-id="82"] {
+  --wood-top-x: 30.946710149371846%;
+  --wood-top-y: 21.683349651297913%;
+  --wood-side-x: 66.89939293870137%;
+  --wood-side-y: 83.83392441835515%;
+  --wood-bottom-x: 66.28576314242184%;
+  --wood-bottom-y: 3.8666661265540525%;
+}
+.a-cube[cube-id="83"] {
+  --wood-top-x: 49.05232031701049%;
+  --wood-top-y: 93.11711093873085%;
+  --wood-side-x: 50.25743254789111%;
+  --wood-side-y: 2.316861374102974%;
+  --wood-bottom-x: 38.481913868797136%;
+  --wood-bottom-y: 68.59055501305643%;
+}
+.a-cube[cube-id="84"] {
+  --wood-top-x: 6.942652017739636%;
+  --wood-top-y: 31.505345504665772%;
+  --wood-side-x: 71.39996251393454%;
+  --wood-side-y: 30.730469933050465%;
+  --wood-bottom-x: 82.44968855022903%;
+  --wood-bottom-y: 48.46830226849631%;
+}
+.a-cube[cube-id="85"] {
+  --wood-top-x: 9.096082686931673%;
+  --wood-top-y: 4.104082373039719%;
+  --wood-side-x: 19.99093512529202%;
+  --wood-side-y: 80.94000772547336%;
+  --wood-bottom-x: 92.85069786333912%;
+  --wood-bottom-y: 61.75686999315516%;
+}
+.a-cube[cube-id="86"] {
+  --wood-top-x: 72.71692499300799%;
+  --wood-top-y: 42.844537346117505%;
+  --wood-side-x: 44.45193588129936%;
+  --wood-side-y: 5.54375733840674%;
+  --wood-bottom-x: 18.985537411809638%;
+  --wood-bottom-y: 58.988078388397504%;
+}
+.a-cube[cube-id="87"] {
+  --wood-top-x: 68.99403440903316%;
+  --wood-top-y: 13.118362707757969%;
+  --wood-side-x: 42.07912658787289%;
+  --wood-side-y: 88.10683095947356%;
+  --wood-bottom-x: 23.102434774299407%;
+  --wood-bottom-y: 70.87351604243372%;
+}
+.a-cube[cube-id="88"] {
+  --wood-top-x: 46.40984500377049%;
+  --wood-top-y: 87.2704280906652%;
+  --wood-side-x: 70.54523365777149%;
+  --wood-side-y: 81.1680035773837%;
+  --wood-bottom-x: 93.45063662207718%;
+  --wood-bottom-y: 9.417572287653053%;
+}
+.a-cube[cube-id="89"] {
+  --wood-top-x: 85.78195780178432%;
+  --wood-top-y: 60.50659834364568%;
+  --wood-side-x: 45.384278395909014%;
+  --wood-side-y: 12.63887652055774%;
+  --wood-bottom-x: 17.749350937826026%;
+  --wood-bottom-y: 13.43074065130997%;
+}
+.a-cube[cube-id="90"] {
+  --wood-top-x: 80.01959043475229%;
+  --wood-top-y: 79.48086437549547%;
+  --wood-side-x: 71.06322880332192%;
+  --wood-side-y: 5.489414214183808%;
+  --wood-bottom-x: 47.10818247385329%;
+  --wood-bottom-y: 69.1411111309561%;
+}
+.a-cube[cube-id="91"] {
+  --wood-top-x: 74.60001070889463%;
+  --wood-top-y: 9.213758652889581%;
+  --wood-side-x: 10.964080202159476%;
+  --wood-side-y: 90.37796169743847%;
+  --wood-bottom-x: 45.04062570683532%;
+  --wood-bottom-y: 88.60580282183874%;
+}
+.a-cube[cube-id="92"] {
+  --wood-top-x: 3.4215164071569992%;
+  --wood-top-y: 49.722499650073345%;
+  --wood-side-x: 21.95159568117998%;
+  --wood-side-y: 77.48219376126785%;
+  --wood-bottom-x: 20.767924713892004%;
+  --wood-bottom-y: 14.479802101015016%;
+}
+.a-cube[cube-id="93"] {
+  --wood-top-x: 67.2011343856719%;
+  --wood-top-y: 76.1901174704952%;
+  --wood-side-x: 44.881881675773904%;
+  --wood-side-y: 98.73283268824115%;
+  --wood-bottom-x: 28.888509041347277%;
+  --wood-bottom-y: 37.81714981238703%;
+}
+.a-cube[cube-id="94"] {
+  --wood-top-x: 8.209960176335985%;
+  --wood-top-y: 80.0071444876975%;
+  --wood-side-x: 58.47730992370397%;
+  --wood-side-y: 9.285262909514724%;
+  --wood-bottom-x: 48.610138801429606%;
+  --wood-bottom-y: 11.680787351218868%;
+}
+.a-cube[cube-id="95"] {
+  --wood-top-x: 73.48329860397939%;
+  --wood-top-y: 80.15419751329159%;
+  --wood-side-x: 39.545739631890285%;
+  --wood-side-y: 40.882620245595135%;
+  --wood-bottom-x: 52.88028171271323%;
+  --wood-bottom-y: 91.67410160165961%;
+}
+.a-cube[cube-id="96"] {
+  --wood-top-x: 1.7161180069813375%;
+  --wood-top-y: 48.86066410072274%;
+  --wood-side-x: 30.75895569344541%;
+  --wood-side-y: 40.4097477369903%;
+  --wood-bottom-x: 37.75405033569872%;
+  --wood-bottom-y: 42.52404472938246%;
+}
+.a-cube[cube-id="97"] {
+  --wood-top-x: 35.68777251759968%;
+  --wood-top-y: 74.4382802890163%;
+  --wood-side-x: 81.36312019084433%;
+  --wood-side-y: 44.62394849270629%;
+  --wood-bottom-x: 22.67592663308041%;
+  --wood-bottom-y: 30.361593027515056%;
+}
+.a-cube[cube-id="98"] {
+  --wood-top-x: 52.382361221740624%;
+  --wood-top-y: 17.533229629496695%;
+  --wood-side-x: 23.67233738230855%;
+  --wood-side-y: 75.6605484427563%;
+  --wood-bottom-x: 25.2889602248866%;
+  --wood-bottom-y: 55.41110098561314%;
+}
+.a-cube[cube-id="99"] {
+  --wood-top-x: 46.981974930004775%;
+  --wood-top-y: 55.93935822402282%;
+  --wood-side-x: 2.6778214452675475%;
+  --wood-side-y: 77.06519722263711%;
+  --wood-bottom-x: 69.72945263007118%;
+  --wood-bottom-y: 12.154905909388969%;
+}
+.a-cube[cube-id="100"] {
+  --wood-top-x: 45.144675581541996%;
+  --wood-top-y: 4.034345171397979%;
+  --wood-side-x: 72.10102981588027%;
+  --wood-side-y: 0.33218497960191273%;
+  --wood-bottom-x: 36.378275110669044%;
+  --wood-bottom-y: 20.389371076294495%;
+}
+.a-cube[cube-id="101"] {
+  --wood-top-x: 76.63203092508351%;
+  --wood-top-y: 94.58531151702209%;
+  --wood-side-x: 87.90159034720928%;
+  --wood-side-y: 82.97196362633026%;
+  --wood-bottom-x: 9.109200641702053%;
+  --wood-bottom-y: 80.55753768478431%;
+}
+.a-cube[cube-id="102"] {
+  --wood-top-x: 89.34787799673005%;
+  --wood-top-y: 71.53634566987827%;
+  --wood-side-x: 52.892980957188506%;
+  --wood-side-y: 77.22970200423408%;
+  --wood-bottom-x: 68.47997818214876%;
+  --wood-bottom-y: 37.125744947257324%;
+}
+.a-cube[cube-id="103"] {
+  --wood-top-x: 80.40334272971704%;
+  --wood-top-y: 88.0615765083076%;
+  --wood-side-x: 14.408779529876547%;
+  --wood-side-y: 55.22744995310421%;
+  --wood-bottom-x: 0.3075678503429824%;
+  --wood-bottom-y: 18.787881624456602%;
+}
+.a-cube[cube-id="104"] {
+  --wood-top-x: 14.343465325049742%;
+  --wood-top-y: 92.01716180844454%;
+  --wood-side-x: 43.39458496525255%;
+  --wood-side-y: 0.9483492605558363%;
+  --wood-bottom-x: 81.74393635409959%;
+  --wood-bottom-y: 35.309750274387085%;
+}
+.a-cube[cube-id="105"] {
+  --wood-top-x: 97.837405713256%;
+  --wood-top-y: 6.516655568828355%;
+  --wood-side-x: 98.54058132541664%;
+  --wood-side-y: 1.7745722273977749%;
+  --wood-bottom-x: 54.61760103266434%;
+  --wood-bottom-y: 0.6959862338729583%;
+}
+.a-cube[cube-id="106"] {
+  --wood-top-x: 65.38733455787784%;
+  --wood-top-y: 86.05611896524493%;
+  --wood-side-x: 61.27711422581026%;
+  --wood-side-y: 38.59201829630412%;
+  --wood-bottom-x: 83.82433841513459%;
+  --wood-bottom-y: 46.354982395108046%;
+}
+.a-cube[cube-id="107"] {
+  --wood-top-x: 24.16063090305792%;
+  --wood-top-y: 91.76488675183683%;
+  --wood-side-x: 61.58827890630313%;
+  --wood-side-y: 5.3578672446922155%;
+  --wood-bottom-x: 73.80141229134281%;
+  --wood-bottom-y: 97.8297387789558%;
+}
+.a-cube[cube-id="108"] {
+  --wood-top-x: 17.78971455446865%;
+  --wood-top-y: 61.45218958449527%;
+  --wood-side-x: 27.49204592447817%;
+  --wood-side-y: 3.6864974710563048%;
+  --wood-bottom-x: 83.95363809052652%;
+  --wood-bottom-y: 8.109590936326294%;
+}
+.a-cube[cube-id="109"] {
+  --wood-top-x: 73.38890404374699%;
+  --wood-top-y: 14.457148785073882%;
+  --wood-side-x: 35.30573567900112%;
+  --wood-side-y: 73.32462988950729%;
+  --wood-bottom-x: 59.86004438789237%;
+  --wood-bottom-y: 10.528567084104456%;
+}
+.a-cube[cube-id="110"] {
+  --wood-top-x: 44.541453654357%;
+  --wood-top-y: 80.41846329243806%;
+  --wood-side-x: 40.48515374263585%;
+  --wood-side-y: 22.80736640533333%;
+  --wood-bottom-x: 31.448245666719565%;
+  --wood-bottom-y: 21.412126542866538%;
+}
+.a-cube[cube-id="111"] {
+  --wood-top-x: 44.720316872293374%;
+  --wood-top-y: 17.815022598401264%;
+  --wood-side-x: 13.350409167075817%;
+  --wood-side-y: 41.60266393858847%;
+  --wood-bottom-x: 16.26242851133436%;
+  --wood-bottom-y: 93.8891017565872%;
+}
+.a-cube[cube-id="112"] {
+  --wood-top-x: 40.74626796455193%;
+  --wood-top-y: 80.44621152314927%;
+  --wood-side-x: 35.75570575026947%;
+  --wood-side-y: 58.62618686749704%;
+  --wood-bottom-x: 80.21917346660464%;
+  --wood-bottom-y: 96.022530579703%;
+}
+.a-cube[cube-id="113"] {
+  --wood-top-x: 60.5554537630499%;
+  --wood-top-y: 71.75932942787632%;
+  --wood-side-x: 16.340184462942297%;
+  --wood-side-y: 92.00169397062183%;
+  --wood-bottom-x: 71.25535552532305%;
+  --wood-bottom-y: 24.170689287618142%;
+}
+.a-cube[cube-id="114"] {
+  --wood-top-x: 52.77785121385532%;
+  --wood-top-y: 74.1605881203679%;
+  --wood-side-x: 83.09055485073637%;
+  --wood-side-y: 83.22146816133949%;
+  --wood-bottom-x: 66.00378347830052%;
+  --wood-bottom-y: 0.4201231945117456%;
+}
+.a-cube[cube-id="115"] {
+  --wood-top-x: 8.39969797160488%;
+  --wood-top-y: 35.26353699776532%;
+  --wood-side-x: 55.45094407425047%;
+  --wood-side-y: 63.566046442580046%;
+  --wood-bottom-x: 94.54754429248912%;
+  --wood-bottom-y: 58.32390515116027%;
+}
+.a-cube[cube-id="116"] {
+  --wood-top-x: 49.720359968527475%;
+  --wood-top-y: 11.820721080082775%;
+  --wood-side-x: 82.68458483043179%;
+  --wood-side-y: 15.930949391281157%;
+  --wood-bottom-x: 35.50668514826493%;
+  --wood-bottom-y: 89.63264931675684%;
+}
+.a-cube[cube-id="117"] {
+  --wood-top-x: 88.31221300717625%;
+  --wood-top-y: 85.68733764075463%;
+  --wood-side-x: 35.185663558352566%;
+  --wood-side-y: 53.950012257636956%;
+  --wood-bottom-x: 64.89344193524865%;
+  --wood-bottom-y: 3.466393281192748%;
+}
+.a-cube[cube-id="118"] {
+  --wood-top-x: 79.24651373787488%;
+  --wood-top-y: 28.670508199981725%;
+  --wood-side-x: 41.17573401087197%;
+  --wood-side-y: 82.4293607397715%;
+  --wood-bottom-x: 3.8533175220609395%;
+  --wood-bottom-y: 56.29132142108906%;
+}
+.a-cube[cube-id="119"] {
+  --wood-top-x: 37.933647299751364%;
+  --wood-top-y: 21.06373034967991%;
+  --wood-side-x: 57.98898639693672%;
+  --wood-side-y: 96.31505417903718%;
+  --wood-bottom-x: 27.821983669851246%;
+  --wood-bottom-y: 21.952480525031028%;
+}
+
 :root {
   --market-cube-size: 28px;
   --bg-gradient-tooltip: linear-gradient(130deg, #a8c686f2, #e1eec8db);
@@ -727,9 +1688,9 @@
   --status-bar-color: #fff9dfe6;
   --market-tile-glow-color: #f8da5f80;
   --image-source-market-tiles: url(img/market_tiles_minified.webp);
-  --image-source-player-order-tiles: url(img/player_order_tiles_minified.jpg);
+  --image-source-player-order-tiles: url(img/player_order_tiles_minified.webp);
   --image-source-bonus-cards: url(img/bonus_cards_minified.webp);
-  --image-source-bonus-card-icons: url(img/bonus_card_icons_minified.jpg);
+  --image-source-bonus-card-icons: url(img/bonus_card_icons_minified.webp);
   --cubes-parallax-margin: 0px;
 }
 
@@ -745,8 +1706,11 @@ body.mobile_version {
 html {
   background: linear-gradient(to bottom right, #1e4b39 32%, #f8da5f 110%);
   background-position: center bottom;
-  background-attachment: fixed;
   background-size: cover;
+}
+
+body {
+  min-height: 100vh;
 }
 
 .background-container {
@@ -776,9 +1740,9 @@ html {
 .background-container .bg-pyramid {
   position: absolute;
   opacity: 0.8;
-  bottom: 0px;
+  top: 100%;
   left: 42%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateY(-100%);
   width: var(--pyramid-width);
   height: calc(var(--pyramid-width) * 0.945);
   background-image: url("img/bg_pyramid.webp");
@@ -871,16 +1835,27 @@ body.mobile_version .background-container .bg-pyramid {
   z-index: 1;
   background-blend-mode: overlay;
   background-color: var(--cube-color);
-  background-size: 610%, 100% 100%, 300% 300%;
+  background-size: 610%, 100% 100%;
 }
 .a-cube .top-side {
   z-index: 2;
   position: absolute;
   width: 100%;
   height: 100%;
-  background-image: url("img/wood_texture_overlay.png"), linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1)), linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
-  background-position: var(--top-bg-x) var(--top-bg-y), 0 0, 150% 150%;
-  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-repeat: no-repeat, no-repeat;
+  background-image: url("img/wood_texture_overlay.webp"), linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+}
+.a-cube .top-side::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background-image: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
+  background-position: 150% 150%;
+  background-size: 500% 500%;
+  background-repeat: no-repeat;
 }
 .a-cube .right-side {
   z-index: 0;
@@ -891,8 +1866,7 @@ body.mobile_version .background-container .bg-pyramid {
   clip-path: polygon(86% 20%, 59.8% -2%, 59% 74%, 86% 93.3%);
   top: 0%;
   left: 39.1%;
-  background-position: var(--side-bg-x) var(--side-bg-y);
-  background-image: url("img/wood_texture_overlay.png"), linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+  background-image: url("img/wood_texture_overlay.webp"), linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
 }
 .a-cube .bottom-side {
   z-index: 1;
@@ -903,8 +1877,7 @@ body.mobile_version .background-container .bg-pyramid {
   clip-path: polygon(18.6% 39%, 90% 39%, 71% 0%, -2% 0%);
   top: 98.6%;
   left: 0%;
-  background-position: var(--bottom-bg-x) var(--bottom-bg-y);
-  background-image: url("img/wood_texture_overlay.png"), linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+  background-image: url("img/wood_texture_overlay.webp"), linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
 }
 .a-cube .cube-background {
   z-index: 0;
@@ -916,7 +1889,7 @@ body.mobile_version .background-container .bg-pyramid {
   transform-origin: 11% 23%;
   position: absolute;
   background-repeat: no-repeat, no-repeat;
-  background-image: url(img/cube_backgrounds.png), linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
+  background-image: url(img/cube_backgrounds.webp), linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
   filter: blur(1px);
   background-size: 200% 100%;
   background-position: 100%;
@@ -932,6 +1905,10 @@ body.mobile_version .background-container .bg-pyramid {
 }
 .a-cube[built-status=built-cube], .a-cube[built-status=discarded-cube] {
   opacity: 0;
+}
+
+.a-cube[shine-once="2000"] .top-side::before {
+  animation: shine-cube 2s ease-in-out;
 }
 
 .market-container {
@@ -962,7 +1939,7 @@ body.mobile_version .background-container .bg-pyramid {
   background-repeat: no-repeat;
   background-size: 400%;
 }
-.market-container .market-tiles-container .a-market-tile:hover .cubes-container .a-cube .top-side {
+.market-container .market-tiles-container .a-market-tile:hover .cubes-container .a-cube .top-side::before {
   animation: shine-cube 1.6s ease-in-out;
 }
 .market-container .market-tiles-container .a-market-tile[market-index="0"] {
@@ -992,7 +1969,7 @@ body.mobile_version .background-container .bg-pyramid {
   pointer-events: none;
 }
 .market-container .market-tiles-container .a-market-tile .cubes-container .a-cube .top-side, .market-container .market-tiles-container .a-market-tile .cubes-container .a-cube .right-side, .market-container .market-tiles-container .a-market-tile .cubes-container .a-cube .bottom-side {
-  background-size: 1220%, 100% 100%, 300% 300%;
+  background-size: 1220%, 100% 100%;
 }
 .market-container .market-tiles-container .a-market-tile .collecting-player-avatar {
   position: absolute;
@@ -1376,7 +2353,7 @@ body.mobile_version #player-tables {
   left: 9%;
   width: 96%;
   height: 96%;
-  background-image: url(img/cube_backgrounds.png);
+  background-image: url(img/cube_backgrounds.webp);
   background-position: 100% 0;
 }
 .pyramids-container .a-pyramid-container .cubes-container .a-cube.animating-cube {
@@ -1401,7 +2378,7 @@ body.mobile_version #player-tables {
   font-size: calc(var(--pyramid-cube-size) * 0.7);
 }
 @media (hover: hover) {
-  .pyramids-container .a-pyramid-container:not([build-pyramid-enabled=true]):hover .a-cube .top-side {
+  .pyramids-container .a-pyramid-container:not([build-pyramid-enabled=true]):hover .a-cube .top-side::before {
     animation: shine-cube 1.6s ease-in-out;
   }
 }
@@ -1414,21 +2391,34 @@ body.mobile_version #player-tables {
 
 body.mobile_version .pyramids-container {
   text-align: left;
+  --expansion-rate: 2;
   --shrunk-pyramid-cube-size: var(--pyramid-cube-size);
-  --expanded-pyramid-cube-size: calc(var(--pyramid-cube-size) * 2);
+  --expanded-pyramid-cube-size: calc(var(--pyramid-cube-size) * var(--expansion-rate));
 }
 body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid {
   max-width: none;
+  --pyramid-cube-size: var(--shrunk-pyramid-cube-size);
 }
-body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid[expanded-to-build=true] {
+body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .a-cube, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .pyramid-cube-snap-point, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .switch-color-button {
+  transition: width var(--expand-to-build-duration) ease-out, height var(--expand-to-build-duration) ease-out, left var(--expand-to-build-duration) ease-out, bottom var(--expand-to-build-duration) ease-out;
+}
+body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid[build-pyramid-enabled=true] {
   width: 98%;
   --pyramid-cube-size: var(--expanded-pyramid-cube-size);
 }
-body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .cubes-container.resizing-cubes-container-clone {
-  transition: transform var(--expand-to-build-duration) ease-out, margin-left var(--expand-to-build-duration) ease-out, margin-top var(--expand-to-build-duration) ease-out;
-  transform-origin: top left;
+body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid[build-pyramid-enabled=true] .a-cube, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid[build-pyramid-enabled=true] .pyramid-cube-snap-point, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid[build-pyramid-enabled=true] .switch-color-button {
+  width: var(--expanded-pyramid-cube-size);
+  height: var(--expanded-pyramid-cube-size);
+  max-width: var(--expanded-pyramid-cube-size);
+  max-height: var(--expanded-pyramid-cube-size);
 }
-body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid:not([enlarge-animation-disabled]) {
+body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid[build-pyramid-enabled=true] .pyramid-cube-snap-point .snap-point-icon {
+  font-size: calc(var(--expanded-pyramid-cube-size) * 0.24);
+}
+body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .cubes-container.shrinking-pyramid-cubes .a-cube, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .cubes-container.shrinking-pyramid-cubes .pyramid-cube-snap-point, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .cubes-container.shrinking-pyramid-cubes .switch-color-button {
+  animation: pyramid-cube-shrink var(--expand-to-build-duration) ease-out forwards;
+}
+body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid {
   transition: width var(--expand-to-build-duration) ease-out;
 }
 
@@ -1890,11 +2880,13 @@ body.mobile_version .gamestate_gameEnd .end-game-score-container {
 }
 
 body.mobile_version .dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip {
-  max-width: 600px;
+  max-width: 500px;
 }
 body.mobile_version .dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip .tooltip-card {
-  width: 120px;
-  height: 168px;
+  width: 99px;
+  height: 138px;
+  margin: 5px 1px;
+  border-radius: 18px;
 }
 
 .tundra:has(.tooltip-wrapper) { /* to change the color of the little tooltip arrow */ }
@@ -1943,7 +2935,7 @@ body.mobile_version .dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip .
 }
 @keyframes shine-cube {
   to {
-    background-position: var(--top-bg-x) var(--top-bg-y), 0 0, -150% -150%;
+    background-position: -100% -100%;
   }
 }
 @keyframes shine-bonus-card-icon {
@@ -2007,6 +2999,20 @@ body.mobile_version .dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip .
   }
   100% {
     transform: translateX(0px);
+  }
+}
+@keyframes pyramid-cube-shrink {
+  from {
+    width: var(--expanded-pyramid-cube-size);
+    height: var(--expanded-pyramid-cube-size);
+    max-width: var(--expanded-pyramid-cube-size);
+    max-height: var(--expanded-pyramid-cube-size);
+  }
+  to {
+    width: var(--shrunk-pyramid-cube-size);
+    height: var(--shrunk-pyramid-cube-size);
+    max-width: var(--shrunk-pyramid-cube-size);
+    max-height: var(--shrunk-pyramid-cube-size);
   }
 }
 

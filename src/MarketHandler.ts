@@ -399,81 +399,100 @@ class MarketHandler{
         this.gameui.players[swapperLeft.player_id].setTurnOrder(swapperRight.turn_order);
         this.gameui.players[swapperRight.player_id].setTurnOrder(swapperLeft.turn_order);
         
-        let raiseAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
-        let lowerAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
+        //get the raised card width
+        const currentCardWidths: { [playerID: number]: number } = {};
         [swapperLeft, swapperRight].forEach(swapper => {
-            const isLeft = swapper.player_id == swapperLeft.player_id;
+            const turnOrderContainer = this.gameui.players[swapper.player_id].pyramid.getTurnOrderContainer();
+            turnOrderContainer.style.transform = 'none'; 
+            const cardRect = turnOrderContainer.getBoundingClientRect();
+            currentCardWidths[swapper.player_id] = cardRect.width;
+            turnOrderContainer.style.transform = null;
+        });
+        const expandedCardWidth = Math.max(...Object.values(currentCardWidths)) * 2;
+
+        const raiseAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
+        const turnOrderClones: HTMLDivElement[] = [];
+        [swapperLeft, swapperRight].forEach(swapper => {
+            const isLeftPlayer = swapper.player_id == swapperLeft.player_id;
+            const destinationPlayerID = isLeftPlayer ? swapperRight.player_id : swapperLeft.player_id;
 
             const turnOrderContainer = this.gameui.players[swapper.player_id].pyramid.getTurnOrderContainer();
             const turnOrderClone = turnOrderContainer.cloneNode(true) as HTMLDivElement;
             turnOrderClone.classList.add('animating-turn-order-container');
+            turnOrderClone.setAttribute('destination-player-id', destinationPlayerID.toString());
+            turnOrderClone.setAttribute('is-left-player', isLeftPlayer ? 'true' : 'false');
             turnOrderContainer.style.opacity = '0';
             turnOrderClone.style.position = 'fixed';
             
-            turnOrderContainer.style.transform = 'none'; //temporarily remove transform to get correct bounding client rect without rotation
-            const cardRect = turnOrderContainer.getBoundingClientRect();
-            turnOrderContainer.style.transform = null;
-            
-            const cardWidth = cardRect.width;
+            turnOrderClone.style.width = currentCardWidths[swapper.player_id] + 'px';
 
-            const expandedCardWidth = cardWidth * 2;
-            turnOrderClone.style.width = cardWidth + 'px';
-
-            const otherPyramid = this.gameui.players[isLeft ? swapperRight.player_id : swapperLeft.player_id].pyramid;
             document.body.appendChild(turnOrderClone);
             this.gameui.placeOnObject(turnOrderClone, turnOrderContainer);
-
+            turnOrderClones.push(turnOrderClone);
             const targetRaised = document.createElement('div');
-            targetRaised.classList.add(isLeft ? 'left-turn-order-animation-target' : 'right-turn-order-animation-target');
+            targetRaised.classList.add(isLeftPlayer ? 'left-turn-order-animation-target' : 'right-turn-order-animation-target');
             document.body.appendChild(targetRaised);
+            
+            turnOrderContainer.setAttribute('turn-order', isLeftPlayer ? swapperRight.turn_order.toString() : swapperLeft.turn_order.toString());
 
             raiseAnimArray.push(this.gameui.animationHandler.animateProperty({
                 node: turnOrderClone,
                 properties: { width: expandedCardWidth, left: targetRaised.offsetLeft, top: targetRaised.offsetTop },
                 duration: 400,
-                delay: isLeft ? 0 : 600,
+                delay: isLeftPlayer ? 0 : 600,
                 easing: 'easeInOut',
                 onEnd: () => { targetRaised.remove(); }
             }));
-
-            const otherTurnOrderContainer = otherPyramid.getTurnOrderContainer();
-            const targetLowered = otherTurnOrderContainer.cloneNode(true) as HTMLDivElement;
-            targetLowered.classList.add('target-turn-order-container');
-            targetLowered.style.position = 'fixed';
-            targetLowered.style.width = cardWidth + 'px';
-            targetLowered.style.opacity = '0';            
-            document.body.appendChild(targetLowered);
-            this.gameui.placeOnObject(targetLowered, otherTurnOrderContainer);
-
-            lowerAnimArray.push(this.gameui.animationHandler.animateProperty({
-                node: turnOrderClone,
-                properties: { width: cardWidth, top: targetLowered.offsetTop, left: targetLowered.offsetLeft },
-                duration: 350,
-                delay: isLeft ? 200 : 550,
-                easing: 'easeIn',
-                onEnd: () => { otherTurnOrderContainer.style.opacity = null; turnOrderClone.remove(); targetLowered.remove(); }
-            }));
-            
-            turnOrderContainer.setAttribute('turn-order', isLeft ? swapperRight.turn_order.toString() : swapperLeft.turn_order.toString());
         });
-        
-        // Combine and start raise animations
-        const swapAnimation = this.gameui.animationHandler.chain([
-            this.gameui.animationHandler.combine(raiseAnimArray), 
-            this.gameui.animationHandler.combine(lowerAnimArray)
-        ]);
 
-        let statusText = _('Swapping Turn Orders: {$swapIcons}');
         let swapIconsHTML = '<div class="swap-icons">' + this.gameui.divColoredPlayer(swapperLeft.player_id);
         swapIconsHTML += '<div class="turn-order-container-wrapper"><div class="turn-order-container" turn-order="' + swapperLeft.turn_order + '"></div></div>';
         swapIconsHTML += '<i class="log-arrow log-arrow-exchange fa6 fa-exchange"></i>';
         swapIconsHTML += '<div class="turn-order-container-wrapper"><div class="turn-order-container" turn-order="' + swapperRight.turn_order + '"></div></div>';
         swapIconsHTML += this.gameui.divColoredPlayer(swapperRight.player_id);
         swapIconsHTML += '</div>';
-        statusText = statusText.replace('{$swapIcons}', swapIconsHTML);
+        const statusText = _('Swapping Turn Orders: {$swapIcons}').replace('{$swapIcons}', swapIconsHTML);
         this.gameui.updateStatusText(statusText);
-        
-        await swapAnimation.start();
+
+        const raiseAnim: ReturnType<typeof dojo.animateProperty> = this.gameui.animationHandler.combine(raiseAnimArray);
+        await raiseAnim.start();
+
+        const lowerAnimArray: ReturnType<typeof dojo.animateProperty>[] = [];
+        turnOrderClones.forEach(turnOrderClone => {
+            const destinationPlayerID = Number(turnOrderClone.getAttribute('destination-player-id'));
+            const isLeftPlayer = turnOrderClone.getAttribute('is-left-player') == 'true';
+
+            const otherPyramid = this.gameui.players[destinationPlayerID].pyramid;
+            const otherTurnOrderContainer = otherPyramid.getTurnOrderContainer();
+
+            const targetLowered = otherTurnOrderContainer.cloneNode(true) as HTMLDivElement;
+
+            //need to temporarily remove transform to get correct bounding client rect without rotation
+            otherPyramid.getPyramidContainer().appendChild(targetLowered);
+            targetLowered.style.transform = 'none';
+            const loweredCardRect = targetLowered.getBoundingClientRect();
+            const loweredCardWidth = loweredCardRect.width;
+            targetLowered.style.transform = null;
+
+            targetLowered.classList.add('target-turn-order-container');
+            targetLowered.style.position = 'fixed';
+            targetLowered.style.width = loweredCardWidth + 'px';
+            targetLowered.style.opacity = '0';            
+            document.body.appendChild(targetLowered);
+            this.gameui.placeOnObject(targetLowered, otherTurnOrderContainer);
+            
+            lowerAnimArray.push(this.gameui.animationHandler.animateProperty({
+                node: turnOrderClone,
+                properties: { width: loweredCardWidth, top: targetLowered.offsetTop, left: targetLowered.offsetLeft },
+                duration: 350,
+                delay: isLeftPlayer ? 200 : 550,
+                easing: 'easeIn',
+                onEnd: () => { otherTurnOrderContainer.style.opacity = null; turnOrderClone.remove(); targetLowered.remove(); }
+            }));  
+        });
+
+        const lowerAnim: ReturnType<typeof dojo.animateProperty> = this.gameui.animationHandler.combine(lowerAnimArray);
+        await lowerAnim.start();
     }
 
     public async zombieIndividualPlayerCollection(player_id: number){

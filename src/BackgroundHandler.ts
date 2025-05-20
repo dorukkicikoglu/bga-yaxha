@@ -4,6 +4,7 @@ class BackgroundHandler{
     private pyramid: HTMLDivElement;
     private shamanTop = 0.14;
     private shamanLeft = 0.18;
+    private lastShamanMoveTime: number = 0;
 
 	constructor(private gameui: GameBody) {
         this.displayBackground();
@@ -32,11 +33,16 @@ class BackgroundHandler{
         this.shaman.style.top = `${this.pyramid.offsetHeight * this.shamanTop}px`;
         this.shaman.style.left = `${this.pyramid.offsetWidth * this.shamanLeft}px`;
 
-        this.moveShamanAlongAxis(Math.random() < 0.5 ? 'up' : 'down');
+        this.moveShamanUpDown(Math.random() < 0.5 ? 'up' : 'down');
         this.closeEyes();
     }
 
-    private async moveShamanAlongAxis(direction: 'up' | 'down' = 'up'){
+    private async moveShamanUpDown(direction: 'up' | 'down' = 'up'){
+        if (Date.now() - this.lastShamanMoveTime < 10000) {
+            setTimeout(() => this.moveShamanUpDown(direction), 10000);
+            return;
+        }
+
         const distance = 0.006 + Math.random() * 0.01;
         const destinationTop = direction === 'up' 
             ? this.shamanTop + distance
@@ -46,6 +52,8 @@ class BackgroundHandler{
 
         const moveTime = 800 + Math.random() * 200;
         const delay = 40000 + Math.random() * 30000;
+
+        this.lastShamanMoveTime = Date.now();
 
         const moveShamanAnim: ReturnType<typeof dojo.animateProperty> = this.gameui.animationHandler.animateProperty({
             node: this.shaman,
@@ -58,7 +66,7 @@ class BackgroundHandler{
                 this.shaman.classList.add('final-shake');
                 this.shaman.classList.remove('is-shaking');
                 setTimeout(() => { this.shaman.classList.remove('final-shake'); }, 500);
-                this.moveShamanAlongAxis(direction === 'up' ? 'down' : 'up');
+                this.moveShamanUpDown(direction === 'up' ? 'down' : 'up');
             }
         });
 
@@ -66,6 +74,11 @@ class BackgroundHandler{
     }
 
     private closeEyes(){
+        if (Date.now() - this.lastShamanMoveTime < 10000) {
+            setTimeout(() => this.closeEyes(), 10000);
+            return;
+        }
+
         const arr = [
             '.eye-lid', //both eyes
             '.eye-lid', //both eyes
@@ -76,6 +89,8 @@ class BackgroundHandler{
         ];
         const whichEyes = arr[Math.floor(Math.random() * arr.length)];
         const delay = 28000 + Math.random() * 14000;
+
+        this.lastShamanMoveTime = Date.now();
 
         const eyelids = this.shaman.querySelectorAll(whichEyes);
         
