@@ -16,7 +16,7 @@ if (!defined('RANDOM_BONUS_CARDS_OPTION')) { // guard since this included multip
         CUBE_COLOR_ORANGE => ['name' => 'ORANGE', 'colorCode' => 'da6e2d'],
         CUBE_COLOR_YELLOW => ['name' => 'YELLOW', 'colorCode' => 'f5d187'],
         CUBE_COLOR_BLUE => ['name' => 'BLUE', 'colorCode' => '304f5e'],
-        CUBE_COLOR_GREEN => ['name' => 'GREEN', 'colorCode' => 'c3dcc7'],
+        CUBE_COLOR_GREEN => ['name' => 'GREEN', 'colorCode' => 'a7d2b8'],
         CUBE_COLOR_WHITE => ['name' => 'WHITE', 'colorCode' => 'dcd9de'],
     ]);
 

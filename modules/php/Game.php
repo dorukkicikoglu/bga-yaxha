@@ -161,8 +161,7 @@ class Game extends \Table
         $this->DbQuery("UPDATE player SET collected_market_index = $marketIndex WHERE player_id = $activePlayerID");
 
         $this->notify->all('individualPlayerCollected', '${INDIVIDUAL_MARKET_TILES_COLLECTION_STR}', array(
-            'LOG_CLASS' => 'individual-collected-tiles-log',
-            'preserve' => ['LOG_CLASS', 'player_id', 'collected_market_index', 'collected_cubes'],
+            'preserve' => ['player_id', 'collected_market_index', 'collected_cubes'],
             'player_id' => $activePlayerID,
             'collected_market_index' => $marketIndex,
             'collected_cubes' => $collectedCubes,
@@ -356,8 +355,7 @@ class Game extends \Table
             $builtCubesDataStr .= $this->getPlayerNameById($playerID).' ↓ '.implode('', array_map(fn($cube) => $this->marketManager->getCubeLogHTML($cube['color']), $cubes)).'<br>';
 
         $this->notify->all('displayBuiltCubes', '${DISPLAY_BUILT_CUBES_STR}', [
-            'LOG_CLASS' => 'display-built-cubes-log',
-            'preserve' => ['LOG_CLASS', 'built_cubes'],
+            'preserve' => ['built_cubes'],
             'built_cubes' => $builtCubesByPlayer,
             'DISPLAY_BUILT_CUBES_STR' => $builtCubesDataStr
         ]);

@@ -130,8 +130,7 @@ class YXHMarketManager extends APP_DbObject
         $marketTilesDataStr = implode(', ', $collectedTilesData).'<br>'.implode(', ', $pendingTilesData);
 
         $this->parent->notify->all('animateAllMarketTileSelections', '${REVEALED_MARKET_TILES_DATA_STR}', [
-            'LOG_CLASS' => 'all-selected-tiles-log',
-            'preserve' => ['LOG_CLASS', 'collectedMarketTilesData'],
+            'preserve' => ['collectedMarketTilesData'],
             'collectedMarketTilesData' => ['collectingPlayers' => $collectingPlayers, 'pendingPlayers' => $pendingPlayers],
             'REVEALED_MARKET_TILES_DATA_STR' => $marketTilesDataStr
         ]);
@@ -186,8 +185,7 @@ class YXHMarketManager extends APP_DbObject
             $swapTurnOrdersDataStr = $this->parent->getPlayerNameById($swap[0]['player_id']).'&nbsp;'.makeInlineTurnOrderCardHTML($swap[1]['turn_order']).' ↔ '.makeInlineTurnOrderCardHTML($swap[0]['turn_order']).'&nbsp;'.$this->parent->getPlayerNameById($swap[1]['player_id']);
 
             $this->parent->notify->all('swapTurnOrders', '${SWAP_TURN_ORDERS_DATA_STR}', [
-                'LOG_CLASS' => 'swap-turn-orders-log',
-                'preserve' => ['LOG_CLASS', 'swapData'],
+                'preserve' => ['swapData'],
                 'swapData' => $swap,
                 'SWAP_TURN_ORDERS_DATA_STR' => $swapTurnOrdersDataStr
             ]);

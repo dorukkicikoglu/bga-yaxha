@@ -5,6 +5,7 @@ class BackgroundHandler{
     private shamanTop = 0.14;
     private shamanLeft = 0.18;
     private lastShamanMoveTime: number = 0;
+    private minTimeBetweenShamanMoves = 10000;
 
 	constructor(private gameui: GameBody) {
         this.displayBackground();
@@ -38,8 +39,8 @@ class BackgroundHandler{
     }
 
     private async moveShamanUpDown(direction: 'up' | 'down' = 'up'){
-        if (Date.now() - this.lastShamanMoveTime < 10000) {
-            setTimeout(() => this.moveShamanUpDown(direction), 10000);
+        if (Date.now() - this.lastShamanMoveTime < this.minTimeBetweenShamanMoves) {
+            setTimeout(() => this.moveShamanUpDown(direction), this.minTimeBetweenShamanMoves);
             return;
         }
 
@@ -53,15 +54,16 @@ class BackgroundHandler{
         const moveTime = 800 + Math.random() * 200;
         const delay = 40000 + Math.random() * 30000;
 
-        this.lastShamanMoveTime = Date.now();
-
         const moveShamanAnim: ReturnType<typeof dojo.animateProperty> = this.gameui.animationHandler.animateProperty({
             node: this.shaman,
             properties: {top: this.pyramid.offsetHeight * destinationTop, left: this.pyramid.offsetWidth * destinationLeft},
             duration: moveTime,
             delay: delay,
             easing: 'ease-in-out',
-            onBegin: () => { this.shaman.classList.add('is-shaking'); },
+            onBegin: () => { 
+                this.lastShamanMoveTime = Date.now();        
+                this.shaman.classList.add('is-shaking'); 
+            },
             onEnd: () => { 
                 this.shaman.classList.add('final-shake');
                 this.shaman.classList.remove('is-shaking');
@@ -74,8 +76,8 @@ class BackgroundHandler{
     }
 
     private closeEyes(){
-        if (Date.now() - this.lastShamanMoveTime < 10000) {
-            setTimeout(() => this.closeEyes(), 10000);
+        if (Date.now() - this.lastShamanMoveTime < this.minTimeBetweenShamanMoves) {
+            setTimeout(() => this.closeEyes(), this.minTimeBetweenShamanMoves);
             return;
         }
 
@@ -83,18 +85,21 @@ class BackgroundHandler{
             '.eye-lid', //both eyes
             '.eye-lid', //both eyes
             '.eye-lid', //both eyes
+            '.eye-lid', //both eyes
+            '.eye-lid', //both eyes
             '.eye-lid.lid-left', //left eye
             '.eye-lid.lid-left', //left eye
+            '.eye-lid.lid-left', //left eye
+            '.eye-lid.lid-right', //right eye
             '.eye-lid.lid-right', //right eye
         ];
         const whichEyes = arr[Math.floor(Math.random() * arr.length)];
         const delay = 28000 + Math.random() * 14000;
 
-        this.lastShamanMoveTime = Date.now();
-
         const eyelids = this.shaman.querySelectorAll(whichEyes);
         
         setTimeout(() => {
+            this.lastShamanMoveTime = Date.now();
             eyelids.forEach(lid => { lid.classList.add('eyes-closed') });
             
             setTimeout(() => {

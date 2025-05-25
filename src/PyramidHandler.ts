@@ -88,6 +88,7 @@ class PyramidHandler {
         this.arrangeCubesZIndex();
         this.updatePyramidStatusText();
     }
+
     public enableBuildOnEnteringState() {
         const canBuild = this.canPlayerBuildPyramid();
         if(!canBuild || this.pyramidContainer.getAttribute('build-pyramid-enabled') === 'true'){
@@ -102,20 +103,13 @@ class PyramidHandler {
     private onSnapPointClicked(args) { //args is either event target or an array [posX, posY, posZ]
         if(this.moveCubeAnim)
             return;
+
+        if(this.gameui.isReplay())
+            return;
         
         const myPyramid = this.owner.playerID.toString() == this.gameui.player_id;
         if(!myPyramid)
             return;
-
-        const lastBuiltCube = this.unplacedCube;
-        if(this.unplacedCube){ //save the last built cube
-            const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
-            
-            marketTile.querySelectorAll('.a-cube[built-status="selected-cube"]').forEach(cube => { cube.removeAttribute('built-status'); });
-            marketTile.querySelector('.a-cube[cube-id="' + this.unplacedCube.cube_id + '"]').setAttribute('built-status', 'built-cube');
-
-            this.unplacedCube = null;
-        }
 
         const posX = Number(args.target.getAttribute('pos-x'));
         const posY = Number(args.target.getAttribute('pos-y'));
@@ -138,13 +132,11 @@ class PyramidHandler {
                 pos_x: posX,
                 pos_y: posY,
                 pos_z: posZ,
-                color: lastBuiltCube.color,
-                cube_id: lastBuiltCube.cube_id,
-                order_in_construction: lastBuiltCube.order_in_construction,
-                div: lastBuiltCube.div
+                color: this.unplacedCube.color,
+                cube_id: this.unplacedCube.cube_id,
+                order_in_construction: this.unplacedCube.order_in_construction,
+                div: this.unplacedCube.div
             };
-
-        this.cubesInConstruction[cubeData.cube_id] = cubeData;
 
         this.animateUnplacedCubeToPyramid(cubeData, moveType); 
     }
@@ -207,7 +199,6 @@ class PyramidHandler {
             return null;
 
         const cubesInPyramid = this.getPyramidCubesExceptFinalBuilt();
-
         let colorsOnMarketTile = this.getAvailableColorsOnMarketTile();
 
         if(colorsOnMarketTile == null){
@@ -408,11 +399,19 @@ class PyramidHandler {
     public updatePyramidStatusText(){
         let statusText = null;
 
+        let cubesToBuildHTML = '';
+        const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
+        if (marketTile) {
+            const cubesOnMarketTile = Array.from(marketTile.querySelectorAll('.a-cube:not([built-status])'));
+            cubesOnMarketTile.sort((a, b) => parseInt(a.getAttribute('color')) - parseInt(b.getAttribute('color')));
+            cubesToBuildHTML = '<div class="cube-wrapper">' + cubesOnMarketTile.map(cube => cube.outerHTML).join('') + '</div>';
+        }
+
         if (this.gameui.gamedatas.gamestate.name === 'individualPlayerSelectMarketTile'){
             if(this.owner.are_cubes_built)
                 statusText = dojo.string.substitute(_('${actplayer} must select an available Market Tile'), {actplayer: this.gameui.divActivePlayer()});
             else {
-                statusText = dojo.string.substitute(_('${you} may build while others are selecting Market Tiles'), {you: this.gameui.divYou()});
+                statusText = dojo.string.substitute(_('${you} may build${cubesToBuild}while others are selecting'), {you: this.gameui.divYou(), cubesToBuild: cubesToBuildHTML});
                 
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = statusText;
@@ -422,7 +421,7 @@ class PyramidHandler {
         } else if (this.gameui.gamedatas.gamestate.name === 'buildPyramid'){
             if(this.owner.are_cubes_built)
                 statusText = dojo.string.substitute(_('Waiting for other players to build Pyramids'), {you: this.gameui.divYou()});
-            else statusText = dojo.string.substitute(_('${you} need to build your Pyramid'), {you: this.gameui.divYou()});
+            else statusText = dojo.string.substitute(_('${you} need to build${cubesToBuild}'), {you: this.gameui.divYou(), cubesToBuild: cubesToBuildHTML});
         }
 
         if(!statusText)
@@ -444,7 +443,7 @@ class PyramidHandler {
 
                     cubeIconsHTML = '<div class="cube-wrapper">' + cubeIconsHTML + '</div>';
 
-                    statusText = dojo.string.substitute(_('Place${cubeIcons}'), {cubeIcons: cubeIconsHTML});
+                    statusText = dojo.string.substitute(_('Place?${cubeIcons}'), {cubeIcons: cubeIconsHTML});
                 } else {
                     statusText = _('You cannot place any of your cubes 😔');
                 }
@@ -463,13 +462,23 @@ class PyramidHandler {
         document.querySelector('#page-title .undo-place-cube-button')?.addEventListener('click', () => this.undoPlaceCubeButtonClicked());
     }
 
-    private animateUnplacedCubeToPyramid(cubeData: PyramidCube, moveType: PyramidCubeMoveType) {
+    public animateUnplacedCubeToPyramid(cubeData: PyramidCube, moveType: PyramidCubeMoveType, calledForOtherDevices: boolean = false) {
         if(this.moveCubeAnim)
             return;
 
+        if(this.gameui.isReplay())
+            return;
+        
+        const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
+
+        if(this.unplacedCube && moveType == 'from_market')
+            marketTile.querySelector('.a-cube[cube-id="' + this.unplacedCube.cube_id + '"]').setAttribute('built-status', 'built-cube');
+
+        this.cubesInConstruction[cubeData.cube_id] = cubeData;
+        this.unplacedCube = cubeData;
+
         this.cubesContainer.querySelectorAll('.switch-color-button').forEach(el => el.remove());
 
-        this.unplacedCube = cubeData;
         let goTo: HTMLDivElement = this.cubesContainer.querySelector(`.pyramid-cube-snap-point[pos-x="${this.unplacedCube.pos_x}"][pos-y="${this.unplacedCube.pos_y}"][pos-z="${this.unplacedCube.pos_z}"]`);
 
         const marketCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--market-cube-size'));
@@ -478,7 +487,6 @@ class PyramidHandler {
         let animSpeed = 400;
 
         if(!this.unplacedCube.div){ //search Market Tiles
-            const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
             let marketCubeDiv: HTMLDivElement = marketTile.querySelector(`.a-cube[cube-id="${cubeData.cube_id}"]`);
 
             this.unplacedCube.div = marketCubeDiv.cloneNode(true) as HTMLDivElement;
@@ -486,6 +494,7 @@ class PyramidHandler {
             this.unplacedCube.div.style.height = marketCubeSize + 'px';
             this.unplacedCube.div.style.maxWidth = pyramidCubeSize + 'px'; //so that the expansion animation happens half way
             this.unplacedCube.div.style.maxHeight = pyramidCubeSize + 'px';
+            this.unplacedCube.div.style.transition = 'none';
 
             this.cubesContainer.appendChild(this.unplacedCube.div);
 
@@ -495,7 +504,6 @@ class PyramidHandler {
             animSpeed = 600;
         }
 
-        this.unplacedCube.div.style.transition = 'none';
         this.moveCubeAnim = this.gameui.animationHandler.animateProperty({
             node: this.unplacedCube.div,
             properties: { top: goTo.offsetTop, left: goTo.offsetLeft, width: pyramidCubeSize * 2, height: pyramidCubeSize * 2 },
@@ -517,7 +525,10 @@ class PyramidHandler {
                 this.unplacedCube.div.style.left = null;
                 this.unplacedCube.div.style.top = null;
                 this.unplacedCube.div.style.transition = null;
-                this.gameui.ajaxAction(moveType == 'from_market' ? 'actAddCubeToPyramid' : 'actMoveCubeInPyramid', { cube_id: this.unplacedCube.cube_id, pos_x: this.unplacedCube.pos_x, pos_y: this.unplacedCube.pos_y, pos_z: this.unplacedCube.pos_z }, false, false);
+                
+                if(!calledForOtherDevices)
+                    this.gameui.ajaxAction(moveType == 'from_market' ? 'actAddCubeToPyramid' : 'actMoveCubeInPyramid', { cube_id: this.unplacedCube.cube_id, pos_x: this.unplacedCube.pos_x, pos_y: this.unplacedCube.pos_y, pos_z: this.unplacedCube.pos_z }, false, false);
+
                 this.moveCubeAnim = null;
                 this.enableBuildPyramid();
             }
@@ -559,7 +570,6 @@ class PyramidHandler {
         });
 
         let delay = 0;
-
         const movedPyramidCubeDivs = [];
         for(const move of cubeMoves){
             let marketCubeDiv: HTMLDivElement = marketTile.querySelector(`.a-cube[cube-id="${move.cube_id}"]`);
@@ -603,6 +613,7 @@ class PyramidHandler {
                 duration: animSpeed + Math.floor(Math.random() * 101) - 50,
                 easing: 'circleOut',
                 delay: delay + Math.floor(Math.random() * 100),
+                beforeBegin: () => { marketCubeDiv.removeAttribute('built-status'); },
                 onEnd: () => { 
                     pyramidCubeDiv.replaceWith(marketCubeDiv);
                     pyramidCubeDiv = marketCubeDiv;
@@ -672,7 +683,10 @@ class PyramidHandler {
         await this.disableAndShrinkIfMobile();
     }
 
-    private async undoPlaceCubeButtonClicked() {
+    public async undoPlaceCubeButtonClicked(forOtherDevices: boolean = false) {
+        if(this.gameui.isReplay())
+            return;
+
         this.cubesContainer.querySelectorAll('.switch-color-button').forEach(el => el.remove());
         this.cubesContainer.querySelectorAll('.pyramid-cube-snap-point').forEach(snapPoint => {
             this.gameui.animationHandler.fadeOutAndDestroy(snapPoint as HTMLDivElement, 100);
@@ -746,8 +760,6 @@ class PyramidHandler {
         this.unplacedCube = null;
         this.owner.are_cubes_built = false;
 
-        this.gameui.ajaxAction('actUndoBuildPyramid', {}, true, false);
-
         marketTile.querySelectorAll('.a-cube[built-status="discarded-cube"]').forEach((cube: HTMLDivElement) => {
             cube.style.transition = 'opacity 200ms';
             cube.style.opacity = '1';
@@ -759,6 +771,11 @@ class PyramidHandler {
         });
 
         await this.gameui.wait(maxDuration + 100);
+
+        marketTile.querySelectorAll('.a-cube').forEach(cube => { cube.removeAttribute('built-status'); });
+        if(!forOtherDevices)
+            this.gameui.ajaxAction('actUndoBuildPyramid', {}, true, false);
+
         this.enableBuildPyramid();
     }
 
@@ -813,6 +830,11 @@ class PyramidHandler {
             const posXB = parseInt(b.getAttribute("pos-x"));
             const posYA = parseInt(a.getAttribute("pos-y"));
             const posYB = parseInt(b.getAttribute("pos-y"));
+
+            if(a.classList.contains('switch-color-button'))
+                return 1;
+            if(b.classList.contains('switch-color-button'))
+                return -1;
 
             if (posZA !== posZB)
                 return posZA - posZB;
@@ -935,13 +957,21 @@ class PyramidHandler {
 
         this.cubesContainer.appendChild(switchColorButton);
 
-        switchColorButton.style.opacity = '0.82';
+        const topSide = this.unplacedCube.div.querySelector('.top-side') as HTMLDivElement;
+        const computedStyle = window.getComputedStyle(topSide);
+        switchColorButton.style.backgroundPosition = computedStyle.backgroundPosition;
+        switchColorButton.style.opacity = '1';
+        switchColorButton.style.backgroundColor = '#' + this.gameui.CUBE_COLORS[this.unplacedCube.color].colorCode + 'E0';
+
         switchColorButton.addEventListener('click', () => this.onSwitchColorButtonClicked());
     }
      
-    private onSwitchColorButtonClicked() {
+    public onSwitchColorButtonClicked(calledForOtherDevices: boolean = false) {
         const myPyramid = this.owner.playerID.toString() == this.gameui.player_id;
         if(!myPyramid)
+            return;
+
+        if(this.gameui.isReplay())
             return;
 
         const switchColorButton = this.cubesContainer.querySelector('.switch-color-button') as HTMLDivElement;
@@ -955,12 +985,16 @@ class PyramidHandler {
         this.unplacedCube.div.setAttribute('cube-id', nextCubeData.cube_id);
         this.cubesInConstruction[nextCubeData.cube_id] = this.unplacedCube;
 
+        switchColorButton.style.backgroundColor = '#' + this.gameui.CUBE_COLORS[this.unplacedCube.color].colorCode + 'E0';
+
         const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
         
         marketTile.querySelectorAll('.a-cube[built-status="selected-cube"]').forEach(cube => { cube.removeAttribute('built-status'); });
         marketTile.querySelector('.a-cube[cube-id="' + nextCubeData.cube_id + '"]').setAttribute('built-status', 'selected-cube');
 
-        this.gameui.ajaxAction('actPyramidCubeColorSwitched', { cube_id: this.unplacedCube.cube_id, pos_x: this.unplacedCube.pos_x, pos_y: this.unplacedCube.pos_y, pos_z: this.unplacedCube.pos_z }, false, false);
+        if(!calledForOtherDevices)
+            this.gameui.ajaxAction('actPyramidCubeColorSwitched', { cube_id: this.unplacedCube.cube_id, pos_x: this.unplacedCube.pos_x, pos_y: this.unplacedCube.pos_y, pos_z: this.unplacedCube.pos_z }, false, false);
+        
         this.drawSnapPoints(); //newly placed block might have allowed placement of a same color cube on top of this cube
         this.arrangeCubesZIndex();
         this.updatePyramidStatusText(); //with the new cube color, possible positions might have changed which will change the confirm button text
@@ -1005,9 +1039,9 @@ class PyramidHandler {
 
     public getUnplacedCube(): PyramidCube{ return this.unplacedCube; }
     public getCubesInConstruction(): { [cubeId: number]: PyramidCube }{ return this.cubesInConstruction; }
-    public getPyramidContainerRect(): DOMRect{ return this.gameui.getPos(this.pyramidContainer); }
     public getTurnOrderContainer(): HTMLDivElement{ return this.pyramidContainer.querySelector('.turn-order-container') as HTMLDivElement; }
     public getPyramidContainer(): HTMLDivElement{ return this.pyramidContainer; }
+    public getMoveCubeAnim(): ReturnType<typeof dojo.animateProperty>{ return this.moveCubeAnim; }
 }
 function cube(value: Element, key: number, parent: NodeListOf<Element>): void {
     throw new Error("Function not implemented.");

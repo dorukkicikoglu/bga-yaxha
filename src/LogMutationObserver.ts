@@ -1,3 +1,8 @@
+interface LogRowData { //this is used to return strings containing log-class-tag divs
+    log_html: string;
+    log_class: string;
+}
+
 class LogMutationObserver{
 	private nextTimestampValue:string = '';
 
@@ -46,32 +51,48 @@ class LogMutationObserver{
     }
 
     private processLogDiv(node: HTMLDivElement): void{
-        let classTag = dojo.query('*[log-class-tag]', node);
-        if(classTag.length > 0){
-            dojo.addClass(node, 'a-game-log ' + dojo.attr(classTag[0], 'log-class-tag'));
-            classTag.forEach(dojo.destroy);
-        } else if(dojo.query('.log-arrow-left, .log-arrow-right, .place-under-icon', node).length > 0) { //guarantee adding class in replay as preserve fields arent loaded
-            dojo.addClass(node, 'a-game-log');
-            if(dojo.query('.log-arrow-right', node).length > 0)
-                dojo.addClass(node, 'selected-cards-log');
-            else dojo.addClass(node, 'take-pile-log');
-        }
-        
-        dojo.query('.playername', node).forEach((playerName) => { dojo.attr(playerName, 'player-color', this.gameui.rgbToHex(dojo.style(playerName, 'color'))); });
+        const classTags: HTMLDivElement[] = Array.from(node.querySelectorAll('*[log-class-tag]'));
 
-        if(this.gameui.isDesktop() && dojo.hasClass(node, 'a-game-log')){
-            let timestamp = dojo.query('.timestamp', node);
+        for(const classTag of classTags){
+            const logClassName: string = classTag.getAttribute('log-class-tag');
+
+            let parentLog: HTMLDivElement = null;
+            let current: HTMLDivElement = classTag;
+            while (current) {
+                if (current.classList.contains('gamelogreview') || current.classList.contains('log')) {
+                    parentLog = current;
+                    break;
+                }
+                current = current.parentElement as HTMLDivElement;
+            }
+
+            if(parentLog)
+                parentLog.classList.add('a-game-log', logClassName);
+        }
+
+        classTags.forEach(classTag => classTag.remove());
+        
+        node.querySelectorAll('.playername').forEach((playerName: HTMLElement) => {
+            playerName.setAttribute('player-color', this.gameui.rgbToHex(window.getComputedStyle(playerName).color));
+        });
+
+        if(this.gameui.isDesktop() && node.classList.contains('a-game-log')){
+            let timestamp: HTMLDivElement[] = Array.from(node.querySelectorAll('.timestamp'));
             if(timestamp.length > 0){
                 this.nextTimestampValue = timestamp[0].innerText;
             } else if(this.observeLogs.hasOwnProperty('nextTimestampValue')){
-                let newTimestamp: HTMLDivElement = dojo.create('div', {class: 'timestamp'});
+                let newTimestamp: HTMLDivElement = document.createElement('div');
+                newTimestamp.classList.add('timestamp');
                 newTimestamp.innerHTML = this.nextTimestampValue;
-                dojo.place(newTimestamp, node);
+
+                node.appendChild(newTimestamp);
             }
         }
     }
 
-    public createLogSelectedMarketTiles(cardsData: {collectingPlayers: CollectedMarketTilesData[], pendingPlayers: CollectedMarketTilesData[]}): string {
+    private addLogClassTag(logHTML: string, logClass: string): LogRowData { return { log_html: logHTML + `<div log-class-tag="${logClass}"></div>`, log_class: logClass }; }
+
+    public createLogSelectedMarketTiles(cardsData: {collectingPlayers: CollectedMarketTilesData[], pendingPlayers: CollectedMarketTilesData[]}): LogRowData {
         let logHTML = '';
 
         cardsData.collectingPlayers.sort((a, b) => a.turn_order - b.turn_order);
@@ -95,14 +116,15 @@ class LogMutationObserver{
         cardsData.pendingPlayers.forEach(cardData => { logHTML += createPlayerRow(cardData, false); });
         logHTML = `<div class="market-interaction-rows-wrapper">${logHTML}</div>`;
 
-        return logHTML;
+        return this.addLogClassTag(logHTML, 'all-selected-tiles-log');
     }
 
-    public createLogIndividualMarketTileCollection(player_id: number, collected_market_index: number, collected_cubes: BaseCube[]): string {
-        return `<div class="player-collected-market-tile-row collecting">${this.gameui.divColoredPlayer(player_id, {class: 'playername'}, false)}<i class="log-arrow log-arrow-left fa6 fa-arrow-left"></i><div class="a-market-tile-icon" market-index="${collected_market_index}"></div></div>` + ' &nbsp; <div class="log-cubes-wrapper">' + collected_cubes.map(cube => this.gameui.createCubeDiv(cube).outerHTML).join('') + '</div>';
+    public createLogIndividualMarketTileCollection(player_id: number, collected_market_index: number, collected_cubes: BaseCube[]): LogRowData {
+        let logHTML = `<div class="player-collected-market-tile-row collecting">${this.gameui.divColoredPlayer(player_id, {class: 'playername'}, false)}<i class="log-arrow log-arrow-left fa6 fa-arrow-left"></i><div class="a-market-tile-icon" market-index="${collected_market_index}"></div></div>` + ' &nbsp; <div class="log-cubes-wrapper">' + collected_cubes.map(cube => this.gameui.createCubeDiv(cube).outerHTML).join('') + '</div>';
+        return this.addLogClassTag(logHTML, 'individual-collected-tiles-log');
     }
 
-    public createLogDisplayBuiltCubes(built_cubes: { [key: number]: CubeToPyramidMoveData[] }): string {
+    public createLogDisplayBuiltCubes(built_cubes: { [key: number]: CubeToPyramidMoveData[] }): LogRowData {
         let logHTML = '';
 
         for(const playerID in this.gameui.players){
@@ -139,16 +161,16 @@ class LogMutationObserver{
 
         logHTML = `<div class="built-cubes-rows-wrapper">${logHTML}</div>`;
 
-        return logHTML;
+        return this.addLogClassTag(logHTML, 'display-built-cubes-log');
     }
 
-    public createLogSwapTurnOrders(swapData: SwapTurnOrdersData[]): string {
-        const logHTML = `${this.gameui.divColoredPlayer(swapData[0].player_id, {class: 'playername swapper-name'}, false)} 
+    public createLogSwapTurnOrders(swapData: SwapTurnOrdersData[]): LogRowData {
+        let logHTML = `${this.gameui.divColoredPlayer(swapData[0].player_id, {class: 'playername swapper-name'}, false)} 
         <div class="turn-order-container-wrapper"><div class="turn-order-container" turn-order="${swapData[1].turn_order}"></div></div>
         <i class="log-arrow log-arrow-exchange fa6 fa-exchange"></i> 
         <div class="turn-order-container-wrapper"><div class="turn-order-container" turn-order="${swapData[0].turn_order}"></div></div>
         ${this.gameui.divColoredPlayer(swapData[1].player_id, {class: 'playername swapper-name'}, false)}`;
 
-        return logHTML;
+        return this.addLogClassTag(logHTML, 'swap-turn-orders-log');
     }
 }

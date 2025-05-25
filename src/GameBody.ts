@@ -53,6 +53,8 @@ class GameBody extends GameGui {
             }
         } else this.playerSeatOrder = Object.keys(gamedatas.players).map(Number); //spectator
 
+        document.body.setAttribute('player-count', this.playerSeatOrder.length.toString());
+
         let cubeColorCSS = '';
         for(let colorIndex in this.CUBE_COLORS){
             cubeColorCSS += `.a-cube[color="${colorIndex}"] { --cube-color: #${this.CUBE_COLORS[colorIndex].colorCode}; }
@@ -203,21 +205,19 @@ class GameBody extends GameGui {
                 args.processed = true;
 
                 // list of special keys we want to replace with images
-                const keys = ['textPlayerID', 'REVEALED_MARKET_TILES_DATA_STR', 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR', 'SWAP_TURN_ORDERS_DATA_STR', 'DISPLAY_BUILT_CUBES_STR', 'LOG_CLASS'];
+                const keys = ['textPlayerID', 'REVEALED_MARKET_TILES_DATA_STR', 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR', 'SWAP_TURN_ORDERS_DATA_STR', 'DISPLAY_BUILT_CUBES_STR'];
                 for(let key of keys) {
                     if(key in args) {
                         if(key == 'textPlayerID')
                             args['textPlayerID'] = this.divColoredPlayer(args['textPlayerID']);
                         else if(key == 'REVEALED_MARKET_TILES_DATA_STR')
-                            args['REVEALED_MARKET_TILES_DATA_STR'] = this.logMutationObserver.createLogSelectedMarketTiles(args['collectedMarketTilesData']);
+                            args['REVEALED_MARKET_TILES_DATA_STR'] = this.logMutationObserver.createLogSelectedMarketTiles(args['collectedMarketTilesData']).log_html;
                         else if(key == 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR')
-                            args['INDIVIDUAL_MARKET_TILES_COLLECTION_STR'] = this.logMutationObserver.createLogIndividualMarketTileCollection(args.player_id, args.collected_market_index, args.collected_cubes);
+                            args['INDIVIDUAL_MARKET_TILES_COLLECTION_STR'] = this.logMutationObserver.createLogIndividualMarketTileCollection(args.player_id, args.collected_market_index, args.collected_cubes).log_html;
                         else if(key == 'DISPLAY_BUILT_CUBES_STR')
-                            args['DISPLAY_BUILT_CUBES_STR'] = this.logMutationObserver.createLogDisplayBuiltCubes(args['built_cubes']);
+                            args['DISPLAY_BUILT_CUBES_STR'] = this.logMutationObserver.createLogDisplayBuiltCubes(args['built_cubes']).log_html;
                         else if(key == 'SWAP_TURN_ORDERS_DATA_STR')
-                            args['SWAP_TURN_ORDERS_DATA_STR'] = this.logMutationObserver.createLogSwapTurnOrders(args['swapData']);
-                        else if(key == 'LOG_CLASS')
-                            log = log + '<div log-class-tag="' + args['LOG_CLASS'] + '"></div>';
+                            args['SWAP_TURN_ORDERS_DATA_STR'] = this.logMutationObserver.createLogSwapTurnOrders(args['swapData']).log_html;
                     }
                 }
             }
@@ -435,6 +435,77 @@ class GameBody extends GameGui {
         console.log('notif_displayEndGameScore');
 
         await this.endGameScoringHandler.displayEndGameScore(args.endGameScoring);
+    }
+
+    public async notif_forOtherDevicesAddedCubeToPyramid(args) {
+        console.log('notif_forOtherDevicesAddedCubeToPyramid');
+
+        if(this.isReplay())
+            return;
+        
+        const cubesInConstruction = this.myself.pyramid.getCubesInConstruction();
+        const cubeInPyramid = cubesInConstruction[args.cube_data.cube_id] !== undefined;
+
+        if(!cubeInPyramid){
+            if(this.myself.pyramid.getMoveCubeAnim()){
+                setTimeout(async () => {
+                    await this.notif_forOtherDevicesAddedCubeToPyramid(args);
+                }, 50);
+            } else await this.myself.pyramid.animateUnplacedCubeToPyramid(args.cube_data, 'from_market', true);
+        }
+    }
+
+    public async notif_forOtherDevicesSwitchedCubeColor(args) {
+        console.log('notif_forOtherDevicesSwitchedCubeColor');
+        
+        if(this.isReplay())
+            return;
+
+        const unplacedCube = this.myself.pyramid.getUnplacedCube();
+
+        if(unplacedCube.cube_id.toString() != args.cube_data.cube_id.toString() || unplacedCube.color.toString() != args.cube_data.color.toString())
+            return;
+
+        this.myself.pyramid.onSwitchColorButtonClicked(true);
+    }
+
+    public async notif_forOtherDevicesMovedCubeInPyramid(args) {
+        console.log('notif_forOtherDevicesMovedCubeInPyramid');
+
+        if(this.isReplay())
+            return;
+        
+        const cubesInConstruction = this.myself.pyramid.getCubesInConstruction();
+        const cubeInPyramid = cubesInConstruction[args.cube_data.cube_id] !== undefined;
+
+        if(!cubeInPyramid)
+            return;
+
+        const existingCube = cubesInConstruction[args.cube_data.cube_id];
+        if(existingCube.pos_x == args.cube_data.pos_x && existingCube.pos_y == args.cube_data.pos_y && existingCube.pos_z == args.cube_data.pos_z)
+            return;
+
+        let newCubeData = args.cube_data;
+        newCubeData.div = existingCube.div;
+
+        if(this.myself.pyramid.getMoveCubeAnim()){
+            setTimeout(async () => {
+                await this.myself.pyramid.animateUnplacedCubeToPyramid(newCubeData, 'from_last_built', true);
+            }, 50);
+        } else await this.myself.pyramid.animateUnplacedCubeToPyramid(newCubeData, 'from_last_built', true);
+    }
+
+    public async notif_forOtherDevicesUndoBuildPyramid(args) {
+        console.log('notif_forOtherDevicesUndoBuildPyramid');
+        
+        if(this.isReplay())
+            return;
+
+        const cubesInConstruction = this.myself.pyramid.getCubesInConstruction();
+        if(Object.keys(cubesInConstruction).length <= 0)
+            return;
+
+        await this.myself.pyramid.undoPlaceCubeButtonClicked(true);
     }
 
     public async notif_zombieIndividualPlayerCollection(args) {

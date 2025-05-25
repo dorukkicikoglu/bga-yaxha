@@ -44,7 +44,10 @@ class YXHPyramidManager extends APP_DbObject{
         $newOrderInConstruction = 1 + $this->getUniqueValueFromDB("SELECT COALESCE(MAX(order_in_construction), 0) FROM cubes WHERE order_in_construction IS NOT NULL AND card_location_arg = $playerID");
 
         $this->DbQuery("UPDATE cubes SET pos_x = $posX, pos_y = $posY, pos_z = $posZ, card_location = 'pyramid', card_location_arg = $playerID, order_in_construction = $newOrderInConstruction WHERE card_id = $cubeID");
-        $this->parent->notify->player($playerID, 'cubePlacedInPyramid', '', []);
+        $cubeColor = $this->getUniqueValueFromDB("SELECT color FROM cubes WHERE card_id = $cubeID");
+        
+        $cubeData = ['cube_id' => $cubeID, 'pos_x' => $posX, 'pos_y' => $posY, 'pos_z' => $posZ, 'color' => $cubeColor, 'order_in_construction' => $newOrderInConstruction];
+        $this->parent->notify->player($playerID, 'forOtherDevicesAddedCubeToPyramid', '', ['cube_data' => $cubeData]);
     }
 
     private function isMoveValid($playerID, $cubeID, $posX, $posY, $posZ){
@@ -136,7 +139,7 @@ class YXHPyramidManager extends APP_DbObject{
 
     public function moveCubeInPyramid($playerID, $cubeID, $posX, $posY, $posZ) {
         $this->checkBuildableState();
-        $cube = $this->getObjectFromDB("SELECT card_location, card_location_arg, order_in_construction FROM cubes WHERE card_id = $cubeID");
+        $cube = $this->getObjectFromDB("SELECT card_location, card_location_arg, order_in_construction, color FROM cubes WHERE card_id = $cubeID");
 
         if ($cube['order_in_construction'] == null || $cube['card_location_arg'] != $playerID)
             throw new \BgaUserException(clienttranslate("You can only move cubes that you have placed in your pyramid"));
@@ -146,6 +149,9 @@ class YXHPyramidManager extends APP_DbObject{
 
         $this->isMoveValid($playerID, $cubeID, $posX, $posY, $posZ);
         $this->DbQuery("UPDATE cubes SET pos_x = $posX, pos_y = $posY, pos_z = $posZ WHERE card_id = $cubeID");
+        
+        $cubeData = ['cube_id' => $cubeID, 'pos_x' => $posX, 'pos_y' => $posY, 'pos_z' => $posZ, 'color' => $cube['color'], 'order_in_construction' => $cube['order_in_construction']];
+        $this->parent->notify->player($playerID, 'forOtherDevicesMovedCubeInPyramid', '', ['cube_data' => $cubeData]);
     }
 
     public function switchCubeColor($playerID, $cubeID): void {
@@ -154,7 +160,7 @@ class YXHPyramidManager extends APP_DbObject{
 
         $playerMarketIndex = $this->getUniqueValueFromDB("SELECT collected_market_index FROM player WHERE player_id = $playerID");
 
-        $lastAddedCube = $this->getObjectFromDB("SELECT * FROM cubes WHERE order_in_construction IS NOT NULL AND card_location_arg = $playerID ORDER BY order_in_construction DESC LIMIT 1");
+        $lastAddedCube = $this->getObjectFromDB("SELECT card_id as cube_id, color, pos_x, pos_y, pos_z, order_in_construction FROM cubes WHERE order_in_construction IS NOT NULL AND card_location_arg = $playerID ORDER BY order_in_construction DESC LIMIT 1");
         if (!$lastAddedCube)
             throw new \BgaUserException(clienttranslate("No cube found in construction"));
 
@@ -165,9 +171,19 @@ class YXHPyramidManager extends APP_DbObject{
             pos_y = NULL, 
             pos_z = NULL, 
             order_in_construction = NUll
-            WHERE card_id = ".$lastAddedCube['card_id']);
+            WHERE card_id = ".$lastAddedCube['cube_id']);
 
-        $this->DbQuery("UPDATE cubes SET card_location = 'pyramid', pos_x = ".$lastAddedCube['pos_x'].", pos_y = ".$lastAddedCube['pos_y'].", pos_z = ".$lastAddedCube['pos_z'].", card_location_arg = $playerID, order_in_construction = ".$lastAddedCube['order_in_construction']." WHERE card_id = $cubeID");
+        $this->DbQuery("UPDATE cubes SET 
+            card_location = 'pyramid', 
+            pos_x = ".$lastAddedCube['pos_x'].", 
+            pos_y = ".$lastAddedCube['pos_y'].", 
+            pos_z = ".$lastAddedCube['pos_z'].", 
+            card_location_arg = $playerID, 
+            order_in_construction = ".$lastAddedCube['order_in_construction']." 
+            WHERE card_id = $cubeID");
+
+        $cubeData = ['cube_id' => $lastAddedCube['cube_id'], 'color' => $lastAddedCube['color']];
+        $this->parent->notify->player($playerID, 'forOtherDevicesSwitchedCubeColor', '', ['cube_data' => $cubeData]);
     }
 
     public function undoBuildPyramid($playerID): void {
@@ -180,7 +196,7 @@ class YXHPyramidManager extends APP_DbObject{
         $this->parent->not_a_move_notification = true;
         $this->DbQuery("UPDATE cubes SET card_location = 'market', card_location_arg = $playerMarketIndex, pos_x = NULL, pos_y = NULL, pos_z = NULL, order_in_construction = NULL WHERE (order_in_construction IS NOT NULL AND card_location_arg = $playerID) OR (card_location = 'to_discard' AND card_location_arg = $playerMarketIndex)");
         $this->DbQuery("UPDATE player SET are_cubes_built = 'false' WHERE player_id = $playerID");
-        $this->parent->notify->player($playerID, 'undoneBuildPyramid', '', []);
+        $this->parent->notify->player($playerID, 'forOtherDevicesUndoBuildPyramid', '', []);
 
         if ($this->parent->gamestate->state()['name'] === 'buildPyramid')
             $this->parent->gamestate->setPlayersMultiactive([$playerID], 'buildPyramid');

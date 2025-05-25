@@ -24,10 +24,12 @@ class MarketHandler{
         Object.keys(this.gameui.players).forEach((_, i) => {
             // First loop: Create Market Tiles
             this.marketTiles[i] = document.createElement('div');
-            this.marketTiles[i].innerHTML = '<div class="cubes-container"></div>';
+            this.marketTiles[i].innerHTML = `
+                <div class="cubes-container"></div>
+                <div class="collected-pointer"></div>
+            `;
             this.marketTiles[i].className = 'a-market-tile market-tile-' + i + ' ' + (this.gameui.gamedatas.gamestate.name === 'allSelectMarketTile' && playerSelectedMarketIndex !== null && Number(playerSelectedMarketIndex) === i ? 'selected-market-tile' : '');
             this.marketTiles[i].setAttribute('market-index', i.toString());
-
             this.marketTiles[i].addEventListener('click', (event: Event) => this.marketTileClicked(event));
 
             this.marketTilesContainer.appendChild(this.marketTiles[i]);
@@ -306,8 +308,14 @@ class MarketHandler{
         if(collectedMarketIndex === null)
             return;
 
+        const playerColor = this.gameui.players[this.gameui.myself.playerID].playerColor;
         const collectedMarketTile = this.marketTiles[collectedMarketIndex];
-        collectedMarketTile.style.setProperty('--collecting-player-color', '#' + this.gameui.players[this.gameui.myself.playerID].playerColor);
+        collectedMarketTile.style.setProperty('--collecting-player-color', '#' + playerColor);
+
+        const collectedPointer = collectedMarketTile.querySelector('.collected-pointer') as HTMLDivElement;
+        const fillColor = 'ffffffee';
+        collectedPointer.style.backgroundImage = `url('data:image/svg+xml,<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 101" width="120" height="101"><title>hbdd1o0cf4mmb8matq8</title><style>.s0 { fill: %23${fillColor};stroke: %23${playerColor};paint-order:stroke fill markers;stroke-linejoin: round;stroke-width: 16 } </style><path fill-rule="evenodd" class="s0" d="m90 7l45 86h-90z"/></svg>')`;
+
         collectedMarketTile.classList.add('collected-market-tile');
     }
 
@@ -325,7 +333,7 @@ class MarketHandler{
             const playerID = this.collectedMarketTilesData.find((data) => Number(data.collected_market_index) === Number(marketIndex))?.player_id;
 
             if(!playerID || !built_cubes[playerID]) continue;
-            if(this.gameui.myself && this.gameui.myself.playerID == Number(playerID))
+            if(!this.gameui.isReplay() && this.gameui.myself && this.gameui.myself.playerID == Number(playerID))
                 continue;
 
             const player = this.gameui.players[playerID];
@@ -389,8 +397,13 @@ class MarketHandler{
     public async animateSwapTurnOrders(swapData: SwapTurnOrdersData[]) {
         let [swapperLeft, swapperRight] = swapData;
 
-        const rect1: DOMRect = this.gameui.players[swapperLeft.player_id].pyramid.getPyramidContainerRect();
-        const rect2: DOMRect = this.gameui.players[swapperRight.player_id].pyramid.getPyramidContainerRect();
+        const playerIDToTurnOrderContainer: { [playerID: number]: HTMLDivElement } = {
+            [swapperLeft.player_id]: this.gameui.players[swapperLeft.player_id].pyramid.getTurnOrderContainer(),
+            [swapperRight.player_id]: this.gameui.players[swapperRight.player_id].pyramid.getTurnOrderContainer()
+        };
+
+        const rect1: DOMRect = this.gameui.getPos(playerIDToTurnOrderContainer[swapperLeft.player_id]);
+        const rect2: DOMRect = this.gameui.getPos(playerIDToTurnOrderContainer[swapperRight.player_id]);
 
         if (rect2.left < rect1.left || (rect2.left === rect1.left && rect2.top < rect1.top)) {
             [swapperLeft, swapperRight] = [swapperRight, swapperLeft];
@@ -402,7 +415,7 @@ class MarketHandler{
         //get the raised card width
         const currentCardWidths: { [playerID: number]: number } = {};
         [swapperLeft, swapperRight].forEach(swapper => {
-            const turnOrderContainer = this.gameui.players[swapper.player_id].pyramid.getTurnOrderContainer();
+            const turnOrderContainer = playerIDToTurnOrderContainer[swapper.player_id];
             turnOrderContainer.style.transform = 'none'; 
             const cardRect = turnOrderContainer.getBoundingClientRect();
             currentCardWidths[swapper.player_id] = cardRect.width;
@@ -416,7 +429,7 @@ class MarketHandler{
             const isLeftPlayer = swapper.player_id == swapperLeft.player_id;
             const destinationPlayerID = isLeftPlayer ? swapperRight.player_id : swapperLeft.player_id;
 
-            const turnOrderContainer = this.gameui.players[swapper.player_id].pyramid.getTurnOrderContainer();
+            const turnOrderContainer = playerIDToTurnOrderContainer[swapper.player_id];
             const turnOrderClone = turnOrderContainer.cloneNode(true) as HTMLDivElement;
             turnOrderClone.classList.add('animating-turn-order-container');
             turnOrderClone.setAttribute('destination-player-id', destinationPlayerID.toString());
@@ -463,7 +476,7 @@ class MarketHandler{
             const isLeftPlayer = turnOrderClone.getAttribute('is-left-player') == 'true';
 
             const otherPyramid = this.gameui.players[destinationPlayerID].pyramid;
-            const otherTurnOrderContainer = otherPyramid.getTurnOrderContainer();
+            const otherTurnOrderContainer = playerIDToTurnOrderContainer[destinationPlayerID];
 
             const targetLowered = otherTurnOrderContainer.cloneNode(true) as HTMLDivElement;
 

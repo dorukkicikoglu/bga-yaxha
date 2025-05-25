@@ -29,7 +29,7 @@ class EndGameScoringHandler{
         this.scoreContainer.classList.add('end-game-score-container');
         this.scoreContainer.style.opacity = '0';
         this.scoreContainer.innerHTML = `
-            <div class="show-table-button" style="display: none;">
+            <div class="show-table-button" style="display: none;" title="${_('Show Scoreboard')}">
                 <i class="fa6 fa6-ranking-star"></i>
             </div> 
             <div class="maximized-content"> 
@@ -129,12 +129,14 @@ class EndGameScoringHandler{
             this.hideButton.style.display = 'none';
             this.scoreContainer.querySelectorAll('.maximized-content').forEach((node: HTMLDivElement) => { node.style.display = 'none'; });
             this.showButton.style.display = null;
+            this.scoreContainer.setAttribute('collapsed', 'true');
         });
 
         this.showButton.addEventListener('click', () => {
             this.hideButton.style.display = null;
             this.scoreContainer.querySelectorAll('.maximized-content').forEach((node: HTMLDivElement) => { node.style.display = null; });
             this.showButton.style.display = 'none';
+            this.scoreContainer.removeAttribute('collapsed');
         });
     }
 
