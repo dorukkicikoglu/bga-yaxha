@@ -496,16 +496,6 @@ class Game extends \Table
     }
 
     /**
-     * Returns the game name.
-     *
-     * IMPORTANT: Please do not modify.
-     */
-    protected function getGameName()
-    {
-        return "yaxha";
-    }
-
-    /**
      * This method is called only once, when a new game is launched. In this method, you must setup the game
      *  according to the game rules, so that the game is ready to be played.
      */
@@ -601,12 +591,12 @@ class Game extends \Table
         $this->initStat("player", "player_total_points_from_bonus_cards", 0);
         $this->initStat("player", "player_bonus_card_largest_orange", 0);
         $this->initStat("player", "player_bonus_card_largest_blue", 0);
-        $this->initStat("player", "player_bonus_card_largest_green", 0);
+        $this->initStat("player", "player_bonus_card_largest_teal", 0);
         $this->initStat("player", "player_bonus_card_largest_yellow", 0);
         $this->initStat("player", "player_bonus_card_largest_white", 0);
         $this->initStat("player", "player_bonus_card_larger_right_orange", 0);
         $this->initStat("player", "player_bonus_card_larger_right_blue", 0);
-        $this->initStat("player", "player_bonus_card_larger_right_green", 0);
+        $this->initStat("player", "player_bonus_card_larger_right_teal", 0);
         $this->initStat("player", "player_bonus_card_larger_right_yellow", 0);
         $this->initStat("player", "player_bonus_card_larger_right_white", 0);
         $this->initStat("player", "player_bonus_card_largest_group_any_color", 0);

@@ -88,10 +88,10 @@
             "name": "Points from bonus card - largest group of blue cubes",
             "type": "int"
         },
-        "player_bonus_card_largest_green":
+        "player_bonus_card_largest_teal":
         {
             "id": 22,
-            "name": "Points from bonus card - largest group of green cubes",
+            "name": "Points from bonus card - largest group of teal cubes",
             "type": "int"
         },
         "player_bonus_card_largest_yellow":
@@ -118,10 +118,10 @@
             "name": "Points from bonus card - large blue group than player to the right",
             "type": "int"
         },
-        "player_bonus_card_larger_right_green":
+        "player_bonus_card_larger_right_teal":
         {
             "id": 27,
-            "name": "Points from bonus card - large green group than player to the right",
+            "name": "Points from bonus card - large teal group than player to the right",
             "type": "int"
         },
         "player_bonus_card_larger_right_yellow":

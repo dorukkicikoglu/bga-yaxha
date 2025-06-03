@@ -3,12 +3,15 @@ class BackgroundHandler{
     private shaman: HTMLDivElement;
     private pyramid: HTMLDivElement;
     private shamanTop = 0.14;
+    private shamanMinTop = 0.02;
+    private shamanMaxTop = 0.2;
     private shamanLeft = 0.18;
     private lastShamanMoveTime: number = 0;
     private minTimeBetweenShamanMoves = 10000;
 
 	constructor(private gameui: GameBody) {
         this.displayBackground();
+        this.bindBodyScrollEvent();
     }
 
     private displayBackground(){
@@ -44,16 +47,19 @@ class BackgroundHandler{
             return;
         }
 
-        const distance = 0.006 + Math.random() * 0.01;
-        const destinationTop = direction === 'up' 
+        const distance = 0.035 + Math.random() * 0.025;
+        let destinationTop = direction === 'up' 
             ? this.shamanTop + distance
             : this.shamanTop - distance;
+
+        destinationTop = Math.min(destinationTop, this.shamanMaxTop);
+        destinationTop = Math.max(destinationTop, this.shamanMinTop);
 
         const destinationLeft = this.shamanLeft + (Math.random() * 0.02 + 0.01);
 
         const moveTime = 800 + Math.random() * 200;
-        const delay = 40000 + Math.random() * 30000;
-
+        const delay = 38000 + Math.random() * 27000;
+        
         const moveShamanAnim: ReturnType<typeof dojo.animateProperty> = this.gameui.animationHandler.animateProperty({
             node: this.shaman,
             properties: {top: this.pyramid.offsetHeight * destinationTop, left: this.pyramid.offsetWidth * destinationLeft},
@@ -65,6 +71,7 @@ class BackgroundHandler{
                 this.shaman.classList.add('is-shaking'); 
             },
             onEnd: () => { 
+                this.shamanTop = destinationTop;
                 this.shaman.classList.add('final-shake');
                 this.shaman.classList.remove('is-shaking');
                 setTimeout(() => { this.shaman.classList.remove('final-shake'); }, 500);
@@ -94,7 +101,7 @@ class BackgroundHandler{
             '.eye-lid.lid-right', //right eye
         ];
         const whichEyes = arr[Math.floor(Math.random() * arr.length)];
-        const delay = 28000 + Math.random() * 14000;
+        const delay = 24000 + Math.random() * 10000;
 
         const eyelids = this.shaman.querySelectorAll(whichEyes);
         
@@ -135,6 +142,32 @@ class BackgroundHandler{
     public stopEyesRainbow(){
         this.shaman.classList.remove('rainbow-eyes');
     }
+
+    private bindBodyScrollEvent() {
+        if(this.gameui.isMobile())
+            return;
+
+        document.addEventListener('scroll', () => {
+            const scrollTop = window.scrollY;
+            const windowHeight = window.innerHeight;
+            const scrollRangeStart = windowHeight * 0.3;
+            const scrollRangeEnd = windowHeight * 1.2;
+    
+            let scale = 1;
+            let opacity = 0.8;
+    
+            if (scrollTop > scrollRangeStart) {
+                const relativeScroll = Math.min(scrollTop, scrollRangeEnd) - scrollRangeStart;
+                const scalePercent = relativeScroll / (scrollRangeEnd - scrollRangeStart);
+                scale = 1 + scalePercent * 0.5; // scale from 1 to 1.5
+                
+                opacity = 0.8 + scalePercent * 0.2;
+            }
+    
+            this.pyramid.style.transform = `translateX(-50%) translateY(-100%) scale(${scale})`;
+            this.pyramid.style.opacity = `${opacity}`;
+        });
+    }  
 }
 
 

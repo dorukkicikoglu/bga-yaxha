@@ -26,6 +26,10 @@ class GameBody extends GameGui {
     public nextPlayerTable: Record<number, number>;
     public rightPlayerID: number;
 
+    public BAKED_CUBE_TEXTURE_COUNT = 300;
+    public BAKED_CUBE_COLUMN_COUNT = 15;
+    public debugProceduralCubeTexture: boolean = false;
+
     constructor() {
         super();
 
@@ -56,10 +60,9 @@ class GameBody extends GameGui {
         document.body.setAttribute('player-count', this.playerSeatOrder.length.toString());
 
         let cubeColorCSS = '';
-        for(let colorIndex in this.CUBE_COLORS){
-            cubeColorCSS += `.a-cube[color="${colorIndex}"] { --cube-color: #${this.CUBE_COLORS[colorIndex].colorCode}; }
-            `;
-        }
+        if(this.debugProceduralCubeTexture)
+            for(let colorIndex in this.CUBE_COLORS)
+                cubeColorCSS += `.a-cube[color="${colorIndex}"] { --cube-color: #${this.CUBE_COLORS[colorIndex].colorCode}; }`;
 
         const pyramidCSSRange = [];
         for (let i = -1 * (this.PYRAMID_MAX_SIZE - 1); i <= this.PYRAMID_MAX_SIZE - 1; i++)
@@ -80,12 +83,22 @@ class GameBody extends GameGui {
             });
 
         let cubeTextureCSS = '';
-        for(let i = 0; i < this.CUBE_COUNT_IN_GAME; i++)
-            cubeTextureCSS += `
-                .a-cube[cube-id="${i}"] .top-side{ background-position: ${Math.random() * 100}% ${Math.random() * 100}%, 0 0; }
-                .a-cube[cube-id="${i}"] .right-side{ background-position: ${Math.random() * 100}% ${Math.random() * 100}%; }
-                .a-cube[cube-id="${i}"] .bottom-side{ background-position: ${Math.random() * 100}% ${Math.random() * 100}%; }
-            `;
+        const bakedColorCount = Math.floor(this.BAKED_CUBE_TEXTURE_COUNT / this.CUBE_COLORS.length);
+        const cubeCountPerColor = Math.floor(this.CUBE_COUNT_IN_GAME / this.CUBE_COLORS.length);
+        const cssArr = [];
+        for(let colorIndex = 0; colorIndex < this.CUBE_COLORS.length; colorIndex++){
+            const colorRange = Array.from({length: bakedColorCount}, (_, i) => (i + (colorIndex * bakedColorCount))); // create array of numbers from 0 to bakedColorCount - 1
+            const colorRangeShuffled = colorRange.sort(() => Math.random() - 0.5);
+            colorRangeShuffled.length = cubeCountPerColor;
+
+            for(let i = 0; i < colorRangeShuffled.length; i++){
+                const cubeId = cssArr.length + 1;
+                const colIndex = colorRangeShuffled[i] % this.BAKED_CUBE_COLUMN_COUNT;
+                const rowIndex = Math.floor(colorRangeShuffled[i] / this.BAKED_CUBE_COLUMN_COUNT);
+                cssArr.push(`.a-cube[procedural-texture="false"][cube-id="${cubeId}"] .cube-image{ background-position: -${colIndex * 100}% -${rowIndex * 100}%, 0 0; }`);
+            }
+        }
+        cubeTextureCSS += cssArr.join('\n');
 
         document.getElementById('game_play_area').insertAdjacentHTML('beforeend', `
             <style>
@@ -127,6 +140,12 @@ class GameBody extends GameGui {
 
         if(gamedatas.hasOwnProperty('endGameScoring'))
              this.endGameScoringHandler.displayEndGameScore(gamedatas.endGameScoring);
+
+        document.addEventListener('click', (event) => {
+            const target = event.target as HTMLElement;
+            if (this.myself && ['a-cube', 'a-market-tile'].some(cls => target.classList.contains(cls) || target.closest('.' + cls)))
+                this.myself.pyramid.wiggleSnapPoints();
+        });
 
         // Setup game notifications to handle (see "setupNotifications" method below)
         this.setupNotifications();
@@ -374,11 +393,75 @@ class GameBody extends GameGui {
     public createCubeDiv(cube: BaseCube): HTMLDivElement {
         const cubeDiv = document.createElement('div');
         cubeDiv.className = 'a-cube';
-        cubeDiv.innerHTML = '<div class="cube-background"></div><div class="top-side"></div><div class="right-side"></div><div class="bottom-side"></div>';
+        cubeDiv.innerHTML = this.debugProceduralCubeTexture ? '<div class="cube-background"></div><div class="top-side"></div><div class="right-side"></div><div class="bottom-side"></div>' : '<div class="cube-shadow"></div><div class="cube-image"></div>';
         cubeDiv.setAttribute('cube-id', cube.cube_id.toString());
         cubeDiv.setAttribute('color', cube.color.toString());
 
+        cubeDiv.setAttribute('procedural-texture', this.debugProceduralCubeTexture ? 'true' : 'false');
+
         return cubeDiv;
+    }
+
+    public debugGenerateCubeTexture(cubesCount: number = this.BAKED_CUBE_TEXTURE_COUNT): void {
+        let proceduralCubeTextureCSS = '';
+        for(let i = 1; i <= cubesCount; i++)
+            proceduralCubeTextureCSS += `
+                .a-cube[procedural-texture="true"][cube-id="${i}"] .top-side{ background-position: ${Math.random() * 100}% ${Math.random() * 100}%, 0 0; }
+                .a-cube[procedural-texture="true"][cube-id="${i}"] .right-side{ background-position: ${Math.random() * 100}% ${Math.random() * 100}%; }
+                .a-cube[procedural-texture="true"][cube-id="${i}"] .bottom-side{ background-position: ${Math.random() * 100}% ${Math.random() * 100}%; }
+            `;
+
+        document.getElementById('game_play_area').insertAdjacentHTML('beforeend', `
+            <style>
+                ${proceduralCubeTextureCSS}
+            </style>
+        </div>`);
+
+        document.getElementById('overall-content').style.display = 'none';   
+        document.getElementById('chatbar').style.display = 'none';   
+
+        // Add styles to document
+        const style = document.createElement('style');
+        style.textContent = `
+            ${proceduralCubeTextureCSS}
+            #cube-container{ position: absolute; top: 0; left: 0; width: 100%; padding-bottom: 100px; background: linear-gradient(to bottom, #000000 30%, #ff0000 30%); display: flex; flex-wrap: wrap; align-content: flex-start; }
+            .a-cube {width: 80px; height: 80px; position: relative; margin: 13px 14px; }
+            .cube-background, .top-side, .right-side, .bottom-side { position: absolute; width: 100%; height: 100%; }
+            .cube-background{ display: none; }
+
+        `;
+        document.head.appendChild(style);
+
+        // Create the main container div
+        const container = document.createElement('div');
+        container.setAttribute('id', 'cube-container');
+
+        for (let i = 1; i <= cubesCount; i++) {
+            const color = Math.floor((i - 1) / (cubesCount / this.CUBE_COLORS.length));
+
+            const cube = document.createElement('div');
+            cube.className = 'a-cube';
+            cube.setAttribute('cube-id', i.toString());
+            cube.setAttribute('color', color.toString());
+
+            const background = document.createElement('div');
+            background.className = 'cube-background';
+            const topSide = document.createElement('div');
+            topSide.className = 'top-side';
+            const rightSide = document.createElement('div');
+            rightSide.className = 'right-side';
+            const bottomSide = document.createElement('div');
+            bottomSide.className = 'bottom-side';
+
+            cube.appendChild(background);
+            cube.appendChild(topSide);
+            cube.appendChild(rightSide);
+            cube.appendChild(bottomSide);
+            cube.setAttribute('procedural-texture', 'true');
+            container.appendChild(cube);
+        }
+
+        document.body.appendChild(container);
     }
 
     //notification functions

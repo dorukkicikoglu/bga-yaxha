@@ -22,8 +22,8 @@ class YXHBonusCardsManager extends APP_DbObject
                 $scores = $this->addCardBonusForLargestColor($scores, CUBE_COLOR_ORANGE);
             else if($bonusCardID == BONUS_CARD_LARGEST_BLUE)
                 $scores = $this->addCardBonusForLargestColor($scores, CUBE_COLOR_BLUE);
-            else if($bonusCardID == BONUS_CARD_LARGEST_GREEN)
-                $scores = $this->addCardBonusForLargestColor($scores, CUBE_COLOR_GREEN);
+            else if($bonusCardID == BONUS_CARD_LARGEST_TEAL)
+                $scores = $this->addCardBonusForLargestColor($scores, CUBE_COLOR_TEAL);
             else if($bonusCardID == BONUS_CARD_LARGEST_YELLOW)
                 $scores = $this->addCardBonusForLargestColor($scores, CUBE_COLOR_YELLOW);
             else if($bonusCardID == BONUS_CARD_LARGEST_WHITE)
@@ -32,8 +32,8 @@ class YXHBonusCardsManager extends APP_DbObject
                 $scores = $this->getCardBonusForLargerRightColor($scores, CUBE_COLOR_ORANGE);
             else if($bonusCardID == BONUS_CARD_LARGER_RIGHT_BLUE)
                 $scores = $this->getCardBonusForLargerRightColor($scores, CUBE_COLOR_BLUE);
-            else if($bonusCardID == BONUS_CARD_LARGER_RIGHT_GREEN)
-                $scores = $this->getCardBonusForLargerRightColor($scores, CUBE_COLOR_GREEN);
+            else if($bonusCardID == BONUS_CARD_LARGER_RIGHT_TEAL)
+                $scores = $this->getCardBonusForLargerRightColor($scores, CUBE_COLOR_TEAL);
             else if($bonusCardID == BONUS_CARD_LARGER_RIGHT_YELLOW)
                 $scores = $this->getCardBonusForLargerRightColor($scores, CUBE_COLOR_YELLOW);
             else if($bonusCardID == BONUS_CARD_LARGER_RIGHT_WHITE)
@@ -68,8 +68,8 @@ class YXHBonusCardsManager extends APP_DbObject
             $bonusCardID = BONUS_CARD_LARGEST_ORANGE;
         else if($color == CUBE_COLOR_BLUE)
             $bonusCardID = BONUS_CARD_LARGEST_BLUE;
-        else if($color == CUBE_COLOR_GREEN)
-            $bonusCardID = BONUS_CARD_LARGEST_GREEN;
+        else if($color == CUBE_COLOR_TEAL)
+            $bonusCardID = BONUS_CARD_LARGEST_TEAL;
         else if($color == CUBE_COLOR_YELLOW)
             $bonusCardID = BONUS_CARD_LARGEST_YELLOW;
         else if($color == CUBE_COLOR_WHITE)
@@ -104,8 +104,8 @@ class YXHBonusCardsManager extends APP_DbObject
             $bonusCardID = BONUS_CARD_LARGER_RIGHT_ORANGE;
         else if($color == CUBE_COLOR_BLUE)
             $bonusCardID = BONUS_CARD_LARGER_RIGHT_BLUE;
-        else if($color == CUBE_COLOR_GREEN)
-            $bonusCardID = BONUS_CARD_LARGER_RIGHT_GREEN;
+        else if($color == CUBE_COLOR_TEAL)
+            $bonusCardID = BONUS_CARD_LARGER_RIGHT_TEAL;
         else if($color == CUBE_COLOR_YELLOW)
             $bonusCardID = BONUS_CARD_LARGER_RIGHT_YELLOW;
         else if($color == CUBE_COLOR_WHITE)

@@ -100,9 +100,10 @@ class EndGameScoringHandler{
             const scoreType = scoreTypes[i];
             
             let scoreTypeIconHTML: string;
-            if(scoreType.type === 'color')
-                scoreTypeIconHTML = this.gameui.createCubeDiv({color: scoreType.index, cube_id: 'score-sheet-cube'}).outerHTML;
-            else if(scoreType.type === 'bonus')
+            if(scoreType.type === 'color'){
+                const cubeID = 1 + (parseInt(scoreType.index) * (this.gameui.CUBE_COUNT_IN_GAME / this.gameui.CUBE_COLORS.length));
+                scoreTypeIconHTML = this.gameui.createCubeDiv({color: scoreType.index, cube_id: cubeID.toString()}).outerHTML;
+            }else if(scoreType.type === 'bonus')
                 scoreTypeIconHTML = `<div class="a-bonus-card-icon-wrapper"><div class="a-bonus-card-icon" bonus-card-id="${scoreType.index}" id="score-sheet-bonus-card-${scoreType.index}"></div></div>`;
             else scoreTypeIconHTML = `<i class="fa fa-star total-icon"></i>`;
 

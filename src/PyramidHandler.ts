@@ -822,7 +822,6 @@ class PyramidHandler {
 
     private arrangeCubesZIndex() {
         let cubes: HTMLDivElement[] = Array.from(this.cubesContainer.querySelectorAll('.a-cube, .pyramid-cube-snap-point, .switch-color-button'));
-
         cubes.sort(function(a, b) {
             const posZA = parseInt(a.getAttribute("pos-z"));
             const posZB = parseInt(b.getAttribute("pos-z"));
@@ -952,16 +951,18 @@ class PyramidHandler {
         const possibleColorsString = possibleColors.join('_');
 
         let switchColorButton: HTMLDivElement = document.createElement('div');
-        switchColorButton.innerHTML = `<div class="switch-color-button" pos-x="${this.unplacedCube.pos_x}" pos-y="${this.unplacedCube.pos_y}" pos-z="${this.unplacedCube.pos_z}" possible-colors="${possibleColorsString}" ><i class="fa6 fa6-exchange switch-color-icon"></i></div>`;
+        switchColorButton.innerHTML = `<div class="switch-color-button" pos-x="${this.unplacedCube.pos_x}" pos-y="${this.unplacedCube.pos_y}" pos-z="${this.unplacedCube.pos_z}" possible-colors="${possibleColorsString}" ><div class="covered-cube-face"></div><i class="fa6 fa6-exchange switch-color-icon"></i></div>`;
         switchColorButton = switchColorButton.firstElementChild as HTMLDivElement;
-
+        switchColorButton.setAttribute('procedural-texture', this.gameui.debugProceduralCubeTexture ? 'true' : 'false');
+        
         this.cubesContainer.appendChild(switchColorButton);
 
-        const topSide = this.unplacedCube.div.querySelector('.top-side') as HTMLDivElement;
-        const computedStyle = window.getComputedStyle(topSide);
-        switchColorButton.style.backgroundPosition = computedStyle.backgroundPosition;
+        const computedStyle = this.gameui.debugProceduralCubeTexture ? 
+            window.getComputedStyle(this.unplacedCube.div.querySelector('.top-side') as HTMLDivElement) :
+            window.getComputedStyle(this.unplacedCube.div.querySelector('.cube-image') as HTMLDivElement);
+        
+        (switchColorButton.querySelector('.covered-cube-face') as HTMLDivElement).style.backgroundPosition = computedStyle.backgroundPosition;
         switchColorButton.style.opacity = '1';
-        switchColorButton.style.backgroundColor = '#' + this.gameui.CUBE_COLORS[this.unplacedCube.color].colorCode + 'E0';
 
         switchColorButton.addEventListener('click', () => this.onSwitchColorButtonClicked());
     }
@@ -985,7 +986,10 @@ class PyramidHandler {
         this.unplacedCube.div.setAttribute('cube-id', nextCubeData.cube_id);
         this.cubesInConstruction[nextCubeData.cube_id] = this.unplacedCube;
 
-        switchColorButton.style.backgroundColor = '#' + this.gameui.CUBE_COLORS[this.unplacedCube.color].colorCode + 'E0';
+        const computedStyle = this.gameui.debugProceduralCubeTexture ? 
+            window.getComputedStyle(this.unplacedCube.div.querySelector('.top-side') as HTMLDivElement) :
+            window.getComputedStyle(this.unplacedCube.div.querySelector('.cube-image') as HTMLDivElement);
+        (switchColorButton.querySelector('.covered-cube-face') as HTMLDivElement).style.backgroundPosition = computedStyle.backgroundPosition;
 
         const marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
         
@@ -1035,6 +1039,15 @@ class PyramidHandler {
         }
 
         return false;
+    }
+
+    public wiggleSnapPoints(){
+        this.cubesContainer.querySelectorAll('.pyramid-cube-snap-point').forEach(el => {
+            el.classList.add('wiggle');
+            setTimeout(() => {
+                el.classList.remove('wiggle');
+            }, 1000);
+        });
     }
 
     public getUnplacedCube(): PyramidCube{ return this.unplacedCube; }
