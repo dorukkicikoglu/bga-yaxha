@@ -9,6 +9,7 @@ class EndGameScoringHandler{
     private fastForwardButton: HTMLButtonElement;
     private bodyClickHandler = null;
     private winner_ids: number[];
+    private delayAfterFadeIns = 5000;
 
 	constructor(private gameui: GameBody) { }
 
@@ -67,6 +68,10 @@ class EndGameScoringHandler{
             }
         });
         await anim.start();
+
+        if(this.gameui.gamedatas.gamestate.name != 'gameEnd')
+            this.gameui.backgroundHandler.startEyesRainbow();
+
         await this.fadeInNextCell(); 
     }
 
@@ -198,10 +203,7 @@ class EndGameScoringHandler{
             this.makeWinnersJump();
             this.setPlayerScores();
 
-            if(this.gameui.gamedatas.gamestate.name != 'gameEnd')
-                this.gameui.backgroundHandler.startEyesRainbow();
-
-            await this.gameui.wait(15000);
+            await this.gameui.wait(this.delayAfterFadeIns);
             return;
         }
 

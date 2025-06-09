@@ -107,7 +107,7 @@ body.mobile_version[player-count="4"] #player_boards{ grid-template-columns: rep
             &[market-index="2"] { background-position-x: 66.66%; }
             &[market-index="3"] { background-position-x: 100%; }
 
-            &.selected-market-tile { outline: none; box-shadow: 2px 2px 6px #000000, 0 0 24px 3px rgba(255, 230, 11, 0.576471), 0 0 1px 6px rgba(255, 230, 11, 0.588235), 0 0 22px 21px rgba(255, 230, 11, 0.1254901961); animation: enlarge-market-tile 0.5s ease-in-out; }
+            &.selected-market-tile { outline: none; box-shadow: 2px 2px 6px #000000, 0 0 24px 3px rgba(255, 230, 11, 0.576471), 0 0 1px 6px rgba(255, 230, 11, 0.588235), 0 0 22px 21px rgba(255, 230, 11, 0.125); animation: enlarge-market-tile 0.5s ease-in-out; }
             &.selectable-market-tile{ animation: selectable-market-tile-glow-animation 2.2s ease-out infinite; }
             &.collected-market-tile{ box-shadow: 0px 0px 2px 5px var(--collecting-player-color, #f2a93b); 
                 .collected-pointer{ opacity: 1; }

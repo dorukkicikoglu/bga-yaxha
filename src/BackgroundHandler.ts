@@ -107,6 +107,10 @@ class BackgroundHandler{
         
         setTimeout(() => {
             this.lastShamanMoveTime = Date.now();
+          
+            if(this.shaman.classList.contains('rainbow-eyes')) //dont close eyes if rainbow eyes is active
+                return;
+    
             eyelids.forEach(lid => { lid.classList.add('eyes-closed') });
             
             setTimeout(() => {

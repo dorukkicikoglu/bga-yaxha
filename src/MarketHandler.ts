@@ -124,8 +124,27 @@ class MarketHandler{
             else actionName = 'actRevertAllSelectMarketTile';
         } else if(this.gameui.gamedatas.gamestate.name === 'individualPlayerSelectMarketTile')
             actionName = 'actIndividualPlayerSelectMarketTile';
-        
-        this.gameui.ajaxAction(actionName, {marketIndex: marketIndex}, true, false);
+
+        const postAction = () => { this.gameui.ajaxAction(actionName, {marketIndex: marketIndex}, true, false); };
+
+        if(actionName == 'actAllSelectMarketTile' || actionName == 'actIndividualPlayerSelectMarketTile'){
+            const tileCubes = this.marketData[marketIndex];
+            
+            const colorsOnMarketTileDict = {};
+            for(const cube of tileCubes)
+                colorsOnMarketTileDict[cube.color] = 1;
+            const colorsOnMarketTile = Object.keys(colorsOnMarketTileDict);
+
+            const possibleMoves = this.gameui.myself.pyramid.getPossibleMoves(colorsOnMarketTile);
+
+            if(possibleMoves.length == 0){
+                this.gameui.confirmationDialog(_('You won\'t be able to add these cubes to your pyramid'), postAction);
+                dojo.query('.standard_popin .standard_popin_title')[0].innerHTML = _('Select this Tile?');
+                return;
+            }
+        }
+
+        postAction();
     }
 
     public async marketTileSelected(marketIndex: number) {

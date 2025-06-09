@@ -194,12 +194,12 @@ class PyramidHandler {
         }, 200);
     }
 
-    private getPossibleMoves(): PossibleMove[] {
+    public getPossibleMoves(colorsOnMarketTileIn: string[] = null): PossibleMove[] { //colorsOnMarketTileIn is only used when showing confirmation dialog if player is about to select a tile with unusable cubes
         if(this.owner.isZombie())
             return null;
 
         const cubesInPyramid = this.getPyramidCubesExceptFinalBuilt();
-        let colorsOnMarketTile = this.getAvailableColorsOnMarketTile();
+        let colorsOnMarketTile: string[] = colorsOnMarketTileIn ? colorsOnMarketTileIn : this.getAvailableColorsOnMarketTile();
 
         if(colorsOnMarketTile == null){
             console.error(`No available colors on market tile for player ${this.owner.playerID} (likely a zombie player coming back to game)`, this.owner);
