@@ -2422,6 +2422,10 @@ var PyramidHandler = /** @class */ (function () {
         this.unplacedCube = cubeData;
         this.cubesContainer.querySelectorAll('.switch-color-button').forEach(function (el) { return el.remove(); });
         var goTo = this.cubesContainer.querySelector(".pyramid-cube-snap-point[pos-x=\"".concat(this.unplacedCube.pos_x, "\"][pos-y=\"").concat(this.unplacedCube.pos_y, "\"][pos-z=\"").concat(this.unplacedCube.pos_z, "\"]"));
+        if (!goTo) {
+            console.error('No snap point found for cube', cubeData);
+            return;
+        }
         var marketCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--market-cube-size'));
         var pyramidCubeSize = goTo.offsetWidth;
         var animSpeed = 400;
@@ -2877,6 +2881,10 @@ var PyramidHandler = /** @class */ (function () {
         if (this.gameui.isReplay())
             return;
         var switchColorButton = this.cubesContainer.querySelector('.switch-color-button');
+        if (!switchColorButton) {
+            console.error('No switch color button found');
+            return;
+        }
         var nextCubeData = this.getNextUnplacedMarketCube(switchColorButton.getAttribute('possible-colors'), this.unplacedCube.color);
         delete this.cubesInConstruction[this.unplacedCube.cube_id];
         this.unplacedCube.cube_id = nextCubeData.cube_id;

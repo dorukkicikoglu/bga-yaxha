@@ -38,7 +38,7 @@ body{ min-height: 100vh; }
 .background-container{ position: fixed; z-index: -1; top: 0; left: 0; width: 100%; height: 100%; --pyramid-width: calc(min(42vw, 51vh)); --shaman-width: calc(var(--pyramid-width) * 0.64); pointer-events: none;
     &::before { content: ""; position: fixed; top: calc(60px + 50%); transform: translateY(-50%); height: 35.8vh; width: 100%; pointer-events: none;  background-repeat: repeat-y; background-position: 0% top, 99% top; background-size: 4vh 3vh; background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='180'%20height='100'%20viewBox='0%200%20180%20100'%3E%3Cpolygon%20points='50,-46%2095,40%205,40'%20fill='%2384b578'%20transform='rotate(90,%2050,%2050)'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='180'%20height='100'%20viewBox='0%200%20180%20100'%3E%3Cpolygon%20points='94,34%20139,120%2049,120'%20fill='%2384b578'%20transform='rotate(-90,%2090,%2050)'/%3E%3C/svg%3E"); }
 
-    .bg-pyramid{ position: absolute; opacity: 0.8; transform-origin: center bottom; top: 100%; left: 42%; transform: translateX(-50%) translateY(-100%); width: var(--pyramid-width); height: calc(var(--pyramid-width) * 0.945); background-image: url('img/bg_pyramid.webp'); background-size: 100%;
+    .bg-pyramid{ position: absolute; opacity: 0.8; transform-origin: center bottom; transition: transform 0.2s ease; top: 100%; left: 42%; transform: translateX(-50%) translateY(-100%); width: var(--pyramid-width); height: calc(var(--pyramid-width) * 0.945); background-image: url('img/bg_pyramid.webp'); background-size: 100%;
         .bg-shaman{ position: absolute; width: var(--shaman-width); height: calc(var(--shaman-width) * 0.929); 
             &.is-shaking{ animation: shake-shaman 0.35s ease-in-out infinite; }
             &.final-shake{ animation: shake-shaman 0.35s ease-in-out; }
@@ -202,7 +202,7 @@ body.mobile_version .market-container .waiting-players-container{ bottom: -25px;
     &[market-index="3"]::after { outline-color: var(--market-tile-color-3); }
 }
 
-#player-tables{ margin-bottom: 20vh; min-height: 210vh; }
+#player-tables{ margin-bottom: 20vh; min-height: 190vh; }
 body.mobile_version #player-tables{ margin-bottom: 60vh; }
 
 .pyramids-container{ text-align: center; margin-top: 40px; margin-bottom: 40px;

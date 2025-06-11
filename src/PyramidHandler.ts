@@ -481,6 +481,11 @@ class PyramidHandler {
 
         let goTo: HTMLDivElement = this.cubesContainer.querySelector(`.pyramid-cube-snap-point[pos-x="${this.unplacedCube.pos_x}"][pos-y="${this.unplacedCube.pos_y}"][pos-z="${this.unplacedCube.pos_z}"]`);
 
+        if(!goTo){
+            console.error('No snap point found for cube', cubeData);
+            return;
+        }
+
         const marketCubeSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--market-cube-size'));
         const pyramidCubeSize = goTo.offsetWidth;
 
@@ -976,6 +981,11 @@ class PyramidHandler {
             return;
 
         const switchColorButton = this.cubesContainer.querySelector('.switch-color-button') as HTMLDivElement;
+        if(!switchColorButton){
+            console.error('No switch color button found');
+            return;
+        }
+
         const nextCubeData: MarketCube = this.getNextUnplacedMarketCube(switchColorButton.getAttribute('possible-colors'), this.unplacedCube.color);
 
         delete this.cubesInConstruction[this.unplacedCube.cube_id];

@@ -780,6 +780,7 @@ body {
   position: absolute;
   opacity: 0.8;
   transform-origin: center bottom;
+  transition: transform 0.2s ease;
   top: 100%;
   left: 42%;
   transform: translateX(-50%) translateY(-100%);
@@ -1375,7 +1376,7 @@ body.mobile_version .market-container .waiting-players-container {
 
 #player-tables {
   margin-bottom: 20vh;
-  min-height: 210vh;
+  min-height: 190vh;
 }
 
 body.mobile_version #player-tables {
