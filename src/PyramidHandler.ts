@@ -930,6 +930,9 @@ class PyramidHandler {
         if(!this.unplacedCube)
             return;
 
+        if(!this.cubesContainer.querySelector(`.a-cube[cube-id="${this.unplacedCube.cube_id}"]`))
+            return;
+
         if(Object.keys(this.cubesInConstruction).length >= this.gameui.CUBES_PER_MARKET_TILE)
             return;
 

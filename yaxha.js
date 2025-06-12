@@ -2842,6 +2842,8 @@ var PyramidHandler = /** @class */ (function () {
         this.cubesContainer.querySelectorAll('.switch-color-button').forEach(function (el) { return el.remove(); });
         if (!this.unplacedCube)
             return;
+        if (!this.cubesContainer.querySelector(".a-cube[cube-id=\"".concat(this.unplacedCube.cube_id, "\"]")))
+            return;
         if (Object.keys(this.cubesInConstruction).length >= this.gameui.CUBES_PER_MARKET_TILE)
             return;
         var availableColors = this.getAvailableColorsOnMarketTile();
