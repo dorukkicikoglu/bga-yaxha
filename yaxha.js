@@ -2102,10 +2102,14 @@ var PyramidHandler = /** @class */ (function () {
         this.enableBuildPyramid();
     };
     PyramidHandler.prototype.onSnapPointClicked = function (args) {
+        console.log('ekmek onSnapPointClicked 111', args); //to-do: delete after tutorial is done
+        debugger; //to-do: delete after tutorial is done
         if (this.moveCubeAnim)
             return;
-        if (this.gameui.isReplay())
-            return;
+        console.log('ekmek onSnapPointClicked 222', args); //to-do: delete after tutorial is done
+        debugger; //to-do: delete after tutorial is done
+        // if(this.gameui.isReplay()) //to-do: delete after tutorial is done
+        //     return;
         var myPyramid = this.owner.playerID.toString() == this.gameui.player_id;
         if (!myPyramid)
             return;
@@ -2413,8 +2417,8 @@ var PyramidHandler = /** @class */ (function () {
         if (calledForOtherDevices === void 0) { calledForOtherDevices = false; }
         if (this.moveCubeAnim)
             return;
-        if (this.gameui.isReplay())
-            return;
+        // if(this.gameui.isReplay()) //to-do: delete after tutorial is done
+        //     return;
         var marketTile = this.gameui.marketHandler.getPlayerCollectedMarketTileDiv(this.owner.playerID);
         if (this.unplacedCube && moveType == 'from_market')
             marketTile.querySelector('.a-cube[cube-id="' + this.unplacedCube.cube_id + '"]').setAttribute('built-status', 'built-cube');

@@ -292,7 +292,7 @@ class GameBody extends GameGui {
         args.version = this.gamedatas.version;
         this.bgaPerformAction(action, args, { lock: lock, checkAction: checkAction });
     }
-    public isReplay(): boolean { return typeof g_replayFrom != 'undefined' || g_archive_mode; }
+    public isReplay(): boolean { return typeof g_replayFrom != 'undefined' || g_archive_mode }
     public remove_px(str: string): number {
         str = str.trim();
         if (!isNaN(parseInt(str)) && str === parseInt(str).toString())
