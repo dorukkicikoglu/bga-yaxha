@@ -543,7 +543,7 @@ class Game extends \Table
         // Get the bonus cards preference from options
         $isRandomBonusCardsSetup = (int) $this->tableOptions->get(100) == (int) RANDOM_BONUS_CARDS_OPTION;
 
-        $bonus_cards = $isRandomBonusCardsSetup ? range(0, 11) : BEGINNER_BONUS_CARDS_IDS;
+        $bonus_cards = $isRandomBonusCardsSetup ? range(0, count(BONUS_CARDS_DATA) - 1) : BEGINNER_BONUS_CARDS_IDS;
         if($this->getPlayersNumber() == 2) //in a 2 player game, remove bonus_cards that compare to the player sitting on the right
             $bonus_cards = array_diff($bonus_cards, [5,6,7,8,9]);
         shuffle($bonus_cards);
