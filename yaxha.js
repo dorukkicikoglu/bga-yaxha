@@ -2102,12 +2102,8 @@ var PyramidHandler = /** @class */ (function () {
         this.enableBuildPyramid();
     };
     PyramidHandler.prototype.onSnapPointClicked = function (args) {
-        console.log('ekmek onSnapPointClicked 111', args); //to-do: delete after tutorial is done
-        debugger; //to-do: delete after tutorial is done
         if (this.moveCubeAnim)
             return;
-        console.log('ekmek onSnapPointClicked 222', args); //to-do: delete after tutorial is done
-        debugger; //to-do: delete after tutorial is done
         // if(this.gameui.isReplay()) //to-do: delete after tutorial is done
         //     return;
         var myPyramid = this.owner.playerID.toString() == this.gameui.player_id;

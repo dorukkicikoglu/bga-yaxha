@@ -10,7 +10,7 @@ class MarketHandler{
         this.marketTilesContainer = this.marketContainer.querySelector('.market-tiles-container') as HTMLDivElement;
         this.waitingPlayersContainer = this.marketContainer.querySelector('.waiting-players-container') as HTMLDivElement;
         this.bonusCardIconsContainer = this.marketContainer.querySelector('.bonus-cards-container') as HTMLDivElement;
-
+        
         this.marketTiles = [];
 
         this.initMarketContainer();

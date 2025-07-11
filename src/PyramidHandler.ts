@@ -101,12 +101,8 @@ class PyramidHandler {
     }
 
     private onSnapPointClicked(args) { //args is either event target or an array [posX, posY, posZ]
-        console.log('ekmek onSnapPointClicked 111', args); //to-do: delete after tutorial is done
-        debugger; //to-do: delete after tutorial is done
         if(this.moveCubeAnim)
             return;
-        console.log('ekmek onSnapPointClicked 222', args); //to-do: delete after tutorial is done
-        debugger; //to-do: delete after tutorial is done
         
         // if(this.gameui.isReplay()) //to-do: delete after tutorial is done
         //     return;
