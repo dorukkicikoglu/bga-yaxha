@@ -553,6 +553,7 @@ var GameBody = /** @class */ (function (_super) {
         _this.BAKED_CUBE_TEXTURE_COUNT = 300;
         _this.BAKED_CUBE_COLUMN_COUNT = 15;
         _this.debugProceduralCubeTexture = false;
+        _this.tabSessionID = Math.floor(Math.random() * 1000000000 + 1); //used to play animations in other active tabs and devices
         console.log('yaxha constructor');
         return _this;
     }
@@ -1054,7 +1055,7 @@ var GameBody = /** @class */ (function (_super) {
     };
     GameBody.prototype.notif_forOtherDevicesAddedCubeToPyramid = function (args) {
         return __awaiter(this, void 0, void 0, function () {
-            var cubesInConstruction, cubeInPyramid;
+            var differentBrowserTab;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -1062,9 +1063,9 @@ var GameBody = /** @class */ (function (_super) {
                         console.log('notif_forOtherDevicesAddedCubeToPyramid');
                         if (this.isReplay())
                             return [2 /*return*/];
-                        cubesInConstruction = this.myself.pyramid.getCubesInConstruction();
-                        cubeInPyramid = cubesInConstruction[args.cube_data.cube_id] !== undefined;
-                        if (!!cubeInPyramid) return [3 /*break*/, 3];
+                        differentBrowserTab = parseInt(args.tab_session_id) != this.tabSessionID;
+                        if (!differentBrowserTab)
+                            return [2 /*return*/];
                         if (!this.myself.pyramid.getMoveCubeAnim()) return [3 /*break*/, 1];
                         setTimeout(function () { return __awaiter(_this, void 0, void 0, function () {
                             return __generator(this, function (_a) {
@@ -1088,22 +1089,41 @@ var GameBody = /** @class */ (function (_super) {
     };
     GameBody.prototype.notif_forOtherDevicesSwitchedCubeColor = function (args) {
         return __awaiter(this, void 0, void 0, function () {
-            var unplacedCube;
+            var differentBrowserTab;
+            var _this = this;
             return __generator(this, function (_a) {
-                console.log('notif_forOtherDevicesSwitchedCubeColor');
-                if (this.isReplay())
-                    return [2 /*return*/];
-                unplacedCube = this.myself.pyramid.getUnplacedCube();
-                if (unplacedCube.cube_id.toString() != args.cube_data.cube_id.toString() || unplacedCube.color.toString() != args.cube_data.color.toString())
-                    return [2 /*return*/];
-                this.myself.pyramid.onSwitchColorButtonClicked(true);
-                return [2 /*return*/];
+                switch (_a.label) {
+                    case 0:
+                        console.log('notif_forOtherDevicesSwitchedCubeColor');
+                        if (this.isReplay())
+                            return [2 /*return*/];
+                        differentBrowserTab = parseInt(args.tab_session_id) != this.tabSessionID;
+                        if (!differentBrowserTab)
+                            return [2 /*return*/];
+                        if (!this.myself.pyramid.getMoveCubeAnim()) return [3 /*break*/, 1];
+                        setTimeout(function () { return __awaiter(_this, void 0, void 0, function () {
+                            return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0: return [4 /*yield*/, this.notif_forOtherDevicesSwitchedCubeColor(args)];
+                                    case 1:
+                                        _a.sent();
+                                        return [2 /*return*/];
+                                }
+                            });
+                        }); }, 50);
+                        return [3 /*break*/, 3];
+                    case 1: return [4 /*yield*/, this.myself.pyramid.onSwitchColorButtonClicked(true)];
+                    case 2:
+                        _a.sent();
+                        _a.label = 3;
+                    case 3: return [2 /*return*/];
+                }
             });
         });
     };
     GameBody.prototype.notif_forOtherDevicesMovedCubeInPyramid = function (args) {
         return __awaiter(this, void 0, void 0, function () {
-            var cubesInConstruction, cubeInPyramid, existingCube, newCubeData;
+            var differentBrowserTab, cubesInConstruction, existingCube, newCubeData;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -1111,10 +1131,23 @@ var GameBody = /** @class */ (function (_super) {
                         console.log('notif_forOtherDevicesMovedCubeInPyramid');
                         if (this.isReplay())
                             return [2 /*return*/];
-                        cubesInConstruction = this.myself.pyramid.getCubesInConstruction();
-                        cubeInPyramid = cubesInConstruction[args.cube_data.cube_id] !== undefined;
-                        if (!cubeInPyramid)
+                        differentBrowserTab = parseInt(args.tab_session_id) != this.tabSessionID;
+                        if (!differentBrowserTab)
                             return [2 /*return*/];
+                        if (this.myself.pyramid.getMoveCubeAnim()) {
+                            setTimeout(function () { return __awaiter(_this, void 0, void 0, function () {
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0: return [4 /*yield*/, this.notif_forOtherDevicesMovedCubeInPyramid(args)];
+                                        case 1:
+                                            _a.sent();
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); }, 50);
+                            return [2 /*return*/];
+                        }
+                        cubesInConstruction = this.myself.pyramid.getCubesInConstruction();
                         existingCube = cubesInConstruction[args.cube_data.cube_id];
                         if (existingCube.pos_x == args.cube_data.pos_x && existingCube.pos_y == args.cube_data.pos_y && existingCube.pos_z == args.cube_data.pos_z)
                             return [2 /*return*/];
@@ -1143,12 +1176,15 @@ var GameBody = /** @class */ (function (_super) {
     };
     GameBody.prototype.notif_forOtherDevicesUndoBuildPyramid = function (args) {
         return __awaiter(this, void 0, void 0, function () {
-            var cubesInConstruction;
+            var differentBrowserTab, cubesInConstruction;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         console.log('notif_forOtherDevicesUndoBuildPyramid');
                         if (this.isReplay())
+                            return [2 /*return*/];
+                        differentBrowserTab = parseInt(args.tab_session_id) != this.tabSessionID;
+                        if (!differentBrowserTab)
                             return [2 /*return*/];
                         cubesInConstruction = this.myself.pyramid.getCubesInConstruction();
                         if (Object.keys(cubesInConstruction).length <= 0)
@@ -2462,7 +2498,7 @@ var PyramidHandler = /** @class */ (function () {
                 _this.unplacedCube.div.style.top = null;
                 _this.unplacedCube.div.style.transition = null;
                 if (!calledForOtherDevices)
-                    _this.gameui.ajaxAction(moveType == 'from_market' ? 'actAddCubeToPyramid' : 'actMoveCubeInPyramid', { cube_id: _this.unplacedCube.cube_id, pos_x: _this.unplacedCube.pos_x, pos_y: _this.unplacedCube.pos_y, pos_z: _this.unplacedCube.pos_z }, false, false);
+                    _this.gameui.ajaxAction(moveType == 'from_market' ? 'actAddCubeToPyramid' : 'actMoveCubeInPyramid', { cube_id: _this.unplacedCube.cube_id, pos_x: _this.unplacedCube.pos_x, pos_y: _this.unplacedCube.pos_y, pos_z: _this.unplacedCube.pos_z, tab_session_id: _this.gameui.tabSessionID }, false, false);
                 _this.moveCubeAnim = null;
                 _this.enableBuildPyramid();
             }
@@ -2696,7 +2732,7 @@ var PyramidHandler = /** @class */ (function () {
                         _a.sent();
                         marketTile.querySelectorAll('.a-cube').forEach(function (cube) { cube.removeAttribute('built-status'); });
                         if (!forOtherDevices)
-                            this.gameui.ajaxAction('actUndoBuildPyramid', {}, true, false);
+                            this.gameui.ajaxAction('actUndoBuildPyramid', { tab_session_id: this.gameui.tabSessionID }, true, false);
                         this.enableBuildPyramid();
                         return [2 /*return*/];
                 }
@@ -2902,7 +2938,7 @@ var PyramidHandler = /** @class */ (function () {
         marketTile.querySelectorAll('.a-cube[built-status="selected-cube"]').forEach(function (cube) { cube.removeAttribute('built-status'); });
         marketTile.querySelector('.a-cube[cube-id="' + nextCubeData.cube_id + '"]').setAttribute('built-status', 'selected-cube');
         if (!calledForOtherDevices)
-            this.gameui.ajaxAction('actPyramidCubeColorSwitched', { cube_id: this.unplacedCube.cube_id, pos_x: this.unplacedCube.pos_x, pos_y: this.unplacedCube.pos_y, pos_z: this.unplacedCube.pos_z }, false, false);
+            this.gameui.ajaxAction('actPyramidCubeColorSwitched', { cube_id: this.unplacedCube.cube_id, pos_x: this.unplacedCube.pos_x, pos_y: this.unplacedCube.pos_y, pos_z: this.unplacedCube.pos_z, tab_session_id: this.gameui.tabSessionID }, false, false);
         this.drawSnapPoints(); //newly placed block might have allowed placement of a same color cube on top of this cube
         this.arrangeCubesZIndex();
         this.updatePyramidStatusText(); //with the new cube color, possible positions might have changed which will change the confirm button text

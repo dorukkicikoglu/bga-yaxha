@@ -532,7 +532,7 @@ class PyramidHandler {
                 this.unplacedCube.div.style.transition = null;
                 
                 if(!calledForOtherDevices)
-                    this.gameui.ajaxAction(moveType == 'from_market' ? 'actAddCubeToPyramid' : 'actMoveCubeInPyramid', { cube_id: this.unplacedCube.cube_id, pos_x: this.unplacedCube.pos_x, pos_y: this.unplacedCube.pos_y, pos_z: this.unplacedCube.pos_z }, false, false);
+                    this.gameui.ajaxAction(moveType == 'from_market' ? 'actAddCubeToPyramid' : 'actMoveCubeInPyramid', { cube_id: this.unplacedCube.cube_id, pos_x: this.unplacedCube.pos_x, pos_y: this.unplacedCube.pos_y, pos_z: this.unplacedCube.pos_z, tab_session_id: this.gameui.tabSessionID}, false, false);
 
                 this.moveCubeAnim = null;
                 this.enableBuildPyramid();
@@ -779,7 +779,7 @@ class PyramidHandler {
 
         marketTile.querySelectorAll('.a-cube').forEach(cube => { cube.removeAttribute('built-status'); });
         if(!forOtherDevices)
-            this.gameui.ajaxAction('actUndoBuildPyramid', {}, true, false);
+            this.gameui.ajaxAction('actUndoBuildPyramid', {tab_session_id: this.gameui.tabSessionID}, true, false);
 
         this.enableBuildPyramid();
     }
@@ -1010,7 +1010,7 @@ class PyramidHandler {
         marketTile.querySelector('.a-cube[cube-id="' + nextCubeData.cube_id + '"]').setAttribute('built-status', 'selected-cube');
 
         if(!calledForOtherDevices)
-            this.gameui.ajaxAction('actPyramidCubeColorSwitched', { cube_id: this.unplacedCube.cube_id, pos_x: this.unplacedCube.pos_x, pos_y: this.unplacedCube.pos_y, pos_z: this.unplacedCube.pos_z }, false, false);
+            this.gameui.ajaxAction('actPyramidCubeColorSwitched', { cube_id: this.unplacedCube.cube_id, pos_x: this.unplacedCube.pos_x, pos_y: this.unplacedCube.pos_y, pos_z: this.unplacedCube.pos_z, tab_session_id: this.gameui.tabSessionID}, false, false);
         
         this.drawSnapPoints(); //newly placed block might have allowed placement of a same color cube on top of this cube
         this.arrangeCubesZIndex();

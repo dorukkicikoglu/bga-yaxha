@@ -235,7 +235,7 @@ body.mobile_version #player-tables{ margin-bottom: 60vh; }
             .switch-color-button{ z-index: 100; opacity: 0; transition: opacity 0.2s ease; outline: 2px solid #353535; outline-offset: -1px; overflow: hidden;
                 &[procedural-texture="true"] .covered-cube-face{ @include procedural-cube-parts-bg();}
                 &[procedural-texture="false"] .covered-cube-face{ @include baked-cube-image-bg(); }
-                .switch-color-icon{ opacity: 0.82; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: calc(var(--pyramid-cube-size) * 0.8); color: #ffffff; background: linear-gradient(45deg, #ef550b, #f1b948, #89bfb3, #0e5b9c, #bbaad1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(2px 2px 2px #222); }
+                .switch-color-icon{ opacity: 0.82; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: calc(var(--pyramid-cube-size) * 0.8); color: #ffffff; background: linear-gradient(45deg, #ef550b, #f1b948, #89bfb3, #0e5b9c, #bbaad1); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(2px 2px 1px #000); }
             }
         }
         @media (hover: hover) {

@@ -174,27 +174,27 @@ class Game extends \Table
     }
     
     #[CheckAction(false)]
-    public function actAddCubeToPyramid(int $cube_id, int $pos_x, int $pos_y, int $pos_z): void
+    public function actAddCubeToPyramid(int $cube_id, int $pos_x, int $pos_y, int $pos_z, int $tab_session_id): void
     {
-        $this->pyramidManager->addCubeToPyramid((int) $this->getCurrentPlayerId(), $cube_id, $pos_x, $pos_y, $pos_z);
+        $this->pyramidManager->addCubeToPyramid((int) $this->getCurrentPlayerId(), $cube_id, $pos_x, $pos_y, $pos_z, $tab_session_id);
     }
     
     #[CheckAction(false)]
-    public function actMoveCubeInPyramid(int $cube_id, int $pos_x, int $pos_y, int $pos_z): void
+    public function actMoveCubeInPyramid(int $cube_id, int $pos_x, int $pos_y, int $pos_z, int $tab_session_id): void
     {
-        $this->pyramidManager->moveCubeInPyramid((int) $this->getCurrentPlayerId(), $cube_id, $pos_x, $pos_y, $pos_z);
+        $this->pyramidManager->moveCubeInPyramid((int) $this->getCurrentPlayerId(), $cube_id, $pos_x, $pos_y, $pos_z, $tab_session_id);
     }
     
     #[CheckAction(false)]
-    public function actPyramidCubeColorSwitched(int $cube_id): void
+    public function actPyramidCubeColorSwitched(int $cube_id, int $tab_session_id): void
     {
-        $this->pyramidManager->switchCubeColor((int) $this->getCurrentPlayerId(), $cube_id);
+        $this->pyramidManager->switchCubeColor((int) $this->getCurrentPlayerId(), $cube_id, $tab_session_id);
     }
 
     #[CheckAction(false)]
-    public function actUndoBuildPyramid(): void
+    public function actUndoBuildPyramid(int $tab_session_id): void
     {
-        $this->pyramidManager->undoBuildPyramid((int) $this->getCurrentPlayerId());
+        $this->pyramidManager->undoBuildPyramid((int) $this->getCurrentPlayerId(), $tab_session_id);
     }
 
     #[CheckAction(false)]

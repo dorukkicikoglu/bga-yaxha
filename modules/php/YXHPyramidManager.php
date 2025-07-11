@@ -35,7 +35,7 @@ class YXHPyramidManager extends APP_DbObject{
     }
     function getPlayerPyramidData(int $ownerID, bool $includeInConstruction = false){ $pyramids = $this->getPyramidsData([$ownerID], $includeInConstruction); return (isset($pyramids[$ownerID]) ? $pyramids[$ownerID] : []); }
 
-    public function addCubeToPyramid($playerID, $cubeID, $posX, $posY, $posZ) {
+    public function addCubeToPyramid($playerID, $cubeID, $posX, $posY, $posZ, $tabSessionID) {
         $this->checkBuildableState();
         $this->doesPlayerOwnCubeOnMarketTile($playerID, $cubeID);
         $this->isMoveValid($playerID, $cubeID, $posX, $posY, $posZ);
@@ -47,7 +47,7 @@ class YXHPyramidManager extends APP_DbObject{
         $cubeColor = $this->getUniqueValueFromDB("SELECT color FROM cubes WHERE card_id = $cubeID");
         
         $cubeData = ['cube_id' => $cubeID, 'pos_x' => $posX, 'pos_y' => $posY, 'pos_z' => $posZ, 'color' => $cubeColor, 'order_in_construction' => $newOrderInConstruction];
-        $this->parent->notify->player($playerID, 'forOtherDevicesAddedCubeToPyramid', '', ['cube_data' => $cubeData]);
+        $this->parent->notify->player($playerID, 'forOtherDevicesAddedCubeToPyramid', '', ['cube_data' => $cubeData, 'tab_session_id' => $tabSessionID]);
     }
 
     private function isMoveValid($playerID, $cubeID, $posX, $posY, $posZ){
@@ -137,7 +137,7 @@ class YXHPyramidManager extends APP_DbObject{
         }
     }
 
-    public function moveCubeInPyramid($playerID, $cubeID, $posX, $posY, $posZ) {
+    public function moveCubeInPyramid($playerID, $cubeID, $posX, $posY, $posZ, $tabSessionID) {
         $this->checkBuildableState();
         $cube = $this->getObjectFromDB("SELECT card_location, card_location_arg, order_in_construction, color FROM cubes WHERE card_id = $cubeID");
 
@@ -151,10 +151,10 @@ class YXHPyramidManager extends APP_DbObject{
         $this->DbQuery("UPDATE cubes SET pos_x = $posX, pos_y = $posY, pos_z = $posZ WHERE card_id = $cubeID");
         
         $cubeData = ['cube_id' => $cubeID, 'pos_x' => $posX, 'pos_y' => $posY, 'pos_z' => $posZ, 'color' => $cube['color'], 'order_in_construction' => $cube['order_in_construction']];
-        $this->parent->notify->player($playerID, 'forOtherDevicesMovedCubeInPyramid', '', ['cube_data' => $cubeData]);
+        $this->parent->notify->player($playerID, 'forOtherDevicesMovedCubeInPyramid', '', ['cube_data' => $cubeData, 'tab_session_id' => $tabSessionID]);
     }
 
-    public function switchCubeColor($playerID, $cubeID): void {
+    public function switchCubeColor($playerID, $cubeID, $tabSessionID): void {
         $this->checkBuildableState();
         $this->doesPlayerOwnCubeOnMarketTile($playerID, $cubeID);
 
@@ -183,10 +183,10 @@ class YXHPyramidManager extends APP_DbObject{
             WHERE card_id = $cubeID");
 
         $cubeData = ['cube_id' => $lastAddedCube['cube_id'], 'color' => $lastAddedCube['color']];
-        $this->parent->notify->player($playerID, 'forOtherDevicesSwitchedCubeColor', '', ['cube_data' => $cubeData]);
+        $this->parent->notify->player($playerID, 'forOtherDevicesSwitchedCubeColor', '', ['cube_data' => $cubeData, 'tab_session_id' => $tabSessionID]);
     }
 
-    public function undoBuildPyramid($playerID): void {
+    public function undoBuildPyramid($playerID, $tabSessionID): void {
         $this->checkBuildableState();
         $playerMarketIndex = $this->getUniqueValueFromDB("SELECT collected_market_index FROM player WHERE player_id = $playerID");
 
@@ -196,7 +196,7 @@ class YXHPyramidManager extends APP_DbObject{
         $this->parent->not_a_move_notification = true;
         $this->DbQuery("UPDATE cubes SET card_location = 'market', card_location_arg = $playerMarketIndex, pos_x = NULL, pos_y = NULL, pos_z = NULL, order_in_construction = NULL WHERE (order_in_construction IS NOT NULL AND card_location_arg = $playerID) OR (card_location = 'to_discard' AND card_location_arg = $playerMarketIndex)");
         $this->DbQuery("UPDATE player SET are_cubes_built = 'false' WHERE player_id = $playerID");
-        $this->parent->notify->player($playerID, 'forOtherDevicesUndoBuildPyramid', '', []);
+        $this->parent->notify->player($playerID, 'forOtherDevicesUndoBuildPyramid', '', ['tab_session_id' => $tabSessionID]);
 
         if ($this->parent->gamestate->state()['name'] === 'buildPyramid')
             $this->parent->gamestate->setPlayersMultiactive([$playerID], 'buildPyramid');

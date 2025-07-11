@@ -30,6 +30,8 @@ class GameBody extends GameGui {
     public BAKED_CUBE_COLUMN_COUNT = 15;
     public debugProceduralCubeTexture: boolean = false;
 
+    public tabSessionID: number = Math.floor(Math.random() * 1000000000 + 1); //used to play animations in other active tabs and devices
+
     constructor() {
         super();
 
@@ -526,16 +528,15 @@ class GameBody extends GameGui {
         if(this.isReplay())
             return;
         
-        const cubesInConstruction = this.myself.pyramid.getCubesInConstruction();
-        const cubeInPyramid = cubesInConstruction[args.cube_data.cube_id] !== undefined;
+        const differentBrowserTab = parseInt(args.tab_session_id) != this.tabSessionID;
+        if(!differentBrowserTab)
+            return;
 
-        if(!cubeInPyramid){
-            if(this.myself.pyramid.getMoveCubeAnim()){
-                setTimeout(async () => {
-                    await this.notif_forOtherDevicesAddedCubeToPyramid(args);
-                }, 50);
-            } else await this.myself.pyramid.animateUnplacedCubeToPyramid(args.cube_data, 'from_market', true);
-        }
+        if(this.myself.pyramid.getMoveCubeAnim()){
+            setTimeout(async () => {
+                await this.notif_forOtherDevicesAddedCubeToPyramid(args);
+            }, 50);
+        } else await this.myself.pyramid.animateUnplacedCubeToPyramid(args.cube_data, 'from_market', true);
     }
 
     public async notif_forOtherDevicesSwitchedCubeColor(args) {
@@ -544,12 +545,15 @@ class GameBody extends GameGui {
         if(this.isReplay())
             return;
 
-        const unplacedCube = this.myself.pyramid.getUnplacedCube();
-
-        if(unplacedCube.cube_id.toString() != args.cube_data.cube_id.toString() || unplacedCube.color.toString() != args.cube_data.color.toString())
+        const differentBrowserTab = parseInt(args.tab_session_id) != this.tabSessionID;
+        if(!differentBrowserTab)
             return;
 
-        this.myself.pyramid.onSwitchColorButtonClicked(true);
+        if(this.myself.pyramid.getMoveCubeAnim()){
+            setTimeout(async () => {
+                await this.notif_forOtherDevicesSwitchedCubeColor(args);
+            }, 50);
+        } else await this.myself.pyramid.onSwitchColorButtonClicked(true);
     }
 
     public async notif_forOtherDevicesMovedCubeInPyramid(args) {
@@ -557,12 +561,20 @@ class GameBody extends GameGui {
 
         if(this.isReplay())
             return;
+
+        const differentBrowserTab = parseInt(args.tab_session_id) != this.tabSessionID;
+
+        if(!differentBrowserTab)
+            return;
+
+        if(this.myself.pyramid.getMoveCubeAnim()){
+            setTimeout(async () => {
+                await this.notif_forOtherDevicesMovedCubeInPyramid(args);
+            }, 50);
+            return;
+        }
         
         const cubesInConstruction = this.myself.pyramid.getCubesInConstruction();
-        const cubeInPyramid = cubesInConstruction[args.cube_data.cube_id] !== undefined;
-
-        if(!cubeInPyramid)
-            return;
 
         const existingCube = cubesInConstruction[args.cube_data.cube_id];
         if(existingCube.pos_x == args.cube_data.pos_x && existingCube.pos_y == args.cube_data.pos_y && existingCube.pos_z == args.cube_data.pos_z)
@@ -582,6 +594,10 @@ class GameBody extends GameGui {
         console.log('notif_forOtherDevicesUndoBuildPyramid');
         
         if(this.isReplay())
+            return;
+
+        const differentBrowserTab = parseInt(args.tab_session_id) != this.tabSessionID;
+        if(!differentBrowserTab)
             return;
 
         const cubesInConstruction = this.myself.pyramid.getCubesInConstruction();

@@ -1542,8 +1542,9 @@ body.mobile_version #player-tables {
   color: #ffffff;
   background: linear-gradient(45deg, #ef550b, #f1b948, #89bfb3, #0e5b9c, #bbaad1);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(2px 2px 2px #222);
+  filter: drop-shadow(2px 2px 1px #000);
 }
 @media (hover: hover) {
   .pyramids-container .a-pyramid-container:not([build-pyramid-enabled=true]):hover .a-cube[procedural-texture=false]::after {
