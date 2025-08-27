@@ -226,12 +226,10 @@ class GameBody extends GameGui {
                 args.processed = true;
 
                 // list of special keys we want to replace with images
-                const keys = ['textPlayerID', 'REVEALED_MARKET_TILES_DATA_STR', 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR', 'SWAP_TURN_ORDERS_DATA_STR', 'DISPLAY_BUILT_CUBES_STR'];
+                const keys = ['REVEALED_MARKET_TILES_DATA_STR', 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR', 'SWAP_TURN_ORDERS_DATA_STR', 'DISPLAY_BUILT_CUBES_STR'];
                 for(let key of keys) {
                     if(key in args) {
-                        if(key == 'textPlayerID')
-                            args['textPlayerID'] = this.divColoredPlayer(args['textPlayerID']);
-                        else if(key == 'REVEALED_MARKET_TILES_DATA_STR')
+                        if(key == 'REVEALED_MARKET_TILES_DATA_STR')
                             args['REVEALED_MARKET_TILES_DATA_STR'] = this.logMutationObserver.createLogSelectedMarketTiles(args['collectedMarketTilesData']).log_html;
                         else if(key == 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR')
                             args['INDIVIDUAL_MARKET_TILES_COLLECTION_STR'] = this.logMutationObserver.createLogIndividualMarketTileCollection(args.player_id, args.collected_market_index, args.collected_cubes).log_html;

@@ -706,13 +706,11 @@ var GameBody = /** @class */ (function (_super) {
             if (log && args && !args.processed) {
                 args.processed = true;
                 // list of special keys we want to replace with images
-                var keys = ['textPlayerID', 'REVEALED_MARKET_TILES_DATA_STR', 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR', 'SWAP_TURN_ORDERS_DATA_STR', 'DISPLAY_BUILT_CUBES_STR'];
+                var keys = ['REVEALED_MARKET_TILES_DATA_STR', 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR', 'SWAP_TURN_ORDERS_DATA_STR', 'DISPLAY_BUILT_CUBES_STR'];
                 for (var _i = 0, keys_1 = keys; _i < keys_1.length; _i++) {
                     var key = keys_1[_i];
                     if (key in args) {
-                        if (key == 'textPlayerID')
-                            args['textPlayerID'] = this.divColoredPlayer(args['textPlayerID']);
-                        else if (key == 'REVEALED_MARKET_TILES_DATA_STR')
+                        if (key == 'REVEALED_MARKET_TILES_DATA_STR')
                             args['REVEALED_MARKET_TILES_DATA_STR'] = this.logMutationObserver.createLogSelectedMarketTiles(args['collectedMarketTilesData']).log_html;
                         else if (key == 'INDIVIDUAL_MARKET_TILES_COLLECTION_STR')
                             args['INDIVIDUAL_MARKET_TILES_COLLECTION_STR'] = this.logMutationObserver.createLogIndividualMarketTileCollection(args.player_id, args.collected_market_index, args.collected_cubes).log_html;
