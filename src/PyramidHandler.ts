@@ -451,7 +451,7 @@ class PyramidHandler {
             }
 
             if(showUndoButton)
-                buttonHTML += '<a class="undo-place-cube-button bgabutton bgabutton_gray">' + _('Undo Build') + '</a>';
+                buttonHTML += '<a class="undo-place-cube-button bgabutton bgabutton_red">' + _('Undo Build') + '</a>';
 
             statusText += buttonHTML;
         }

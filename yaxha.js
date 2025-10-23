@@ -2435,7 +2435,7 @@ var PyramidHandler = /** @class */ (function () {
                 buttonHTML += "<a class=\"confirm-place-cube-button bgabutton bgabutton_".concat(allCubesBuilt ? 'blue' : 'red', "\">") + (allCubesBuilt ? _('Confirm') : _('Confirm and discard the rest')) + '</a>';
             }
             if (showUndoButton)
-                buttonHTML += '<a class="undo-place-cube-button bgabutton bgabutton_gray">' + _('Undo Build') + '</a>';
+                buttonHTML += '<a class="undo-place-cube-button bgabutton bgabutton_red">' + _('Undo Build') + '</a>';
             statusText += buttonHTML;
         }
         this.gameui.updateStatusText(statusText);
