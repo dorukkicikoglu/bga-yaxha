@@ -22,6 +22,7 @@ declare class GameGui {
     gamedatas: any;
     prefs: any;
     tooltips: any;
+    bga?: any; //new framework API object (this.bga.players etc.); may not exist on dojo-style gamegui games
     notifqueue: any;
     scoreCtrl: any;
     statusBar: any;

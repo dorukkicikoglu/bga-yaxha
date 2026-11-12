@@ -7,58 +7,72 @@ class PlayerHandler{
 		this.pyramid = new PyramidHandler(this.gameui, this, this.gameui.PYRAMID_MAX_SIZE, pyramidData);
 	}
 
-    public createAvatarClone(srcAvatar: HTMLImageElement = null): HTMLDivElement{
-		if(!srcAvatar)
-			srcAvatar = this.overallPlayerBoard.querySelector('img.avatar');
+	//new, independent avatar element sized and positioned like geometrySource (the player panel avatar by default), showing the 184px avatar
+    public createAvatarClone(geometrySource: HTMLImageElement = null): HTMLDivElement{
+		if(!geometrySource)
+			geometrySource = this.getPanelAvatarImg();
 
-		const get184by184 = true;
-
-		if (srcAvatar) {
-			// Get dimensions and source from original avatar
-			let withinPageContent = document.getElementById('page-content').contains(srcAvatar);
-			const avatarRect = withinPageContent ? this.gameui.getPos(srcAvatar) : srcAvatar.getBoundingClientRect();
-
-			const avatarSrc32 = srcAvatar.getAttribute('src');
-			const avatarSrc = get184by184 ? PlayerHandler.toLargeAvatarSrc(avatarSrc32) : avatarSrc32;
-
-			// Create new avatar clone structure with innerHTML
-			const avatarClone = document.createElement('div');
-			avatarClone.className = 'avatar-clone yaxha-player-avatar';
-			avatarClone.setAttribute('player-id', this.playerID.toString());
-			avatarClone.style.cssText = `position: absolute; width: ${avatarRect.width}px; height: ${avatarRect.height}px; --player-color: #${this.playerColor};`;
-			avatarClone.innerHTML = `<img src="${avatarSrc}" style="width: 100%; height: 100%;">`;
-
-			if(get184by184){ // If requesting 184x184 avatar, handle fallback to 32x32 if larger image fails to load
-				const addedImg = avatarClone.querySelector('img');
-			
-				const tempImg = new Image();
-				tempImg.src = avatarSrc;
-				tempImg.onerror = () => {
-					document.querySelectorAll('img').forEach(img => {
-						if (img.getAttribute('src') === avatarSrc)
-							img.src = avatarSrc32;
-					});
-					addedImg.src = avatarSrc32; 
-				};
-			}
-
-			return avatarClone;
-		} else {
+		if(!geometrySource){
 			console.error('avatar not found, playerID:', this.playerID);
 			return null;
 		}
+
+		const withinPageContent = document.getElementById('page-content').contains(geometrySource);
+		const avatarRect = withinPageContent ? this.gameui.getPos(geometrySource) : geometrySource.getBoundingClientRect();
+
+		const avatarClone = document.createElement('div');
+		avatarClone.className = 'avatar-clone yaxha-player-avatar';
+		avatarClone.setAttribute('player-id', this.playerID.toString());
+		avatarClone.style.cssText = `position: absolute; width: ${avatarRect.width}px; height: ${avatarRect.height}px; --player-color: #${this.playerColor};`;
+
+		const img = document.createElement('img');
+		img.style.width = '100%';
+		img.style.height = '100%';
+		if(!this.setAvatarImgSrc(img, 184))
+			img.src = geometrySource.src;
+		avatarClone.appendChild(img);
+
+		return avatarClone;
     }
 
-	private static toLargeAvatarSrc(avatarSrc32: string): string { return avatarSrc32.replace('32.jpg', '184.jpg'); }
+	private getPanelAvatarImg(): HTMLImageElement { return this.overallPlayerBoard ? this.overallPlayerBoard.querySelector('img.avatar') : null; }
 
-	//src of the player panel avatar (32px) and its 184px version; null if the panel avatar isn't found
-	public getAvatarSrcs(): {small: string, large: string} | null {
-		const srcAvatar: HTMLImageElement = this.overallPlayerBoard ? this.overallPlayerBoard.querySelector('img.avatar') : null;
-		if(!srcAvatar || !srcAvatar.getAttribute('src'))
+	//official this.bga.players.getPlayerAvatarUrl() when the framework provides it; otherwise the player panel avatar (32px) with the size swapped
+	public getAvatarUrl(size: 32 | 50 | 92 | 184 = 184): string | null {
+		const bgaPlayers = this.gameui.bga ? this.gameui.bga.players : null;
+		if(bgaPlayers && typeof bgaPlayers.getPlayerAvatarUrl === 'function'){
+			try {
+				const url = bgaPlayers.getPlayerAvatarUrl(this.playerID, size);
+				if(url)
+					return url;
+			} catch(e) {
+				console.warn('bga.players.getPlayerAvatarUrl failed, using the player panel avatar', e);
+			}
+		}
+
+		const panelAvatar = this.getPanelAvatarImg();
+		const src32 = panelAvatar ? panelAvatar.getAttribute('src') : null;
+		if(!src32)
 			return null;
 
-		const small = srcAvatar.getAttribute('src');
-		return {small: small, large: PlayerHandler.toLargeAvatarSrc(small)};
+		return size === 32 ? src32 : src32.replace('32.jpg', size + '.jpg');
+	}
+
+	//sets img to this player's avatar; if that size fails to load, only this img falls back to 32px. false if no avatar was found
+	public setAvatarImgSrc(img: HTMLImageElement, size: 32 | 50 | 92 | 184 = 184): boolean {
+		const url = this.getAvatarUrl(size);
+		if(!url)
+			return false;
+
+		const fallbackUrl = size === 32 ? null : this.getAvatarUrl(32);
+		if(fallbackUrl && fallbackUrl !== url)
+			img.addEventListener('error', () => {
+				if(img.getAttribute('src') !== fallbackUrl)
+					img.src = fallbackUrl;
+			});
+
+		img.src = url;
+		return true;
 	}
 
 	public setPlayerScore(newScore: number):void { this.overallPlayerBoard.querySelector('.player_score_value').innerHTML = newScore.toString(); }

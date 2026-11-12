@@ -29,13 +29,15 @@ class PyramidHandler {
         this.pyramidContainer.style.setProperty('--expand-to-build-duration', `${this.expandToBuildDuration / 1000}s`);
         
         const turnOrderContainerId = `turn-order-${this.owner.playerID}`;
-        const avatarSrcs = this.owner.getAvatarSrcs();
-        if(!avatarSrcs)
+        const avatarImg = document.createElement('img');
+        avatarImg.alt = '';
+        const hasAvatar = this.owner.setAvatarImgSrc(avatarImg, 184);
+        if(!hasAvatar)
             this.pyramidContainer.classList.add('no-avatar'); //always shows the name
 
 		this.pyramidContainer.innerHTML = `
 			<div class="player-name-text">
-				<div class="player-avatar" id="${this.getAvatarElementId()}">${avatarSrcs ? `<img src="${avatarSrcs.large}" alt="">` : ''}</div>
+				<div class="player-avatar" id="${this.getAvatarElementId()}"></div>
 				<div class="text-container">${this.owner.getPlayerName()}</div>
 			</div>
 			<div class="turn-order-container" id="${turnOrderContainerId}" turn-order="${this.owner.getTurnOrder()}"></div>
@@ -47,13 +49,8 @@ class PyramidHandler {
 			this.pyramidContainer
 		);
 
-        if(avatarSrcs){
-            const avatarImg = this.pyramidContainer.querySelector('.player-avatar img') as HTMLImageElement;
-            avatarImg.addEventListener('error', () => { //184px version missing, fall back to the player panel size
-                if(avatarImg.getAttribute('src') !== avatarSrcs.small)
-                    avatarImg.src = avatarSrcs.small;
-            });
-        }
+        if(hasAvatar)
+            this.pyramidContainer.querySelector('.player-avatar').appendChild(avatarImg);
 
         this.pyramidContainer.querySelectorAll('.player-name-text .player-avatar, .player-name-text .text-container').forEach(el => {
             el.addEventListener('click', () => this.gameui.togglePlayerDisplay());

@@ -74,7 +74,7 @@ class YXHMarketManager extends APP_DbObject
 
     public function handleAllMarketTileSelectionsMade()
     {
-        $selectedMarketIndexes = $this->getCollectionFromDb("SELECT player_id, selected_market_index, collected_market_index, turn_order FROM player WHERE player_zombie = 0");
+        $selectedMarketIndexes = $this->getCollectionFromDb("SELECT player_id, selected_market_index, collected_market_index, turn_order FROM player WHERE player_zombie = 0 ORDER BY turn_order"); //keeps collecting / pending players in turn order
         $playersBySelectedMarketIndex = array_reduce($selectedMarketIndexes, function($acc, $player) {
             $acc[$player['selected_market_index']][] = $player;
             return $acc;

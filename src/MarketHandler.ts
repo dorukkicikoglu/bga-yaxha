@@ -190,30 +190,39 @@ class MarketHandler{
 	}
 
     public async animateAllMarketTileSelections(collectedMarketTilesData: { collectingPlayers: CollectedMarketTilesData[], pendingPlayers: CollectedMarketTilesData[] }) {
+        //the queue must be in turn order: the server activates pending players by turn order and clearZombiePendingAvatars() relies on it
+        const pendingPlayersInTurnOrder = [...collectedMarketTilesData.pendingPlayers].sort((a, b) => Number(a.turn_order) - Number(b.turn_order));
+
         this.collectedMarketTilesData = [
             ...collectedMarketTilesData.collectingPlayers.map(player => ({...player, type: 'collecting' as const})),
-            ...collectedMarketTilesData.pendingPlayers.map(player => ({...player, type: 'pending' as const}))
+            ...pendingPlayersInTurnOrder.map(player => ({...player, type: 'pending' as const}))
         ];
 
         const raiseAvatarAnimations: ReturnType<typeof dojo.animateProperty>[] = [];
         const moveCollectingAvatarAnimations: ReturnType<typeof dojo.animateProperty>[] = [];
         const movePendingAvatarAnimations: ReturnType<typeof dojo.animateProperty>[] = [];
 
-        //add player avatars first for correct positioning in animation
-        this.collectedMarketTilesData.forEach((playerCollects, animationOrder) => { this.addPlayerAvatar(playerCollects, false); });
+        //add player avatars first for correct positioning in animation; keep each player's own element instead of looking it up again
+        const destAvatars: HTMLDivElement[] = this.collectedMarketTilesData.map(playerCollects => this.addPlayerAvatar(playerCollects, false));
 
         this.collectedMarketTilesData.forEach((playerCollects, animationOrder) => {
-            const avatarClone: HTMLDivElement = this.gameui.players[playerCollects.player_id].createAvatarClone();
+            const destAvatar = destAvatars[animationOrder];
+            const srcAvatar: HTMLImageElement = this.gameui.players[playerCollects.player_id].overallPlayerBoard.querySelector('img.avatar');
+            const avatarClone: HTMLDivElement = destAvatar && srcAvatar ? this.gameui.players[playerCollects.player_id].createAvatarClone(srcAvatar) : null;
+            if(!avatarClone){
+                if(destAvatar)
+                    destAvatar.style.opacity = null; //show it without the fly-in
+                return;
+            }
+
             avatarClone.style.transform = 'none';
             avatarClone.style.zIndex = '1000';
-            const srcAvatar: HTMLImageElement = this.gameui.players[playerCollects.player_id].overallPlayerBoard.querySelector('img.avatar');
 
             document.body.appendChild(avatarClone);
 			this.gameui.placeOnObject(avatarClone, srcAvatar);
             const currentTop = parseInt(window.getComputedStyle(avatarClone).top);
 
-            const destAvatar = this.marketContainer.querySelector(`.yaxha-player-avatar[player-id="${playerCollects.player_id}"]`) as HTMLDivElement;
-            const destAvatarRect = destAvatar ? destAvatar.getBoundingClientRect() : {width: 0, height: 0};
+            const destAvatarRect = destAvatar.getBoundingClientRect();
 
             const destAvatarClone = avatarClone.cloneNode(true) as HTMLDivElement;
             destAvatarClone.style.opacity = '0';
@@ -271,7 +280,17 @@ class MarketHandler{
 
         let destAvatar = this.addPlayerAvatar({player_id: playerID, collected_market_index: collectedMarketIndex, type: 'collecting'} as CollectedMarketTilesData, false);
         const pendingAvatar: HTMLDivElement = this.waitingPlayersContainer.querySelector(`.yaxha-player-avatar.pending-player-avatar[player-id="${playerID}"]`) as HTMLDivElement;
-       
+        if(!destAvatar)
+            return;
+
+        if(!pendingAvatar){ //nothing to fly from; just show the avatar on the tile
+            destAvatar.style.opacity = null;
+            this.highlightCollectedMarketTile();
+            if(this.waitingPlayersContainer.querySelectorAll('.pending-player-avatar').length === 0)
+                this.closeWaitingPlayersContainer();
+            return;
+        }
+
         const pendingAvatarClone = this.gameui.players[playerID].createAvatarClone(pendingAvatar.querySelector('img'));
         pendingAvatarClone.style.zIndex = '1000';
         this.marketContainer.appendChild(pendingAvatarClone);
@@ -307,16 +326,18 @@ class MarketHandler{
         this.waitingPlayersContainer.querySelectorAll('.pending-player-avatar').forEach((avatar: HTMLDivElement) => this.gameui.animationHandler.fadeOutAndDestroy(avatar));
     }
 
-    public clearZombiePendingAvatars(nextCollectingPlayerID: number){ //any avatar to the left of the next collecting player is a zombie
+    //pending players are activated in turn order, so any pending avatar with a lower turn order than the next collecting player was skipped (zombie).
+    //compares turn orders rather than positions in the queue, so the DOM order can't remove a player who is still waiting
+    public clearZombiePendingAvatars(nextCollectingPlayerID: number){
         const allPendingAvatars: HTMLDivElement[] = Array.from(this.waitingPlayersContainer.querySelectorAll('.pending-player-avatar'));
-        const zombieAvatars = [];
-        
-        for(const avatar of allPendingAvatars){
-            if(Number(avatar.getAttribute('player-id')) == nextCollectingPlayerID)
-                break;
-            zombieAvatars.push(avatar);
-        }
-        zombieAvatars.forEach(avatar => this.gameui.animationHandler.fadeOutAndDestroy(avatar));
+        const nextAvatar = allPendingAvatars.find(avatar => Number(avatar.getAttribute('player-id')) === Number(nextCollectingPlayerID));
+        if(!nextAvatar || !nextAvatar.hasAttribute('turn-order'))
+            return;
+
+        const nextTurnOrder = Number(nextAvatar.getAttribute('turn-order'));
+        allPendingAvatars
+            .filter(avatar => avatar !== nextAvatar && avatar.hasAttribute('turn-order') && Number(avatar.getAttribute('turn-order')) < nextTurnOrder)
+            .forEach(avatar => this.gameui.animationHandler.fadeOutAndDestroy(avatar));
     }
 
     private highlightCollectedMarketTile(){ 
@@ -538,10 +559,15 @@ class MarketHandler{
         if(playerCollects.type == 'zombie')
             return null;
 
-        const avatarClone: HTMLDivElement = this.gameui.players[playerCollects.player_id].createAvatarClone();
-
         if(playerCollects.type != 'pending' && playerCollects.collected_market_index == null)
             return null;
+
+        const avatarClone: HTMLDivElement = this.gameui.players[playerCollects.player_id].createAvatarClone(); //a new element per call
+        if(!avatarClone)
+            return null;
+
+        if(playerCollects.turn_order != null)
+            avatarClone.setAttribute('turn-order', playerCollects.turn_order.toString());
 
         const newAvatarContainer: HTMLDivElement = playerCollects.type === 'pending' 
             ? this.marketContainer.querySelector('.waiting-players-container')

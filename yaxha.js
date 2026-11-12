@@ -1643,27 +1643,32 @@ var MarketHandler = /** @class */ (function () {
     };
     MarketHandler.prototype.animateAllMarketTileSelections = function (collectedMarketTilesData) {
         return __awaiter(this, void 0, void 0, function () {
-            var raiseAvatarAnimations, moveCollectingAvatarAnimations, movePendingAvatarAnimations, raiseAvatarsCombinedAnimation, moveCollectingAvatarsCombinedAnimation, movePendingAvatarsCombinedAnimation;
+            var pendingPlayersInTurnOrder, raiseAvatarAnimations, moveCollectingAvatarAnimations, movePendingAvatarAnimations, destAvatars, raiseAvatarsCombinedAnimation, moveCollectingAvatarsCombinedAnimation, movePendingAvatarsCombinedAnimation;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        this.collectedMarketTilesData = __spreadArray(__spreadArray([], collectedMarketTilesData.collectingPlayers.map(function (player) { return (__assign(__assign({}, player), { type: 'collecting' })); }), true), collectedMarketTilesData.pendingPlayers.map(function (player) { return (__assign(__assign({}, player), { type: 'pending' })); }), true);
+                        pendingPlayersInTurnOrder = __spreadArray([], collectedMarketTilesData.pendingPlayers, true).sort(function (a, b) { return Number(a.turn_order) - Number(b.turn_order); });
+                        this.collectedMarketTilesData = __spreadArray(__spreadArray([], collectedMarketTilesData.collectingPlayers.map(function (player) { return (__assign(__assign({}, player), { type: 'collecting' })); }), true), pendingPlayersInTurnOrder.map(function (player) { return (__assign(__assign({}, player), { type: 'pending' })); }), true);
                         raiseAvatarAnimations = [];
                         moveCollectingAvatarAnimations = [];
                         movePendingAvatarAnimations = [];
-                        //add player avatars first for correct positioning in animation
-                        this.collectedMarketTilesData.forEach(function (playerCollects, animationOrder) { _this.addPlayerAvatar(playerCollects, false); });
+                        destAvatars = this.collectedMarketTilesData.map(function (playerCollects) { return _this.addPlayerAvatar(playerCollects, false); });
                         this.collectedMarketTilesData.forEach(function (playerCollects, animationOrder) {
-                            var avatarClone = _this.gameui.players[playerCollects.player_id].createAvatarClone();
+                            var destAvatar = destAvatars[animationOrder];
+                            var srcAvatar = _this.gameui.players[playerCollects.player_id].overallPlayerBoard.querySelector('img.avatar');
+                            var avatarClone = destAvatar && srcAvatar ? _this.gameui.players[playerCollects.player_id].createAvatarClone(srcAvatar) : null;
+                            if (!avatarClone) {
+                                if (destAvatar)
+                                    destAvatar.style.opacity = null; //show it without the fly-in
+                                return;
+                            }
                             avatarClone.style.transform = 'none';
                             avatarClone.style.zIndex = '1000';
-                            var srcAvatar = _this.gameui.players[playerCollects.player_id].overallPlayerBoard.querySelector('img.avatar');
                             document.body.appendChild(avatarClone);
                             _this.gameui.placeOnObject(avatarClone, srcAvatar);
                             var currentTop = parseInt(window.getComputedStyle(avatarClone).top);
-                            var destAvatar = _this.marketContainer.querySelector(".yaxha-player-avatar[player-id=\"".concat(playerCollects.player_id, "\"]"));
-                            var destAvatarRect = destAvatar ? destAvatar.getBoundingClientRect() : { width: 0, height: 0 };
+                            var destAvatarRect = destAvatar.getBoundingClientRect();
                             var destAvatarClone = avatarClone.cloneNode(true);
                             destAvatarClone.style.opacity = '0';
                             avatarClone.after(destAvatarClone);
@@ -1726,6 +1731,15 @@ var MarketHandler = /** @class */ (function () {
                         this.collectedMarketTilesData[playerIndex].collected_market_index = collectedMarketIndex;
                         destAvatar = this.addPlayerAvatar({ player_id: playerID, collected_market_index: collectedMarketIndex, type: 'collecting' }, false);
                         pendingAvatar = this.waitingPlayersContainer.querySelector(".yaxha-player-avatar.pending-player-avatar[player-id=\"".concat(playerID, "\"]"));
+                        if (!destAvatar)
+                            return [2 /*return*/];
+                        if (!pendingAvatar) { //nothing to fly from; just show the avatar on the tile
+                            destAvatar.style.opacity = null;
+                            this.highlightCollectedMarketTile();
+                            if (this.waitingPlayersContainer.querySelectorAll('.pending-player-avatar').length === 0)
+                                this.closeWaitingPlayersContainer();
+                            return [2 /*return*/];
+                        }
                         pendingAvatarClone = this.gameui.players[playerID].createAvatarClone(pendingAvatar.querySelector('img'));
                         pendingAvatarClone.style.zIndex = '1000';
                         this.marketContainer.appendChild(pendingAvatarClone);
@@ -1761,17 +1775,18 @@ var MarketHandler = /** @class */ (function () {
         this.waitingPlayersContainer.style.opacity = null;
         this.waitingPlayersContainer.querySelectorAll('.pending-player-avatar').forEach(function (avatar) { return _this.gameui.animationHandler.fadeOutAndDestroy(avatar); });
     };
+    //pending players are activated in turn order, so any pending avatar with a lower turn order than the next collecting player was skipped (zombie).
+    //compares turn orders rather than positions in the queue, so the DOM order can't remove a player who is still waiting
     MarketHandler.prototype.clearZombiePendingAvatars = function (nextCollectingPlayerID) {
         var _this = this;
         var allPendingAvatars = Array.from(this.waitingPlayersContainer.querySelectorAll('.pending-player-avatar'));
-        var zombieAvatars = [];
-        for (var _i = 0, allPendingAvatars_1 = allPendingAvatars; _i < allPendingAvatars_1.length; _i++) {
-            var avatar = allPendingAvatars_1[_i];
-            if (Number(avatar.getAttribute('player-id')) == nextCollectingPlayerID)
-                break;
-            zombieAvatars.push(avatar);
-        }
-        zombieAvatars.forEach(function (avatar) { return _this.gameui.animationHandler.fadeOutAndDestroy(avatar); });
+        var nextAvatar = allPendingAvatars.find(function (avatar) { return Number(avatar.getAttribute('player-id')) === Number(nextCollectingPlayerID); });
+        if (!nextAvatar || !nextAvatar.hasAttribute('turn-order'))
+            return;
+        var nextTurnOrder = Number(nextAvatar.getAttribute('turn-order'));
+        allPendingAvatars
+            .filter(function (avatar) { return avatar !== nextAvatar && avatar.hasAttribute('turn-order') && Number(avatar.getAttribute('turn-order')) < nextTurnOrder; })
+            .forEach(function (avatar) { return _this.gameui.animationHandler.fadeOutAndDestroy(avatar); });
     };
     MarketHandler.prototype.highlightCollectedMarketTile = function () {
         if (!this.gameui.myself)
@@ -2005,9 +2020,13 @@ var MarketHandler = /** @class */ (function () {
     MarketHandler.prototype.addPlayerAvatar = function (playerCollects, isVisible) {
         if (playerCollects.type == 'zombie')
             return null;
-        var avatarClone = this.gameui.players[playerCollects.player_id].createAvatarClone();
         if (playerCollects.type != 'pending' && playerCollects.collected_market_index == null)
             return null;
+        var avatarClone = this.gameui.players[playerCollects.player_id].createAvatarClone(); //a new element per call
+        if (!avatarClone)
+            return null;
+        if (playerCollects.turn_order != null)
+            avatarClone.setAttribute('turn-order', playerCollects.turn_order.toString());
         var newAvatarContainer = playerCollects.type === 'pending'
             ? this.marketContainer.querySelector('.waiting-players-container')
             : this.marketTiles[playerCollects.collected_market_index];
@@ -2075,50 +2094,64 @@ var PlayerHandler = /** @class */ (function () {
         this.overallPlayerBoard = $('overall_player_board_' + this.playerID);
         this.pyramid = new PyramidHandler(this.gameui, this, this.gameui.PYRAMID_MAX_SIZE, pyramidData);
     }
-    PlayerHandler.prototype.createAvatarClone = function (srcAvatar) {
-        if (srcAvatar === void 0) { srcAvatar = null; }
-        if (!srcAvatar)
-            srcAvatar = this.overallPlayerBoard.querySelector('img.avatar');
-        var get184by184 = true;
-        if (srcAvatar) {
-            // Get dimensions and source from original avatar
-            var withinPageContent = document.getElementById('page-content').contains(srcAvatar);
-            var avatarRect = withinPageContent ? this.gameui.getPos(srcAvatar) : srcAvatar.getBoundingClientRect();
-            var avatarSrc32_1 = srcAvatar.getAttribute('src');
-            var avatarSrc_1 = get184by184 ? PlayerHandler.toLargeAvatarSrc(avatarSrc32_1) : avatarSrc32_1;
-            // Create new avatar clone structure with innerHTML
-            var avatarClone = document.createElement('div');
-            avatarClone.className = 'avatar-clone yaxha-player-avatar';
-            avatarClone.setAttribute('player-id', this.playerID.toString());
-            avatarClone.style.cssText = "position: absolute; width: ".concat(avatarRect.width, "px; height: ").concat(avatarRect.height, "px; --player-color: #").concat(this.playerColor, ";");
-            avatarClone.innerHTML = "<img src=\"".concat(avatarSrc_1, "\" style=\"width: 100%; height: 100%;\">");
-            if (get184by184) { // If requesting 184x184 avatar, handle fallback to 32x32 if larger image fails to load
-                var addedImg_1 = avatarClone.querySelector('img');
-                var tempImg = new Image();
-                tempImg.src = avatarSrc_1;
-                tempImg.onerror = function () {
-                    document.querySelectorAll('img').forEach(function (img) {
-                        if (img.getAttribute('src') === avatarSrc_1)
-                            img.src = avatarSrc32_1;
-                    });
-                    addedImg_1.src = avatarSrc32_1;
-                };
-            }
-            return avatarClone;
-        }
-        else {
+    //new, independent avatar element sized and positioned like geometrySource (the player panel avatar by default), showing the 184px avatar
+    PlayerHandler.prototype.createAvatarClone = function (geometrySource) {
+        if (geometrySource === void 0) { geometrySource = null; }
+        if (!geometrySource)
+            geometrySource = this.getPanelAvatarImg();
+        if (!geometrySource) {
             console.error('avatar not found, playerID:', this.playerID);
             return null;
         }
+        var withinPageContent = document.getElementById('page-content').contains(geometrySource);
+        var avatarRect = withinPageContent ? this.gameui.getPos(geometrySource) : geometrySource.getBoundingClientRect();
+        var avatarClone = document.createElement('div');
+        avatarClone.className = 'avatar-clone yaxha-player-avatar';
+        avatarClone.setAttribute('player-id', this.playerID.toString());
+        avatarClone.style.cssText = "position: absolute; width: ".concat(avatarRect.width, "px; height: ").concat(avatarRect.height, "px; --player-color: #").concat(this.playerColor, ";");
+        var img = document.createElement('img');
+        img.style.width = '100%';
+        img.style.height = '100%';
+        if (!this.setAvatarImgSrc(img, 184))
+            img.src = geometrySource.src;
+        avatarClone.appendChild(img);
+        return avatarClone;
     };
-    PlayerHandler.toLargeAvatarSrc = function (avatarSrc32) { return avatarSrc32.replace('32.jpg', '184.jpg'); };
-    //src of the player panel avatar (32px) and its 184px version; null if the panel avatar isn't found
-    PlayerHandler.prototype.getAvatarSrcs = function () {
-        var srcAvatar = this.overallPlayerBoard ? this.overallPlayerBoard.querySelector('img.avatar') : null;
-        if (!srcAvatar || !srcAvatar.getAttribute('src'))
+    PlayerHandler.prototype.getPanelAvatarImg = function () { return this.overallPlayerBoard ? this.overallPlayerBoard.querySelector('img.avatar') : null; };
+    //official this.bga.players.getPlayerAvatarUrl() when the framework provides it; otherwise the player panel avatar (32px) with the size swapped
+    PlayerHandler.prototype.getAvatarUrl = function (size) {
+        if (size === void 0) { size = 184; }
+        var bgaPlayers = this.gameui.bga ? this.gameui.bga.players : null;
+        if (bgaPlayers && typeof bgaPlayers.getPlayerAvatarUrl === 'function') {
+            try {
+                var url = bgaPlayers.getPlayerAvatarUrl(this.playerID, size);
+                if (url)
+                    return url;
+            }
+            catch (e) {
+                console.warn('bga.players.getPlayerAvatarUrl failed, using the player panel avatar', e);
+            }
+        }
+        var panelAvatar = this.getPanelAvatarImg();
+        var src32 = panelAvatar ? panelAvatar.getAttribute('src') : null;
+        if (!src32)
             return null;
-        var small = srcAvatar.getAttribute('src');
-        return { small: small, large: PlayerHandler.toLargeAvatarSrc(small) };
+        return size === 32 ? src32 : src32.replace('32.jpg', size + '.jpg');
+    };
+    //sets img to this player's avatar; if that size fails to load, only this img falls back to 32px. false if no avatar was found
+    PlayerHandler.prototype.setAvatarImgSrc = function (img, size) {
+        if (size === void 0) { size = 184; }
+        var url = this.getAvatarUrl(size);
+        if (!url)
+            return false;
+        var fallbackUrl = size === 32 ? null : this.getAvatarUrl(32);
+        if (fallbackUrl && fallbackUrl !== url)
+            img.addEventListener('error', function () {
+                if (img.getAttribute('src') !== fallbackUrl)
+                    img.src = fallbackUrl;
+            });
+        img.src = url;
+        return true;
     };
     PlayerHandler.prototype.setPlayerScore = function (newScore) { this.overallPlayerBoard.querySelector('.player_score_value').innerHTML = newScore.toString(); };
     PlayerHandler.prototype.getPlayerName = function () { return this.playerName; };
@@ -2156,18 +2189,15 @@ var PyramidHandler = /** @class */ (function () {
         this.pyramidContainer.style.setProperty('--player-color-hex', this.gameui.hexToRgb(this.owner.playerColor));
         this.pyramidContainer.style.setProperty('--expand-to-build-duration', "".concat(this.expandToBuildDuration / 1000, "s"));
         var turnOrderContainerId = "turn-order-".concat(this.owner.playerID);
-        var avatarSrcs = this.owner.getAvatarSrcs();
-        if (!avatarSrcs)
+        var avatarImg = document.createElement('img');
+        avatarImg.alt = '';
+        var hasAvatar = this.owner.setAvatarImgSrc(avatarImg, 184);
+        if (!hasAvatar)
             this.pyramidContainer.classList.add('no-avatar'); //always shows the name
-        this.pyramidContainer.innerHTML = "\n\t\t\t<div class=\"player-name-text\">\n\t\t\t\t<div class=\"player-avatar\" id=\"".concat(this.getAvatarElementId(), "\">").concat(avatarSrcs ? "<img src=\"".concat(avatarSrcs.large, "\" alt=\"\">") : '', "</div>\n\t\t\t\t<div class=\"text-container\">").concat(this.owner.getPlayerName(), "</div>\n\t\t\t</div>\n\t\t\t<div class=\"turn-order-container\" id=\"").concat(turnOrderContainerId, "\" turn-order=\"").concat(this.owner.getTurnOrder(), "\"></div>\n            <div class=\"cubes-container\"></div>\n        ");
+        this.pyramidContainer.innerHTML = "\n\t\t\t<div class=\"player-name-text\">\n\t\t\t\t<div class=\"player-avatar\" id=\"".concat(this.getAvatarElementId(), "\"></div>\n\t\t\t\t<div class=\"text-container\">").concat(this.owner.getPlayerName(), "</div>\n\t\t\t</div>\n\t\t\t<div class=\"turn-order-container\" id=\"").concat(turnOrderContainerId, "\" turn-order=\"").concat(this.owner.getTurnOrder(), "\"></div>\n            <div class=\"cubes-container\"></div>\n        ");
         document.getElementById('player-tables').querySelector('.pyramids-container').insertAdjacentElement(Number(this.owner.playerID) === Number(this.gameui.player_id) ? 'afterbegin' : 'beforeend', this.pyramidContainer);
-        if (avatarSrcs) {
-            var avatarImg_1 = this.pyramidContainer.querySelector('.player-avatar img');
-            avatarImg_1.addEventListener('error', function () {
-                if (avatarImg_1.getAttribute('src') !== avatarSrcs.small)
-                    avatarImg_1.src = avatarSrcs.small;
-            });
-        }
+        if (hasAvatar)
+            this.pyramidContainer.querySelector('.player-avatar').appendChild(avatarImg);
         this.pyramidContainer.querySelectorAll('.player-name-text .player-avatar, .player-name-text .text-container').forEach(function (el) {
             el.addEventListener('click', function () { return _this.gameui.togglePlayerDisplay(); });
         });
