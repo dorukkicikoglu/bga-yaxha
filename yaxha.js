@@ -3162,7 +3162,7 @@ var PyramidHandler = /** @class */ (function () {
             return;
         if (!this.cubesContainer.querySelector(".a-cube[cube-id=\"".concat(this.unplacedCube.cube_id, "\"]")))
             return;
-        if (Object.keys(this.cubesInConstruction).length >= this.gameui.CUBES_PER_MARKET_TILE) {
+        if (Number(this.unplacedCube.order_in_construction) >= Number(this.gameui.CUBES_PER_MARKET_TILE)) {
             this.createCubeOverlay(this.unplacedCube, 'last-cube-tick', 'fa6-check last-cube-tick-icon');
             return;
         }
@@ -3180,10 +3180,8 @@ var PyramidHandler = /** @class */ (function () {
             availableColorsDict = filteredColors_1;
         }
         var possibleColors = Object.keys(availableColorsDict);
-        if (possibleColors.length <= 1) {
-            this.createCubeOverlay(this.unplacedCube, 'last-cube-tick', 'fa6-check last-cube-tick-icon');
+        if (possibleColors.length <= 1)
             return;
-        }
         var possibleColorsString = possibleColors.join('_');
         var switchColorButton = document.createElement('div');
         switchColorButton.innerHTML = "<div class=\"switch-color-button\" pos-x=\"".concat(this.unplacedCube.pos_x, "\" pos-y=\"").concat(this.unplacedCube.pos_y, "\" pos-z=\"").concat(this.unplacedCube.pos_z, "\" possible-colors=\"").concat(possibleColorsString, "\" ><div class=\"covered-cube-face\"></div><i class=\"fa6 fa6-exchange switch-color-icon\"></i></div>");

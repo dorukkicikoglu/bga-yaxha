@@ -1130,7 +1130,7 @@ class PyramidHandler {
         this.updatePyramidStatusText();
     }
 
-    private displaySwitchColorButton() { //shows the last cube tick instead whenever the switch color button is not available
+    private displaySwitchColorButton() { //cube 1 or 2: switch color button when another legal color is on the Market tile, otherwise nothing. cube 3: the last cube tick instead
         this.cubesContainer.querySelectorAll('.switch-color-button, .last-cube-tick').forEach(el => el.remove());
 
         if(!this.unplacedCube)
@@ -1139,7 +1139,7 @@ class PyramidHandler {
         if(!this.cubesContainer.querySelector(`.a-cube[cube-id="${this.unplacedCube.cube_id}"]`))
             return;
 
-        if(Object.keys(this.cubesInConstruction).length >= this.gameui.CUBES_PER_MARKET_TILE){
+        if(Number(this.unplacedCube.order_in_construction) >= Number(this.gameui.CUBES_PER_MARKET_TILE)){
             this.createCubeOverlay(this.unplacedCube, 'last-cube-tick', 'fa6-check last-cube-tick-icon');
             return;
         }
@@ -1161,10 +1161,8 @@ class PyramidHandler {
         }
 
         const possibleColors = Object.keys(availableColorsDict);
-        if(possibleColors.length <= 1){
-            this.createCubeOverlay(this.unplacedCube, 'last-cube-tick', 'fa6-check last-cube-tick-icon');
+        if(possibleColors.length <= 1)
             return;
-        }
 
         const possibleColorsString = possibleColors.join('_');
 
