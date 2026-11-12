@@ -25,9 +25,7 @@ use YXHMarketManager;
 use YXHPyramidManager;
 use YXHScoringManager;
 
-require_once(APP_GAMEMODULE_PATH . "module/table/table.game.php");
-
-class Game extends \Table
+class Game extends \Bga\GameFramework\Table
 {
     public YXHGlobalsManager $globalsManager;
     public YXHMarketManager $marketManager;
