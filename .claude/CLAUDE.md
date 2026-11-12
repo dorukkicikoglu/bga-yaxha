@@ -29,3 +29,5 @@ Each round a player places up to 3 cubes (`CUBES_PER_MARKET_TILE`) from their Ma
 - Before editing to fix a server error, ask the user for the PHP error log from the Studio instead of guessing.
 - Don't commit without asking.
 - In browser console commands, refer to the game object as `window[0].gameui`, not `gameui`.
+- When you learn something durable about this project, such as a decision, a convention or a gotcha, update the relevant file in `.claude/` before finishing the task.
+- When a session has been long or covered several tasks, before wrapping up ask me whether to update the `.claude/` docs with anything from this chat worth keeping.
