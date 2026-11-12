@@ -2,7 +2,21 @@ class TooltipHandler{
 	constructor(private gameui: GameBody) { 
         this.addTooltipToBonusCards('market');
         this.addTooltipToTurnOrder();
+        this.addTooltipToPlayerAvatars();
 	}
+
+    public addTooltipToPlayerAvatars() {
+        document.querySelectorAll('.pyramids-container .player-name-text .player-avatar').forEach((avatar) => {
+            const playerId = avatar.closest('.a-pyramid-container').getAttribute('player-id');
+            this.gameui.addTooltipHtml(
+                avatar.getAttribute('id'),
+                `<div class="player-avatar-tooltip tooltip-wrapper">
+                    <div class="tooltip-text">${this.gameui.divColoredPlayer(playerId, {}, false)}</div>
+                </div>`,
+                400
+            );
+        });
+    }
 
 	public addTooltipToBonusCards(where: 'market' | 'scoreSheet' ){
         const container = where === 'market' ? this.gameui.marketHandler.getBonusCardIconsContainer() : document.querySelector('.end-game-score-container');

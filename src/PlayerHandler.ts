@@ -18,9 +18,8 @@ class PlayerHandler{
 			let withinPageContent = document.getElementById('page-content').contains(srcAvatar);
 			const avatarRect = withinPageContent ? this.gameui.getPos(srcAvatar) : srcAvatar.getBoundingClientRect();
 
-			let avatarSrc = srcAvatar.getAttribute('src');
-			const avatarSrc32 = avatarSrc;
-			avatarSrc = get184by184 ? avatarSrc.replace('32.jpg', '184.jpg') : avatarSrc;
+			const avatarSrc32 = srcAvatar.getAttribute('src');
+			const avatarSrc = get184by184 ? PlayerHandler.toLargeAvatarSrc(avatarSrc32) : avatarSrc32;
 
 			// Create new avatar clone structure with innerHTML
 			const avatarClone = document.createElement('div');
@@ -49,6 +48,18 @@ class PlayerHandler{
 			return null;
 		}
     }
+
+	private static toLargeAvatarSrc(avatarSrc32: string): string { return avatarSrc32.replace('32.jpg', '184.jpg'); }
+
+	//src of the player panel avatar (32px) and its 184px version; null if the panel avatar isn't found
+	public getAvatarSrcs(): {small: string, large: string} | null {
+		const srcAvatar: HTMLImageElement = this.overallPlayerBoard ? this.overallPlayerBoard.querySelector('img.avatar') : null;
+		if(!srcAvatar || !srcAvatar.getAttribute('src'))
+			return null;
+
+		const small = srcAvatar.getAttribute('src');
+		return {small: small, large: PlayerHandler.toLargeAvatarSrc(small)};
+	}
 
 	public setPlayerScore(newScore: number):void { this.overallPlayerBoard.querySelector('.player_score_value').innerHTML = newScore.toString(); }
 

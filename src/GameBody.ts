@@ -30,6 +30,11 @@ class GameBody extends GameGui {
     public BAKED_CUBE_COLUMN_COUNT = 15;
     public debugProceduralCubeTexture: boolean = false;
 
+    //"Show players as" game user preference (gamepreferences.json)
+    public PREF_PLAYER_DISPLAY = 100;
+    public PREF_PLAYER_DISPLAY_AVATAR = 1;
+    public PREF_PLAYER_DISPLAY_NAME = 2;
+
     public tabSessionID: number = Math.floor(Math.random() * 1000000000 + 1); //used to play animations in other active tabs and devices
 
     constructor() {
@@ -60,6 +65,7 @@ class GameBody extends GameGui {
         } else this.playerSeatOrder = Object.keys(gamedatas.players).map(Number); //spectator
 
         document.body.setAttribute('player-count', this.playerSeatOrder.length.toString());
+        this.setPlayerDisplayAttribute(this.readPlayerDisplayPreference());
 
         let cubeColorCSS = '';
         if(this.debugProceduralCubeTexture)
@@ -178,6 +184,44 @@ class GameBody extends GameGui {
             case 'gameEnd':
                 this.backgroundHandler.stopEyesRainbow();
             break;
+        }
+    }
+
+    public onGameUserPreferenceChanged(prefId: number, prefValue: number) {
+        if(Number(prefId) === this.PREF_PLAYER_DISPLAY)
+            this.applyPlayerDisplay(Number(prefValue));
+    }
+
+    private readPlayerDisplayPreference(): number {
+        try {
+            const value = Number(this.getGameUserPreference(this.PREF_PLAYER_DISPLAY));
+            if(value === this.PREF_PLAYER_DISPLAY_NAME || value === this.PREF_PLAYER_DISPLAY_AVATAR)
+                return value;
+        } catch(e) {
+            console.warn('Could not read the player display preference', e);
+        }
+        return this.PREF_PLAYER_DISPLAY_AVATAR; //default, also for spectators without preferences
+    }
+
+    private setPlayerDisplayAttribute(value: number) {
+        document.body.setAttribute('player-display', value === this.PREF_PLAYER_DISPLAY_NAME ? 'name' : 'avatar');
+    }
+
+    private applyPlayerDisplay(value: number) {
+        this.setPlayerDisplayAttribute(value);
+        for(const playerID in this.players)
+            this.players[playerID].pyramid.onPlayerDisplayChanged();
+    }
+
+    //clicking the avatar or name on a pyramid switches between the two and saves it as the user's preference
+    public togglePlayerDisplay() {
+        const newValue = document.body.getAttribute('player-display') === 'name' ? this.PREF_PLAYER_DISPLAY_AVATAR : this.PREF_PLAYER_DISPLAY_NAME;
+        this.applyPlayerDisplay(newValue); //apply locally first so it switches even if saving fails (e.g. spectators who aren't logged in)
+
+        try {
+            Promise.resolve(this.setGameUserPreference(this.PREF_PLAYER_DISPLAY, newValue)).catch(e => console.warn('Could not save the player display preference', e));
+        } catch(e) {
+            console.warn('Could not save the player display preference', e);
         }
     }
 

@@ -21,6 +21,7 @@ declare class GameGui {
     interface_min_width: number;
     gamedatas: any;
     prefs: any;
+    tooltips: any;
     notifqueue: any;
     scoreCtrl: any;
     statusBar: any;
@@ -40,6 +41,9 @@ declare class GameGui {
     onLeavingState(stateName: string ): void;
     onUpdateActionButtons(stateName: string, args: any): void;
     setupNotifications(): void;
+    getGameUserPreference(prefId: number): number;
+    setGameUserPreference(prefId: number, value: number): void | Promise<void>;
+    onGameUserPreferenceChanged(prefId: number, prefValue: number): void;
     addTooltipHtml( nodeID: string, html: string, delay: number ):void;
     
     attachToNewParent(node: HTMLDivElement, newParent: HTMLDivElement): HTMLDivElement;

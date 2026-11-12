@@ -20,6 +20,10 @@ Each round a player places up to 3 cubes (`CUBES_PER_MARKET_TILE`) from their Ma
 - **Grid Confirm button:** `updatePyramidStatusText()` decides the status bar Confirm (blue "Confirm" or red "Confirm and discard the rest") and passes the same variant to `updateGridConfirmButton()`, which shows a mirrored `.grid-confirm-button` inside a folder-tab `.grid-confirm-tab` centered on the top border of the player's own grid (slides up from behind the border). It is hidden whenever build mode is off, and immediately at the start of take back, Undo Build and `disableAndShrinkIfMobile()`. `fitPlayerNameAroundGridConfirm()` truncates the player name so it never runs under it.
 - **Fewer than 3 cubes:** if no valid spot remains, the confirm button becomes "Confirm and discard the rest" (`updatePyramidStatusText()`); the server re-checks this in `checkUnbuiltCubesAreNotBuildable()`.
 
+## Player avatar / name on pyramids
+- User preference `100` "Show players as" in `gamepreferences.json` (1 = Profile picture, default; 2 = Player name). `GameBody` keeps it as `body[player-display="avatar|name"]`; CSS shows `.player-avatar` or `.text-container` inside `.player-name-text`.
+- Clicking either calls `togglePlayerDisplay()` → `setGameUserPreference()`; changes from the BGA options menu arrive via `onGameUserPreferenceChanged()`. Pyramids whose panel avatar isn't found get `.no-avatar` and always show the name.
+
 ## Working rules
 - Read `.claude/SPEC.md` (rules summary from the official rulebook) before changing game logic.
 - Before editing to fix a server error, ask the user for the PHP error log from the Studio instead of guessing.

@@ -553,6 +553,10 @@ var GameBody = /** @class */ (function (_super) {
         _this.BAKED_CUBE_TEXTURE_COUNT = 300;
         _this.BAKED_CUBE_COLUMN_COUNT = 15;
         _this.debugProceduralCubeTexture = false;
+        //"Show players as" game user preference (gamepreferences.json)
+        _this.PREF_PLAYER_DISPLAY = 100;
+        _this.PREF_PLAYER_DISPLAY_AVATAR = 1;
+        _this.PREF_PLAYER_DISPLAY_NAME = 2;
         _this.tabSessionID = Math.floor(Math.random() * 1000000000 + 1); //used to play animations in other active tabs and devices
         console.log('yaxha constructor');
         return _this;
@@ -580,6 +584,7 @@ var GameBody = /** @class */ (function (_super) {
         else
             this.playerSeatOrder = Object.keys(gamedatas.players).map(Number); //spectator
         document.body.setAttribute('player-count', this.playerSeatOrder.length.toString());
+        this.setPlayerDisplayAttribute(this.readPlayerDisplayPreference());
         var cubeColorCSS = '';
         if (this.debugProceduralCubeTexture)
             for (var colorIndex in this.CUBE_COLORS)
@@ -668,6 +673,40 @@ var GameBody = /** @class */ (function (_super) {
                 return [2 /*return*/];
             });
         });
+    };
+    GameBody.prototype.onGameUserPreferenceChanged = function (prefId, prefValue) {
+        if (Number(prefId) === this.PREF_PLAYER_DISPLAY)
+            this.applyPlayerDisplay(Number(prefValue));
+    };
+    GameBody.prototype.readPlayerDisplayPreference = function () {
+        try {
+            var value = Number(this.getGameUserPreference(this.PREF_PLAYER_DISPLAY));
+            if (value === this.PREF_PLAYER_DISPLAY_NAME || value === this.PREF_PLAYER_DISPLAY_AVATAR)
+                return value;
+        }
+        catch (e) {
+            console.warn('Could not read the player display preference', e);
+        }
+        return this.PREF_PLAYER_DISPLAY_AVATAR; //default, also for spectators without preferences
+    };
+    GameBody.prototype.setPlayerDisplayAttribute = function (value) {
+        document.body.setAttribute('player-display', value === this.PREF_PLAYER_DISPLAY_NAME ? 'name' : 'avatar');
+    };
+    GameBody.prototype.applyPlayerDisplay = function (value) {
+        this.setPlayerDisplayAttribute(value);
+        for (var playerID in this.players)
+            this.players[playerID].pyramid.onPlayerDisplayChanged();
+    };
+    //clicking the avatar or name on a pyramid switches between the two and saves it as the user's preference
+    GameBody.prototype.togglePlayerDisplay = function () {
+        var newValue = document.body.getAttribute('player-display') === 'name' ? this.PREF_PLAYER_DISPLAY_AVATAR : this.PREF_PLAYER_DISPLAY_NAME;
+        this.applyPlayerDisplay(newValue); //apply locally first so it switches even if saving fails (e.g. spectators who aren't logged in)
+        try {
+            Promise.resolve(this.setGameUserPreference(this.PREF_PLAYER_DISPLAY, newValue)).catch(function (e) { return console.warn('Could not save the player display preference', e); });
+        }
+        catch (e) {
+            console.warn('Could not save the player display preference', e);
+        }
     };
     GameBody.prototype.onLeavingState = function (stateName) {
         console.log('Leaving state: ' + stateName);
@@ -2045,9 +2084,8 @@ var PlayerHandler = /** @class */ (function () {
             // Get dimensions and source from original avatar
             var withinPageContent = document.getElementById('page-content').contains(srcAvatar);
             var avatarRect = withinPageContent ? this.gameui.getPos(srcAvatar) : srcAvatar.getBoundingClientRect();
-            var avatarSrc_1 = srcAvatar.getAttribute('src');
-            var avatarSrc32_1 = avatarSrc_1;
-            avatarSrc_1 = get184by184 ? avatarSrc_1.replace('32.jpg', '184.jpg') : avatarSrc_1;
+            var avatarSrc32_1 = srcAvatar.getAttribute('src');
+            var avatarSrc_1 = get184by184 ? PlayerHandler.toLargeAvatarSrc(avatarSrc32_1) : avatarSrc32_1;
             // Create new avatar clone structure with innerHTML
             var avatarClone = document.createElement('div');
             avatarClone.className = 'avatar-clone yaxha-player-avatar';
@@ -2072,6 +2110,15 @@ var PlayerHandler = /** @class */ (function () {
             console.error('avatar not found, playerID:', this.playerID);
             return null;
         }
+    };
+    PlayerHandler.toLargeAvatarSrc = function (avatarSrc32) { return avatarSrc32.replace('32.jpg', '184.jpg'); };
+    //src of the player panel avatar (32px) and its 184px version; null if the panel avatar isn't found
+    PlayerHandler.prototype.getAvatarSrcs = function () {
+        var srcAvatar = this.overallPlayerBoard ? this.overallPlayerBoard.querySelector('img.avatar') : null;
+        if (!srcAvatar || !srcAvatar.getAttribute('src'))
+            return null;
+        var small = srcAvatar.getAttribute('src');
+        return { small: small, large: PlayerHandler.toLargeAvatarSrc(small) };
     };
     PlayerHandler.prototype.setPlayerScore = function (newScore) { this.overallPlayerBoard.querySelector('.player_score_value').innerHTML = newScore.toString(); };
     PlayerHandler.prototype.getPlayerName = function () { return this.playerName; };
@@ -2109,8 +2156,21 @@ var PyramidHandler = /** @class */ (function () {
         this.pyramidContainer.style.setProperty('--player-color-hex', this.gameui.hexToRgb(this.owner.playerColor));
         this.pyramidContainer.style.setProperty('--expand-to-build-duration', "".concat(this.expandToBuildDuration / 1000, "s"));
         var turnOrderContainerId = "turn-order-".concat(this.owner.playerID);
-        this.pyramidContainer.innerHTML = "\n\t\t\t<div class=\"player-name-text\">\n\t\t\t\t<div class=\"text-container\">".concat(this.owner.getPlayerName(), "</div>\n\t\t\t</div>\n\t\t\t<div class=\"turn-order-container\" id=\"").concat(turnOrderContainerId, "\" turn-order=\"").concat(this.owner.getTurnOrder(), "\"></div>\n            <div class=\"cubes-container\"></div>\n        ");
+        var avatarSrcs = this.owner.getAvatarSrcs();
+        if (!avatarSrcs)
+            this.pyramidContainer.classList.add('no-avatar'); //always shows the name
+        this.pyramidContainer.innerHTML = "\n\t\t\t<div class=\"player-name-text\">\n\t\t\t\t<div class=\"player-avatar\" id=\"".concat(this.getAvatarElementId(), "\">").concat(avatarSrcs ? "<img src=\"".concat(avatarSrcs.large, "\" alt=\"\">") : '', "</div>\n\t\t\t\t<div class=\"text-container\">").concat(this.owner.getPlayerName(), "</div>\n\t\t\t</div>\n\t\t\t<div class=\"turn-order-container\" id=\"").concat(turnOrderContainerId, "\" turn-order=\"").concat(this.owner.getTurnOrder(), "\"></div>\n            <div class=\"cubes-container\"></div>\n        ");
         document.getElementById('player-tables').querySelector('.pyramids-container').insertAdjacentElement(Number(this.owner.playerID) === Number(this.gameui.player_id) ? 'afterbegin' : 'beforeend', this.pyramidContainer);
+        if (avatarSrcs) {
+            var avatarImg_1 = this.pyramidContainer.querySelector('.player-avatar img');
+            avatarImg_1.addEventListener('error', function () {
+                if (avatarImg_1.getAttribute('src') !== avatarSrcs.small)
+                    avatarImg_1.src = avatarSrcs.small;
+            });
+        }
+        this.pyramidContainer.querySelectorAll('.player-name-text .player-avatar, .player-name-text .text-container').forEach(function (el) {
+            el.addEventListener('click', function () { return _this.gameui.togglePlayerDisplay(); });
+        });
         this.cubesContainer = this.pyramidContainer.querySelector('.cubes-container');
         if (this.canPlayerBuildPyramid())
             this.enableBuildPyramid();
@@ -2514,16 +2574,38 @@ var PyramidHandler = /** @class */ (function () {
             setTimeout(function () { return _this.fitPlayerNameAroundGridConfirm(); }, this.gridConfirmSlideDuration); //give the name its full width back once the button has slid away
         }
     };
-    //truncates the player name on the top border so it never runs under the grid confirm button
+    PyramidHandler.prototype.getAvatarElementId = function () { return 'pyramid-avatar-' + this.owner.playerID; };
+    //called after the "Show players as" preference switched between avatar and name
+    PyramidHandler.prototype.onPlayerDisplayChanged = function () {
+        var avatarTooltip = this.gameui.tooltips ? this.gameui.tooltips[this.getAvatarElementId()] : null;
+        if (avatarTooltip && typeof avatarTooltip.close === 'function')
+            avatarTooltip.close(); //the avatar may have just been hidden under the cursor
+        this.fitPlayerNameAroundGridConfirm();
+    };
+    //keeps the player name / avatar on the top border clear of the grid confirm button:
+    //name mode truncates the name; avatar mode narrows the (centered) confirm tab so its left edge clears the avatar
     PyramidHandler.prototype.fitPlayerNameAroundGridConfirm = function () {
         var nameText = this.pyramidContainer.querySelector('.player-name-text .text-container');
-        if (!nameText)
-            return;
-        nameText.style.maxWidth = '';
-        if (!this.gridConfirmContainer || !this.gridConfirmContainer.classList.contains('shown'))
+        var avatar = this.pyramidContainer.querySelector('.player-name-text .player-avatar');
+        var tab = this.gridConfirmContainer ? this.gridConfirmContainer.querySelector('.grid-confirm-tab') : null;
+        if (nameText)
+            nameText.style.maxWidth = '';
+        if (tab)
+            tab.style.maxWidth = ''; //back to the CSS max-width
+        if (!tab || !this.gridConfirmContainer.classList.contains('shown'))
             return;
         var gap = 8;
-        var tabRect = this.gridConfirmContainer.querySelector('.grid-confirm-tab').getBoundingClientRect();
+        var tabRect = tab.getBoundingClientRect();
+        if (avatar && avatar.offsetWidth > 0) { //avatar mode (hidden avatar has no width)
+            var avatarRect = avatar.getBoundingClientRect();
+            if (avatarRect.right + gap > tabRect.left) {
+                var tabCenter = (tabRect.left + tabRect.right) / 2;
+                tab.style.maxWidth = Math.max(0, 2 * (tabCenter - avatarRect.right - gap)) + 'px'; //label wraps instead
+            }
+            return;
+        }
+        if (!nameText)
+            return;
         var nameRect = nameText.getBoundingClientRect();
         if (nameRect.right > tabRect.left - gap)
             nameText.style.maxWidth = Math.max(0, tabRect.left - gap - nameRect.left) + 'px';
@@ -3170,7 +3252,15 @@ var TooltipHandler = /** @class */ (function () {
         this.gameui = gameui;
         this.addTooltipToBonusCards('market');
         this.addTooltipToTurnOrder();
+        this.addTooltipToPlayerAvatars();
     }
+    TooltipHandler.prototype.addTooltipToPlayerAvatars = function () {
+        var _this = this;
+        document.querySelectorAll('.pyramids-container .player-name-text .player-avatar').forEach(function (avatar) {
+            var playerId = avatar.closest('.a-pyramid-container').getAttribute('player-id');
+            _this.gameui.addTooltipHtml(avatar.getAttribute('id'), "<div class=\"player-avatar-tooltip tooltip-wrapper\">\n                    <div class=\"tooltip-text\">".concat(_this.gameui.divColoredPlayer(playerId, {}, false), "</div>\n                </div>"), 400);
+        });
+    };
     TooltipHandler.prototype.addTooltipToBonusCards = function (where) {
         var _this = this;
         var container = where === 'market' ? this.gameui.marketHandler.getBonusCardIconsContainer() : document.querySelector('.end-game-score-container');

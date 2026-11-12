@@ -29,9 +29,13 @@ class PyramidHandler {
         this.pyramidContainer.style.setProperty('--expand-to-build-duration', `${this.expandToBuildDuration / 1000}s`);
         
         const turnOrderContainerId = `turn-order-${this.owner.playerID}`;
+        const avatarSrcs = this.owner.getAvatarSrcs();
+        if(!avatarSrcs)
+            this.pyramidContainer.classList.add('no-avatar'); //always shows the name
 
 		this.pyramidContainer.innerHTML = `
 			<div class="player-name-text">
+				<div class="player-avatar" id="${this.getAvatarElementId()}">${avatarSrcs ? `<img src="${avatarSrcs.large}" alt="">` : ''}</div>
 				<div class="text-container">${this.owner.getPlayerName()}</div>
 			</div>
 			<div class="turn-order-container" id="${turnOrderContainerId}" turn-order="${this.owner.getTurnOrder()}"></div>
@@ -42,6 +46,18 @@ class PyramidHandler {
 			Number(this.owner.playerID) === Number(this.gameui.player_id) ? 'afterbegin' : 'beforeend',
 			this.pyramidContainer
 		);
+
+        if(avatarSrcs){
+            const avatarImg = this.pyramidContainer.querySelector('.player-avatar img') as HTMLImageElement;
+            avatarImg.addEventListener('error', () => { //184px version missing, fall back to the player panel size
+                if(avatarImg.getAttribute('src') !== avatarSrcs.small)
+                    avatarImg.src = avatarSrcs.small;
+            });
+        }
+
+        this.pyramidContainer.querySelectorAll('.player-name-text .player-avatar, .player-name-text .text-container').forEach(el => {
+            el.addEventListener('click', () => this.gameui.togglePlayerDisplay());
+        });
 
         this.cubesContainer = this.pyramidContainer.querySelector('.cubes-container');
         if(this.canPlayerBuildPyramid())
@@ -506,19 +522,47 @@ class PyramidHandler {
         }
     }
 
-    //truncates the player name on the top border so it never runs under the grid confirm button
+    public getAvatarElementId(): string { return 'pyramid-avatar-' + this.owner.playerID; }
+
+    //called after the "Show players as" preference switched between avatar and name
+    public onPlayerDisplayChanged() {
+        const avatarTooltip = this.gameui.tooltips ? this.gameui.tooltips[this.getAvatarElementId()] : null;
+        if(avatarTooltip && typeof avatarTooltip.close === 'function')
+            avatarTooltip.close(); //the avatar may have just been hidden under the cursor
+
+        this.fitPlayerNameAroundGridConfirm();
+    }
+
+    //keeps the player name / avatar on the top border clear of the grid confirm button:
+    //name mode truncates the name; avatar mode narrows the (centered) confirm tab so its left edge clears the avatar
     private fitPlayerNameAroundGridConfirm() {
         const nameText = this.pyramidContainer.querySelector('.player-name-text .text-container') as HTMLDivElement;
-        if(!nameText)
-            return;
+        const avatar = this.pyramidContainer.querySelector('.player-name-text .player-avatar') as HTMLDivElement;
+        const tab = this.gridConfirmContainer ? this.gridConfirmContainer.querySelector('.grid-confirm-tab') as HTMLDivElement : null;
 
-        nameText.style.maxWidth = '';
+        if(nameText)
+            nameText.style.maxWidth = '';
+        if(tab)
+            tab.style.maxWidth = ''; //back to the CSS max-width
 
-        if(!this.gridConfirmContainer || !this.gridConfirmContainer.classList.contains('shown'))
+        if(!tab || !this.gridConfirmContainer.classList.contains('shown'))
             return;
 
         const gap = 8;
-        const tabRect = this.gridConfirmContainer.querySelector('.grid-confirm-tab').getBoundingClientRect();
+        const tabRect = tab.getBoundingClientRect();
+
+        if(avatar && avatar.offsetWidth > 0){ //avatar mode (hidden avatar has no width)
+            const avatarRect = avatar.getBoundingClientRect();
+            if(avatarRect.right + gap > tabRect.left){
+                const tabCenter = (tabRect.left + tabRect.right) / 2;
+                tab.style.maxWidth = Math.max(0, 2 * (tabCenter - avatarRect.right - gap)) + 'px'; //label wraps instead
+            }
+            return;
+        }
+
+        if(!nameText)
+            return;
+
         const nameRect = nameText.getBoundingClientRect();
 
         if(nameRect.right > tabRect.left - gap)
