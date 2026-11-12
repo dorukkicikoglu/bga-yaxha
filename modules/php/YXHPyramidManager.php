@@ -50,7 +50,8 @@ class YXHPyramidManager extends APP_DbObject{
         $this->parent->notify->player($playerID, 'forOtherDevicesAddedCubeToPyramid', '', ['cube_data' => $cubeData, 'tab_session_id' => $tabSessionID]);
     }
 
-    private function isMoveValid($playerID, $cubeID, $posX, $posY, $posZ){
+    //$replacedCubeID: a cube currently in the pyramid that $cubeID would replace (color switch); it is ignored during validation
+    private function isMoveValid($playerID, $cubeID, $posX, $posY, $posZ, ?int $replacedCubeID = null){
         $cubeID = (int) $cubeID;
         $posX = (int) $posX;
         $posY = (int) $posY;
@@ -60,7 +61,10 @@ class YXHPyramidManager extends APP_DbObject{
         if($cubeColor === null || $cubeColor === false)
             throw new \BgaUserException(clienttranslate("Cube not found"));
 
-        $pyramidData = $this->getPlayerPyramidData($playerID, true);
+        $pyramidData = array_filter( //the cube being placed/moved and the cube being replaced do not count as existing cubes
+            $this->getPlayerPyramidData($playerID, true),
+            fn($cube) => (int) $cube['cube_id'] !== $cubeID && (int) $cube['cube_id'] !== $replacedCubeID
+        );
         if(empty($pyramidData))
             return;
 
@@ -70,9 +74,6 @@ class YXHPyramidManager extends APP_DbObject{
         $maxX = $posX; $maxY = $posY;
 
         foreach($pyramidData as $index => $cube){
-            if((int) $cube['cube_id'] == $cubeID) //the last cube in construction might be in the pyramid
-                continue;
-
             $pyrCubeX = (int) $cube['pos_x'];
             $pyrCubeY = (int) $cube['pos_y'];
             $pyrCubeZ = (int) $cube['pos_z'];
@@ -156,6 +157,11 @@ class YXHPyramidManager extends APP_DbObject{
 
     public function switchCubeColor($playerID, $cubeID, $tabSessionID): void {
         $this->checkBuildableState();
+
+        $cubesInConstructionCount = (int) $this->getUniqueValueFromDB("SELECT COUNT(*) FROM cubes WHERE order_in_construction IS NOT NULL AND card_location_arg = $playerID");
+        if ($cubesInConstructionCount >= CUBES_PER_MARKET_TILE) //the final cube can only be moved, not switched
+            throw new \BgaUserException(clienttranslate("The color of the final cube cannot be switched"));
+
         $this->doesPlayerOwnCubeOnMarketTile($playerID, $cubeID);
 
         $playerMarketIndex = $this->getUniqueValueFromDB("SELECT collected_market_index FROM player WHERE player_id = $playerID");
@@ -163,6 +169,8 @@ class YXHPyramidManager extends APP_DbObject{
         $lastAddedCube = $this->getObjectFromDB("SELECT card_id as cube_id, color, pos_x, pos_y, pos_z, order_in_construction FROM cubes WHERE order_in_construction IS NOT NULL AND card_location_arg = $playerID ORDER BY order_in_construction DESC LIMIT 1");
         if (!$lastAddedCube)
             throw new \BgaUserException(clienttranslate("No cube found in construction"));
+
+        $this->isMoveValid($playerID, $cubeID, $lastAddedCube['pos_x'], $lastAddedCube['pos_y'], $lastAddedCube['pos_z'], (int) $lastAddedCube['cube_id']);
 
         $this->DbQuery("UPDATE cubes SET 
             card_location = 'market', 

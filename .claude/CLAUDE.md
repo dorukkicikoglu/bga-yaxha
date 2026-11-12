@@ -10,6 +10,13 @@
 - Uploads can fail silently. After any server-side error, first check that the server copy matches the local one before assuming the code is at fault.
 - Paths in the `ignore` list of `.vscode/sftp.json` (e.g. `.claude/`, `references/`, `node_modules/`) never upload.
 
+## Cube placement UI
+Each round a player places up to 3 cubes (`CUBES_PER_MARKET_TILE`) from their Market tile into their pyramid, one at a time. Client logic is in `src/PyramidHandler.ts`, styles in `src/yaxha.scss`, server checks in `modules/php/YXHPyramidManager.php`.
+- **Valid spots:** `getPossibleMoves()` computes them and `drawSnapPoints()` draws them as `.pyramid-cube-snap-point`: a darkened square (lighter on level 2+) with a player-colour outline and an icon in the bottom-right corner. Clicking one calls `onSnapPointClicked()`, which sends `actAddCubeToPyramid` (server: `addCubeToPyramid()` → `isMoveValid()`).
+- **Change-colour icon (cubes 1 and 2 only):** `displaySwitchColorButton()` puts a `.switch-color-button` overlay (`fa6-exchange`) on the last placed cube. That overlay is the only "last placed" highlight, and at most one exists. It only appears if another legal colour is still on the Market tile (on level 2+, legal means on or next to that colour). Each click swaps the cube for a different-coloured cube from the tile (`onSwitchColorButtonClicked()` → `actPyramidCubeColorSwitched` → server `switchCubeColor()`); it never picks a free colour.
+- **Cube 3:** its colour can't be switched. Instead the snap points stay, with a move icon (`fa-angle-double-right`), and clicking one moves cube 3 there (`actMoveCubeInPyramid` → `moveCubeInPyramid()`, which only allows the 3rd cube). Cube 3's own spot doesn't create new spots (`getPyramidCubesExceptFinalBuilt()`).
+- **Fewer than 3 cubes:** if no valid spot remains, the confirm button becomes "Confirm and discard the rest" (`updatePyramidStatusText()`); the server re-checks this in `checkUnbuiltCubesAreNotBuildable()`.
+
 ## Working rules
 - Read `.claude/SPEC.md` (rules summary from the official rulebook) before changing game logic.
 - Before editing to fix a server error, ask the user for the PHP error log from the Studio instead of guessing.
