@@ -11,6 +11,7 @@
 - Paths in the `ignore` list of `.vscode/sftp.json` (e.g. `.claude/`, `references/`, `node_modules/`) never upload.
 
 ## Working rules
+- Read `.claude/SPEC.md` (rules summary from the official rulebook) before changing game logic.
 - Before editing to fix a server error, ask the user for the PHP error log from the Studio instead of guessing.
 - Don't commit without asking.
 - In browser console commands, refer to the game object as `window[0].gameui`, not `gameui`.
