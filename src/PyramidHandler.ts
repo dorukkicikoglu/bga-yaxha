@@ -8,6 +8,8 @@ class PyramidHandler {
     private centerTilesAnim: ReturnType<typeof dojo.animateProperty>;
     private moveCubeAnim: ReturnType<typeof dojo.animateProperty> = null;
     private expandToBuildDuration: number = 300;
+    private gridConfirmContainer: HTMLDivElement = null;
+    private gridConfirmSlideDuration: number = 250; //keep in sync with the transition of .grid-confirm-tab in yaxha.scss
 
     constructor(private gameui: GameBody,private owner: PlayerHandler,private PYRAMID_MAX_SIZE: number,private pyramidData: PyramidCube[]) {
         this.initPyramidContainer();
@@ -425,12 +427,15 @@ class PyramidHandler {
             else statusText = dojo.string.substitute(_('${you} need to build${cubesToBuild}'), {you: this.gameui.divYou(), cubesToBuild: cubesToBuildHTML});
         }
 
-        if(!statusText)
+        if(!statusText){
+            this.updateGridConfirmButton(null);
             return;
-        
+        }
+
         const showConfirmButton = (Object.keys(this.cubesInConstruction).length >= this.gameui.CUBES_PER_MARKET_TILE || this.pyramidContainer.querySelectorAll('.pyramid-cube-snap-point').length <= 0) && !this.owner.are_cubes_built;
         const showUndoButton = Object.keys(this.cubesInConstruction).length > 0;
-        
+        let confirmButtonVariant: {color: string, label: string} = null; //mirrored by the confirm button on the grid
+
         if(showConfirmButton || showUndoButton){
             let buttonHTML = '';
             if(showConfirmButton){
@@ -448,7 +453,8 @@ class PyramidHandler {
                 } else {
                     statusText = _('You cannot place any of your cubes 😔');
                 }
-                buttonHTML += `<a class="confirm-place-cube-button bgabutton bgabutton_${allCubesBuilt ? 'blue' : 'red'}">` + (allCubesBuilt ? _('Confirm') : _('Confirm and discard the rest')) + '</a>';
+                confirmButtonVariant = {color: allCubesBuilt ? 'blue' : 'red', label: allCubesBuilt ? _('Confirm') : _('Confirm and discard the rest')};
+                buttonHTML += `<a class="confirm-place-cube-button bgabutton bgabutton_${confirmButtonVariant.color}">` + confirmButtonVariant.label + '</a>';
             }
 
             if(showUndoButton)
@@ -461,6 +467,62 @@ class PyramidHandler {
 
         document.querySelector('#page-title .confirm-place-cube-button')?.addEventListener('click', () => this.confirmPlaceCubeButtonClicked());
         document.querySelector('#page-title .undo-place-cube-button')?.addEventListener('click', () => this.undoPlaceCubeButtonClicked());
+
+        this.updateGridConfirmButton(confirmButtonVariant);
+    }
+
+    //second confirm button attached to the top border of the player's own grid; mirrors the status bar confirm button (null hides it)
+    private updateGridConfirmButton(variant: {color: string, label: string} | null) {
+        const myPyramid = this.owner.playerID.toString() == this.gameui.player_id.toString();
+        const buildEnabled = this.pyramidContainer.getAttribute('build-pyramid-enabled') === 'true';
+        const show = variant !== null && myPyramid && buildEnabled;
+
+        if(!this.gridConfirmContainer){
+            if(!show)
+                return;
+
+            this.gridConfirmContainer = document.createElement('div');
+            this.gridConfirmContainer.className = 'grid-confirm-container';
+            this.gridConfirmContainer.innerHTML = '<div class="grid-confirm-tab"><a class="grid-confirm-button bgabutton"></a></div>'; //container clips the tab so it slides up from behind the grid border
+            this.pyramidContainer.appendChild(this.gridConfirmContainer);
+
+            this.gridConfirmContainer.querySelector('.grid-confirm-button').addEventListener('click', () => this.confirmPlaceCubeButtonClicked());
+            window.addEventListener('resize', () => this.fitPlayerNameAroundGridConfirm());
+
+            this.gridConfirmContainer.offsetHeight; //force layout so the first appearance also slides up
+        }
+
+        const button = this.gridConfirmContainer.querySelector('.grid-confirm-button') as HTMLAnchorElement;
+
+        if(show){
+            button.classList.remove('bgabutton_blue', 'bgabutton_red');
+            button.classList.add('bgabutton_' + variant.color);
+            button.innerHTML = variant.label;
+            this.gridConfirmContainer.classList.add('shown');
+            this.fitPlayerNameAroundGridConfirm();
+        } else if(this.gridConfirmContainer.classList.contains('shown')) {
+            this.gridConfirmContainer.classList.remove('shown');
+            setTimeout(() => this.fitPlayerNameAroundGridConfirm(), this.gridConfirmSlideDuration); //give the name its full width back once the button has slid away
+        }
+    }
+
+    //truncates the player name on the top border so it never runs under the grid confirm button
+    private fitPlayerNameAroundGridConfirm() {
+        const nameText = this.pyramidContainer.querySelector('.player-name-text .text-container') as HTMLDivElement;
+        if(!nameText)
+            return;
+
+        nameText.style.maxWidth = '';
+
+        if(!this.gridConfirmContainer || !this.gridConfirmContainer.classList.contains('shown'))
+            return;
+
+        const gap = 8;
+        const tabRect = this.gridConfirmContainer.querySelector('.grid-confirm-tab').getBoundingClientRect();
+        const nameRect = nameText.getBoundingClientRect();
+
+        if(nameRect.right > tabRect.left - gap)
+            nameText.style.maxWidth = Math.max(0, tabRect.left - gap - nameRect.left) + 'px';
     }
 
     public animateUnplacedCubeToPyramid(cubeData: PyramidCube, moveType: PyramidCubeMoveType, calledForOtherDevices: boolean = false) {
@@ -694,6 +756,7 @@ class PyramidHandler {
             return;
 
         this.removeCubeOverlayButtons();
+        this.updateGridConfirmButton(null); //slide away right away; the status bar is redrawn once the cubes are back on the Market tile
         this.cubesContainer.querySelectorAll('.pyramid-cube-snap-point').forEach(snapPoint => {
             this.gameui.animationHandler.fadeOutAndDestroy(snapPoint as HTMLDivElement, 100);
         });
@@ -809,6 +872,7 @@ class PyramidHandler {
             this.gameui.ajaxAction('actTakeBackCubes', {cube_id: takeBackToCube.cube_id, tab_session_id: this.gameui.tabSessionID}, true, false);
 
         this.removeCubeOverlayButtons();
+        this.updateGridConfirmButton(null); //slide away right away; the status bar is redrawn once the cubes are back on the Market tile
         this.cubesContainer.querySelectorAll('.pyramid-cube-snap-point').forEach(snapPoint => {
             this.gameui.animationHandler.fadeOutAndDestroy(snapPoint as HTMLDivElement, 100);
         });
@@ -988,6 +1052,7 @@ class PyramidHandler {
     public async disableAndShrinkIfMobile() {
         this.cubesContainer.querySelectorAll('.pyramid-cube-snap-point').forEach(el => el.remove());
         this.removeCubeOverlayButtons();
+        this.updateGridConfirmButton(null);
 
         if(!this.gameui.isMobile()){
             this.pyramidContainer.removeAttribute('build-pyramid-enabled'); 

@@ -215,6 +215,15 @@ body.mobile_version #player-tables{ margin-bottom: 60vh; }
         .turn-order-container{ position: absolute;  top: -6%; left: 84%; transform-origin: center; transform: rotate(8deg); cursor: help; width: 14%;
             &:hover { animation: wiggle-turn-order-container 0.25s ease-in-out 2; }
         }
+        //strip ending exactly on the grid's top border line; it clips the tab so the tab slides up from behind the border
+        //(extends 12px past the sides so the tab's shadow isn't cut; stays symmetric so the tab remains centered on the grid)
+        .grid-confirm-container{ position: absolute; left: -12px; right: -12px; bottom: 100%; overflow: hidden; padding-top: 10px; pointer-events: none; z-index: 200;
+            //folder tab: rounded top corners, open flat bottom on the border line, player-colour outline like the grid border
+            //centered with left + translate so it never depends on its contents; max-width keeps it clear of the turn order tile (starts at 84% of the grid), long labels wrap instead
+            .grid-confirm-tab{ position: relative; left: 50%; width: max-content; max-width: calc(68% - 24px); box-sizing: border-box; padding: 6px 10px; background-color: #1b3432; border: 2px solid var(--player-color, #000000); border-bottom: none; border-radius: 10px 10px 0 0; box-shadow: 0 -2px 8px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06); transform: translate(-50%, 110%); transition: transform 0.25s ease-out; pointer-events: auto; }
+            &.shown .grid-confirm-tab{ transform: translate(-50%, 0); }
+            .grid-confirm-button{ display: block; margin: 0; white-space: normal; text-align: center; box-sizing: border-box; }
+        }
         .cubes-container{ 
             position: absolute; top: 50%; left: 50%; 
             .a-cube, .pyramid-cube-snap-point, .switch-color-button, .take-back-button, .last-cube-tick{ position: absolute; width: var(--pyramid-cube-size, 0px); height: var(--pyramid-cube-size, 0px); max-width: var(--pyramid-cube-size, 0px); max-height: var(--pyramid-cube-size, 0px);}
@@ -253,6 +262,10 @@ body.mobile_version #player-tables{ margin-bottom: 60vh; }
 }
 body.mobile_version .pyramids-container{ text-align: left; --expansion-rate: 2; --shrunk-pyramid-cube-size: var(--pyramid-cube-size); --expanded-pyramid-cube-size: calc(var(--pyramid-cube-size) * var(--expansion-rate));
     .a-pyramid-container.my-pyramid{ max-width: none; --pyramid-cube-size: var(--shrunk-pyramid-cube-size);
+        .grid-confirm-container{ //comfortable tap target
+            .grid-confirm-tab{ padding: 8px 12px; }
+            .grid-confirm-button{ min-height: 44px; padding: 10px 22px; font-size: 17px; display: flex; align-items: center; justify-content: center; }
+        }
         .a-cube, .pyramid-cube-snap-point, .switch-color-button, .take-back-button, .last-cube-tick{ transition: width var(--expand-to-build-duration) ease-out, height var(--expand-to-build-duration) ease-out, left var(--expand-to-build-duration) ease-out, bottom var(--expand-to-build-duration) ease-out; }
         &[build-pyramid-enabled=true]{ width: 98%; 
             --pyramid-cube-size: var(--expanded-pyramid-cube-size);

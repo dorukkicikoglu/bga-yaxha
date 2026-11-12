@@ -1453,6 +1453,42 @@ body.mobile_version #player-tables {
 .pyramids-container .a-pyramid-container .turn-order-container:hover {
   animation: wiggle-turn-order-container 0.25s ease-in-out 2;
 }
+.pyramids-container .a-pyramid-container .grid-confirm-container {
+  position: absolute;
+  left: -12px;
+  right: -12px;
+  bottom: 100%;
+  overflow: hidden;
+  padding-top: 10px;
+  pointer-events: none;
+  z-index: 200;
+}
+.pyramids-container .a-pyramid-container .grid-confirm-container .grid-confirm-tab {
+  position: relative;
+  left: 50%;
+  width: max-content;
+  max-width: calc(68% - 24px);
+  box-sizing: border-box;
+  padding: 6px 10px;
+  background-color: #1b3432;
+  border: 2px solid var(--player-color, #000000);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transform: translate(-50%, 110%);
+  transition: transform 0.25s ease-out;
+  pointer-events: auto;
+}
+.pyramids-container .a-pyramid-container .grid-confirm-container.shown .grid-confirm-tab {
+  transform: translate(-50%, 0);
+}
+.pyramids-container .a-pyramid-container .grid-confirm-container .grid-confirm-button {
+  display: block;
+  margin: 0;
+  white-space: normal;
+  text-align: center;
+  box-sizing: border-box;
+}
 .pyramids-container .a-pyramid-container .cubes-container {
   position: absolute;
   top: 50%;
@@ -1593,6 +1629,17 @@ body.mobile_version .pyramids-container {
 body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid {
   max-width: none;
   --pyramid-cube-size: var(--shrunk-pyramid-cube-size);
+}
+body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .grid-confirm-container .grid-confirm-tab {
+  padding: 8px 12px;
+}
+body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .grid-confirm-container .grid-confirm-button {
+  min-height: 44px;
+  padding: 10px 22px;
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .a-cube, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .pyramid-cube-snap-point, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .switch-color-button, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .take-back-button, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .last-cube-tick {
   transition: width var(--expand-to-build-duration) ease-out, height var(--expand-to-build-duration) ease-out, left var(--expand-to-build-duration) ease-out, bottom var(--expand-to-build-duration) ease-out;
