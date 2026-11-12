@@ -196,6 +196,12 @@ class Game extends \Bga\GameFramework\Table
     }
 
     #[CheckAction(false)]
+    public function actTakeBackCubes(int $cube_id, int $tab_session_id): void
+    {
+        $this->pyramidManager->takeBackCubes((int) $this->getCurrentPlayerId(), $cube_id, $tab_session_id);
+    }
+
+    #[CheckAction(false)]
     public function actConfirmBuildPyramid(): void
     {
         $this->pyramidManager->confirmBuildPyramid((int) $this->getCurrentPlayerId());

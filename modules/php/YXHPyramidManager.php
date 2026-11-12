@@ -202,12 +202,44 @@ class YXHPyramidManager extends APP_DbObject{
             throw new \BgaUserException(clienttranslate("You have not selected any Market Tile to undo build"));
             
         $this->parent->not_a_move_notification = true;
-        $this->DbQuery("UPDATE cubes SET card_location = 'market', card_location_arg = $playerMarketIndex, pos_x = NULL, pos_y = NULL, pos_z = NULL, order_in_construction = NULL WHERE (order_in_construction IS NOT NULL AND card_location_arg = $playerID) OR (card_location = 'to_discard' AND card_location_arg = $playerMarketIndex)");
+        $this->returnCubesInConstructionToMarket((int) $playerID, (int) $playerMarketIndex);
+        $this->DbQuery("UPDATE cubes SET card_location = 'market', card_location_arg = $playerMarketIndex, pos_x = NULL, pos_y = NULL, pos_z = NULL, order_in_construction = NULL WHERE card_location = 'to_discard' AND card_location_arg = $playerMarketIndex");
         $this->DbQuery("UPDATE player SET are_cubes_built = 'false' WHERE player_id = $playerID");
         $this->parent->notify->player($playerID, 'forOtherDevicesUndoBuildPyramid', '', ['tab_session_id' => $tabSessionID]);
 
         if ($this->parent->gamestate->state()['name'] === 'buildPyramid')
             $this->parent->gamestate->setPlayersMultiactive([$playerID], 'buildPyramid');
+    }
+
+    //rewinds this build phase to just after $cubeID was placed: every cube placed after it goes back to the player's Market tile
+    public function takeBackCubes($playerID, $cubeID, $tabSessionID): void {
+        $this->checkBuildableState();
+
+        $playerRow = $this->getObjectFromDB("SELECT are_cubes_built, collected_market_index FROM player WHERE player_id = $playerID");
+        if ($playerRow['are_cubes_built'] === 'true')
+            throw new \BgaUserException(clienttranslate("You have already confirmed your build"));
+
+        $playerMarketIndex = $playerRow['collected_market_index'];
+        if ($playerMarketIndex === null)
+            throw new \BgaUserException(clienttranslate("You have not selected any Market Tile yet"));
+
+        $cube = $this->getObjectFromDB("SELECT card_location, card_location_arg, order_in_construction FROM cubes WHERE card_id = $cubeID");
+        if (!$cube || $cube['card_location'] !== 'pyramid' || (int) $cube['card_location_arg'] !== (int) $playerID || $cube['order_in_construction'] === null)
+            throw new \BgaUserException(clienttranslate("You can only take back cubes placed this round"));
+
+        $cubeOrder = (int) $cube['order_in_construction'];
+        $laterCubesCount = (int) $this->getUniqueValueFromDB("SELECT COUNT(*) FROM cubes WHERE order_in_construction > $cubeOrder AND card_location_arg = $playerID");
+        if ($laterCubesCount <= 0)
+            throw new \BgaUserException(clienttranslate("No cubes were placed after this one"));
+
+        $this->parent->not_a_move_notification = true;
+        $this->returnCubesInConstructionToMarket((int) $playerID, (int) $playerMarketIndex, $cubeOrder);
+        $this->parent->notify->player($playerID, 'forOtherDevicesTookBackCubes', '', ['cube_id' => $cubeID, 'tab_session_id' => $tabSessionID]);
+    }
+
+    //returns the player's cubes in construction placed after $afterOrder (all of them by default) to their Market tile
+    private function returnCubesInConstructionToMarket(int $playerID, int $playerMarketIndex, int $afterOrder = 0): void {
+        $this->DbQuery("UPDATE cubes SET card_location = 'market', card_location_arg = $playerMarketIndex, pos_x = NULL, pos_y = NULL, pos_z = NULL, order_in_construction = NULL WHERE order_in_construction > $afterOrder AND card_location_arg = $playerID");
     }
 
     private function doesPlayerOwnCubeOnMarketTile($playerID, $cubeID): void{

@@ -588,6 +588,26 @@ class GameBody extends GameGui {
         } else await this.myself.pyramid.animateUnplacedCubeToPyramid(newCubeData, 'from_last_built', true);
     }
 
+    public async notif_forOtherDevicesTookBackCubes(args) {
+        console.log('notif_forOtherDevicesTookBackCubes');
+
+        if(this.isReplay())
+            return;
+
+        const differentBrowserTab = parseInt(args.tab_session_id) != this.tabSessionID;
+        if(!differentBrowserTab)
+            return;
+
+        if(this.myself.pyramid.getMoveCubeAnim()){
+            setTimeout(async () => {
+                await this.notif_forOtherDevicesTookBackCubes(args);
+            }, 50);
+            return;
+        }
+
+        await this.myself.pyramid.onTakeBackButtonClicked(args.cube_id.toString(), true);
+    }
+
     public async notif_forOtherDevicesUndoBuildPyramid(args) {
         console.log('notif_forOtherDevicesUndoBuildPyramid');
         

@@ -1458,7 +1458,7 @@ body.mobile_version #player-tables {
   top: 50%;
   left: 50%;
 }
-.pyramids-container .a-pyramid-container .cubes-container .a-cube, .pyramids-container .a-pyramid-container .cubes-container .pyramid-cube-snap-point, .pyramids-container .a-pyramid-container .cubes-container .switch-color-button {
+.pyramids-container .a-pyramid-container .cubes-container .a-cube, .pyramids-container .a-pyramid-container .cubes-container .pyramid-cube-snap-point, .pyramids-container .a-pyramid-container .cubes-container .switch-color-button, .pyramids-container .a-pyramid-container .cubes-container .take-back-button, .pyramids-container .a-pyramid-container .cubes-container .last-cube-tick {
   position: absolute;
   width: var(--pyramid-cube-size, 0px);
   height: var(--pyramid-cube-size, 0px);
@@ -1510,7 +1510,7 @@ body.mobile_version #player-tables {
 .pyramids-container .a-pyramid-container .cubes-container .a-cube[procedural-texture=true] .top-side {
   box-shadow: 0px 0px 3px #000000;
 }
-.pyramids-container .a-pyramid-container .cubes-container .switch-color-button {
+.pyramids-container .a-pyramid-container .cubes-container .switch-color-button, .pyramids-container .a-pyramid-container .cubes-container .take-back-button, .pyramids-container .a-pyramid-container .cubes-container .last-cube-tick {
   z-index: 100;
   opacity: 0;
   transition: opacity 0.2s ease;
@@ -1518,12 +1518,12 @@ body.mobile_version #player-tables {
   outline-offset: -1px;
   overflow: hidden;
 }
-.pyramids-container .a-pyramid-container .cubes-container .switch-color-button[procedural-texture=true] .covered-cube-face {
+.pyramids-container .a-pyramid-container .cubes-container .switch-color-button[procedural-texture=true] .covered-cube-face, .pyramids-container .a-pyramid-container .cubes-container .take-back-button[procedural-texture=true] .covered-cube-face, .pyramids-container .a-pyramid-container .cubes-container .last-cube-tick[procedural-texture=true] .covered-cube-face {
   background-blend-mode: overlay;
   background-size: 610%, 100% 100%;
   background-image: url(img/wood_texture_overlay.webp), linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
 }
-.pyramids-container .a-pyramid-container .cubes-container .switch-color-button[procedural-texture=false] .covered-cube-face {
+.pyramids-container .a-pyramid-container .cubes-container .switch-color-button[procedural-texture=false] .covered-cube-face, .pyramids-container .a-pyramid-container .cubes-container .take-back-button[procedural-texture=false] .covered-cube-face, .pyramids-container .a-pyramid-container .cubes-container .last-cube-tick[procedural-texture=false] .covered-cube-face {
   position: absolute;
   top: -2%;
   left: -2%;
@@ -1532,7 +1532,27 @@ body.mobile_version #player-tables {
   width: 135%;
   height: 132%;
 }
-.pyramids-container .a-pyramid-container .cubes-container .switch-color-button .switch-color-icon {
+.pyramids-container .a-pyramid-container .cubes-container .switch-color-button .last-cube-tick-icon, .pyramids-container .a-pyramid-container .cubes-container .take-back-button .last-cube-tick-icon, .pyramids-container .a-pyramid-container .cubes-container .last-cube-tick .last-cube-tick-icon {
+  opacity: 0.7;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: calc(var(--pyramid-cube-size) * 0.6);
+  color: #ffffff;
+  filter: drop-shadow(2px 2px 1px #000);
+}
+.pyramids-container .a-pyramid-container .cubes-container .switch-color-button .take-back-icon, .pyramids-container .a-pyramid-container .cubes-container .take-back-button .take-back-icon, .pyramids-container .a-pyramid-container .cubes-container .last-cube-tick .take-back-icon {
+  opacity: 0.55;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: calc(var(--pyramid-cube-size) * 0.6);
+  color: #ffffff;
+  filter: drop-shadow(2px 2px 1px #000);
+}
+.pyramids-container .a-pyramid-container .cubes-container .switch-color-button .switch-color-icon, .pyramids-container .a-pyramid-container .cubes-container .take-back-button .switch-color-icon, .pyramids-container .a-pyramid-container .cubes-container .last-cube-tick .switch-color-icon {
   opacity: 0.82;
   position: absolute;
   top: 50%;
@@ -1546,6 +1566,9 @@ body.mobile_version #player-tables {
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(2px 2px 1px #000);
 }
+.pyramids-container .a-pyramid-container .cubes-container .last-cube-tick {
+  pointer-events: none;
+}
 @media (hover: hover) {
   .pyramids-container .a-pyramid-container:not([build-pyramid-enabled=true]):hover .a-cube[procedural-texture=false]::after {
     animation: shine-cube 1.6s ease-in-out;
@@ -1557,7 +1580,7 @@ body.mobile_version #player-tables {
 .pyramids-container .a-pyramid-container[build-pyramid-enabled=true] .pyramid-cube-snap-point {
   cursor: pointer;
 }
-.pyramids-container .a-pyramid-container[build-pyramid-enabled=true] .switch-color-button {
+.pyramids-container .a-pyramid-container[build-pyramid-enabled=true] .switch-color-button, .pyramids-container .a-pyramid-container[build-pyramid-enabled=true] .take-back-button {
   cursor: pointer;
 }
 
@@ -1571,14 +1594,14 @@ body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid {
   max-width: none;
   --pyramid-cube-size: var(--shrunk-pyramid-cube-size);
 }
-body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .a-cube, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .pyramid-cube-snap-point, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .switch-color-button {
+body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .a-cube, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .pyramid-cube-snap-point, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .switch-color-button, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .take-back-button, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .last-cube-tick {
   transition: width var(--expand-to-build-duration) ease-out, height var(--expand-to-build-duration) ease-out, left var(--expand-to-build-duration) ease-out, bottom var(--expand-to-build-duration) ease-out;
 }
 body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid[build-pyramid-enabled=true] {
   width: 98%;
   --pyramid-cube-size: var(--expanded-pyramid-cube-size);
 }
-body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid[build-pyramid-enabled=true] .a-cube, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid[build-pyramid-enabled=true] .pyramid-cube-snap-point, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid[build-pyramid-enabled=true] .switch-color-button {
+body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid[build-pyramid-enabled=true] .a-cube, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid[build-pyramid-enabled=true] .pyramid-cube-snap-point, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid[build-pyramid-enabled=true] .switch-color-button, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid[build-pyramid-enabled=true] .take-back-button, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid[build-pyramid-enabled=true] .last-cube-tick {
   width: var(--expanded-pyramid-cube-size);
   height: var(--expanded-pyramid-cube-size);
   max-width: var(--expanded-pyramid-cube-size);
@@ -1587,7 +1610,7 @@ body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid[build-py
 body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid[build-pyramid-enabled=true] .pyramid-cube-snap-point .snap-point-icon {
   font-size: calc(var(--expanded-pyramid-cube-size) * 0.24);
 }
-body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .cubes-container.shrinking-pyramid-cubes .a-cube, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .cubes-container.shrinking-pyramid-cubes .pyramid-cube-snap-point, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .cubes-container.shrinking-pyramid-cubes .switch-color-button {
+body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .cubes-container.shrinking-pyramid-cubes .a-cube, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .cubes-container.shrinking-pyramid-cubes .pyramid-cube-snap-point, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .cubes-container.shrinking-pyramid-cubes .switch-color-button, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .cubes-container.shrinking-pyramid-cubes .take-back-button, body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid .cubes-container.shrinking-pyramid-cubes .last-cube-tick {
   animation: pyramid-cube-shrink var(--expand-to-build-duration) ease-out forwards;
 }
 body.mobile_version .pyramids-container .a-pyramid-container.my-pyramid {
