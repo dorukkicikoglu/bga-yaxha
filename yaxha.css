@@ -761,6 +761,7 @@ body {
   height: 100%;
   --pyramid-width: calc(min(42vw, 51vh));
   --shaman-width: calc(var(--pyramid-width) * 0.64);
+  --bg-pyramid-max-scale: 1.5;
   pointer-events: none;
 }
 .background-container::before {
@@ -781,18 +782,19 @@ body {
   opacity: 0.8;
   transform-origin: center bottom;
   transition: transform 0.2s ease;
+  will-change: transform, opacity;
   top: 100%;
   left: 42%;
-  transform: translateX(-50%) translateY(-100%);
-  width: var(--pyramid-width);
-  height: calc(var(--pyramid-width) * 0.945);
+  transform: translate3d(-50%, -100%, 0) scale(calc(1 / var(--bg-pyramid-max-scale)));
+  width: calc(var(--pyramid-width) * var(--bg-pyramid-max-scale));
+  height: calc(var(--pyramid-width) * var(--bg-pyramid-max-scale) * 0.945);
   background-image: url("img/bg_pyramid.webp");
   background-size: 100%;
 }
 .background-container .bg-pyramid .bg-shaman {
   position: absolute;
-  width: var(--shaman-width);
-  height: calc(var(--shaman-width) * 0.929);
+  width: calc(var(--shaman-width) * var(--bg-pyramid-max-scale));
+  height: calc(var(--shaman-width) * var(--bg-pyramid-max-scale) * 0.929);
 }
 .background-container .bg-pyramid .bg-shaman.is-shaking {
   animation: shake-shaman 0.35s ease-in-out infinite;
@@ -860,8 +862,14 @@ body.mobile_version .background-container::before {
 }
 body.mobile_version .background-container .bg-pyramid {
   left: 50%;
+  transition: none;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .background-container .bg-pyramid {
+    transition: none;
+  }
+}
 body.mobile_version[player-count="4"] #player_boards {
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
 }
@@ -1381,6 +1389,7 @@ body.mobile_version .market-container .waiting-players-container {
 
 body.mobile_version #player-tables {
   margin-bottom: 60vh;
+  padding-bottom: 40vh;
 }
 
 .pyramids-container {
@@ -2324,10 +2333,10 @@ body.mobile_version .dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip .
     transform: translateX(0px);
   }
   25% {
-    transform: translateX(-2px);
+    transform: translateX(calc(-2px * var(--bg-pyramid-max-scale, 1)));
   }
   75% {
-    transform: translateX(2px);
+    transform: translateX(calc(2px * var(--bg-pyramid-max-scale, 1)));
   }
   100% {
     transform: translateX(0px);

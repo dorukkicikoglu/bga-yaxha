@@ -35,11 +35,12 @@ body{
 
 html{ background: linear-gradient(to bottom right, #1e4b39 32%, #f8da5f 110%); background-position: center bottom; background-size: cover; }
 body{ min-height: 100vh; }
-.background-container{ position: fixed; z-index: -1; top: 0; left: 0; width: 100%; height: 100%; --pyramid-width: calc(min(42vw, 51vh)); --shaman-width: calc(var(--pyramid-width) * 0.64); pointer-events: none;
+.background-container{ position: fixed; z-index: -1; top: 0; left: 0; width: 100%; height: 100%; --pyramid-width: calc(min(42vw, 51vh)); --shaman-width: calc(var(--pyramid-width) * 0.64); --bg-pyramid-max-scale: 1.5; pointer-events: none; //--bg-pyramid-max-scale must match MAX_SCALE in BackgroundHandler.bindBodyScrollEvent()
     &::before { content: ""; position: fixed; top: calc(60px + 50%); transform: translateY(-50%); height: 35.8vh; width: 100%; pointer-events: none;  background-repeat: repeat-y; background-position: 0% top, 99% top; background-size: 4vh 3vh; background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='180'%20height='100'%20viewBox='0%200%20180%20100'%3E%3Cpolygon%20points='50,-46%2095,40%205,40'%20fill='%2384b578'%20transform='rotate(90,%2050,%2050)'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='180'%20height='100'%20viewBox='0%200%20180%20100'%3E%3Cpolygon%20points='94,34%20139,120%2049,120'%20fill='%2384b578'%20transform='rotate(-90,%2090,%2050)'/%3E%3C/svg%3E"); }
 
-    .bg-pyramid{ position: absolute; opacity: 0.8; transform-origin: center bottom; transition: transform 0.2s ease; top: 100%; left: 42%; transform: translateX(-50%) translateY(-100%); width: var(--pyramid-width); height: calc(var(--pyramid-width) * 0.945); background-image: url('img/bg_pyramid.webp'); background-size: 100%;
-        .bg-shaman{ position: absolute; width: var(--shaman-width); height: calc(var(--shaman-width) * 0.929); 
+    //laid out at the max scroll size and scaled down, so the composited layer stays sharp as the scroll parallax grows it (transform/opacity only, see BackgroundHandler)
+    .bg-pyramid{ position: absolute; opacity: 0.8; transform-origin: center bottom; transition: transform 0.2s ease; will-change: transform, opacity; top: 100%; left: 42%; transform: translate3d(-50%, -100%, 0) scale(calc(1 / var(--bg-pyramid-max-scale))); width: calc(var(--pyramid-width) * var(--bg-pyramid-max-scale)); height: calc(var(--pyramid-width) * var(--bg-pyramid-max-scale) * 0.945); background-image: url('img/bg_pyramid.webp'); background-size: 100%;
+        .bg-shaman{ position: absolute; width: calc(var(--shaman-width) * var(--bg-pyramid-max-scale)); height: calc(var(--shaman-width) * var(--bg-pyramid-max-scale) * 0.929); 
             &.is-shaking{ animation: shake-shaman 0.35s ease-in-out infinite; }
             &.final-shake{ animation: shake-shaman 0.35s ease-in-out; }
 
@@ -60,8 +61,9 @@ body{ min-height: 100vh; }
 }
 body.mobile_version .background-container{ --pyramid-width: calc(min(86vw, 48vh));
     &::before { background-size: 3vh 2.2vh; height: 22.2vh; top: calc(100px + 50%); }
-    .bg-pyramid{ left: 50%;}
+    .bg-pyramid{ left: 50%; transition: none; } //updated every frame while touch scrolling, so no transition to retarget
 }
+@media (prefers-reduced-motion: reduce) { .background-container .bg-pyramid{ transition: none; } }
 
 
 body.mobile_version[player-count="4"] #player_boards{ grid-template-columns: repeat(auto-fit,minmax(350px,1fr)); }
@@ -203,7 +205,7 @@ body.mobile_version .market-container .waiting-players-container{ bottom: -25px;
 }
 
 #player-tables{ margin-bottom: 20vh; min-height: 190vh; }
-body.mobile_version #player-tables{ margin-bottom: 60vh; }
+body.mobile_version #player-tables{ margin-bottom: 60vh; padding-bottom: 40vh; } //padding: extra empty space between the play area and BGA's bottom menus on mobile (padding never collapses like margin can)
 
 .pyramids-container{ text-align: center; margin-top: 40px; margin-bottom: 40px;
     .a-pyramid-container { position: relative; margin-top: 30px; width: 48%; margin: 1%; aspect-ratio: 1; background-color: rgba(255, 255, 255, 0.1); box-shadow: 2px 2px 0 var(--player-color, #000000), -2px 2px 0 var(--player-color, #000000); display: inline-block; max-width: 400px;
@@ -541,8 +543,8 @@ body.mobile_version .dijitTooltipContainer .tooltip-wrapper.bonus-card-tooltip{ 
 
 @keyframes shake-shaman {
     0% { transform: translateX(0px); }
-    25% { transform: translateX(-2px); }
-    75% { transform: translateX(2px); }
+    25% { transform: translateX(calc(-2px * var(--bg-pyramid-max-scale, 1))); }
+    75% { transform: translateX(calc(2px * var(--bg-pyramid-max-scale, 1))); }
     100% { transform: translateX(0px); }
 }
 

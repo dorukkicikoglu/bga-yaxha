@@ -24,6 +24,12 @@ Each round a player places up to 3 cubes (`CUBES_PER_MARKET_TILE`) from their Ma
 - User preference `100` "Show players as" in `gamepreferences.json` (1 = Profile picture, default; 2 = Player name). `GameBody` keeps it as `body[player-display="avatar|name"]`; CSS shows `.player-avatar` or `.text-container` inside `.player-name-text`.
 - Clicking either calls `togglePlayerDisplay()` → `setGameUserPreference()`; changes from the BGA options menu arrive via `onGameUserPreferenceChanged()`. Pyramids whose panel avatar isn't found get `.no-avatar` and always show the name.
 
+## Background pyramid parallax
+- `BackgroundHandler.bindBodyScrollEvent()` grows `.bg-pyramid` from 1x to 1.5x (opacity 0.8 to 1) between 30% and 120% of the viewport height of scroll. It runs on desktop and mobile, and stays at rest for `prefers-reduced-motion: reduce`.
+- It only changes `transform` and `opacity`: a passive scroll listener, at most one rAF update per frame, and the viewport height cached on resize.
+- `.bg-pyramid` and `.bg-shaman` are laid out at `--bg-pyramid-max-scale` (1.5, must match `MAX_SCALE` in TS) and scaled down, so the `will-change` layer stays sharp at full size. Any new px sizes inside `.bg-pyramid` need multiplying by that variable (see `shake-shaman`).
+- The 0.2s transform transition is desktop-only. On mobile it's off, because it was retargeted every frame.
+
 ## Working rules
 - Read `.claude/SPEC.md` (rules summary from the official rulebook) before changing game logic.
 - Before editing to fix a server error, ask the user for the PHP error log from the Studio instead of guessing.

@@ -147,31 +147,67 @@ class BackgroundHandler{
         this.shaman.classList.remove('rainbow-eyes');
     }
 
+    // Scroll parallax: the background pyramid grows from 1x to 1.5x (and opacity 0.8 to 1) as the page scrolls
+    // from 30% to 120% of the viewport height. Only transform and opacity change, so it stays on the compositor.
+    // The element is laid out at the max size (--bg-pyramid-max-scale in yaxha.scss) and scaled down, so the layer
+    // is rasterized at full resolution and doesn't get blurry when it grows.
     private bindBodyScrollEvent() {
-        if(this.gameui.isMobile())
-            return;
+        const MAX_SCALE = 1.5; // keep in sync with --bg-pyramid-max-scale in yaxha.scss
+        const reducedMotionQuery = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
 
-        document.addEventListener('scroll', () => {
-            const scrollTop = window.scrollY;
+        let scrollRangeStart = 0;
+        let scrollRangeEnd = 0;
+        let framePending = false;
+        let lastProgress = -1;
+
+        const cacheMeasurements = () => {
             const windowHeight = window.innerHeight;
-            const scrollRangeStart = windowHeight * 0.3;
-            const scrollRangeEnd = windowHeight * 1.2;
-    
-            let scale = 1;
-            let opacity = 0.8;
-    
-            if (scrollTop > scrollRangeStart) {
-                const relativeScroll = Math.min(scrollTop, scrollRangeEnd) - scrollRangeStart;
-                const scalePercent = relativeScroll / (scrollRangeEnd - scrollRangeStart);
-                scale = 1 + scalePercent * 0.5; // scale from 1 to 1.5
-                
-                opacity = 0.8 + scalePercent * 0.2;
+            scrollRangeStart = windowHeight * 0.3;
+            scrollRangeEnd = windowHeight * 1.2;
+        };
+
+        const applyProgress = (progress: number) => {
+            if(progress === lastProgress)
+                return;
+            lastProgress = progress;
+
+            const scale = (1 + progress * (MAX_SCALE - 1)) / MAX_SCALE;
+            this.pyramid.style.transform = `translate3d(-50%, -100%, 0) scale(${scale})`;
+            this.pyramid.style.opacity = `${0.8 + progress * 0.2}`;
+        };
+
+        const update = () => {
+            framePending = false;
+            if(reducedMotionQuery && reducedMotionQuery.matches){
+                applyProgress(0);
+                return;
             }
-    
-            this.pyramid.style.transform = `translateX(-50%) translateY(-100%) scale(${scale})`;
-            this.pyramid.style.opacity = `${opacity}`;
-        });
-    }  
+
+            const scrollTop = window.scrollY;
+            const progress = scrollTop <= scrollRangeStart ? 0 : (Math.min(scrollTop, scrollRangeEnd) - scrollRangeStart) / (scrollRangeEnd - scrollRangeStart);
+            applyProgress(progress);
+        };
+
+        const requestUpdate = () => {
+            if(framePending)
+                return;
+            framePending = true;
+            window.requestAnimationFrame(update);
+        };
+
+        cacheMeasurements();
+        window.addEventListener('scroll', requestUpdate, { passive: true });
+        window.addEventListener('resize', () => { cacheMeasurements(); requestUpdate(); }, { passive: true });
+
+        if(reducedMotionQuery){
+            if(reducedMotionQuery.addEventListener)
+                reducedMotionQuery.addEventListener('change', requestUpdate);
+            else if((reducedMotionQuery as any).addListener) // Safari < 14
+                (reducedMotionQuery as any).addListener(requestUpdate);
+        }
+
+        requestUpdate();
+    }
 }
 
 
